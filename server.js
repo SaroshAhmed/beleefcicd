@@ -5,14 +5,14 @@ const passport = require("passport");
 const MongoStore = require("connect-mongo");
 const databaseConnect = require("./config/database");
 const routes = require('./routes/v1');
-const { MONGO_URI, SECRET_KEY,REACT_APP_FRONTNED_URL } = require("./config");
+const { MONGO_URI, SECRET_KEY,REACT_APP_FRONTEND_URL } = require("./config");
 
 const app = express();
 require("./config/passport");
 
 app.use(
   cors({
-    origin: REACT_APP_FRONTNED_URL,
+    origin: REACT_APP_FRONTEND_URL,
     credentials: true,
   })
 );

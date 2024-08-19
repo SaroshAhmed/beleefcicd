@@ -2,7 +2,7 @@
 const express = require("express");
 const passport = require("passport");
 const Session = require("../../../models/Session");
-const { REACT_APP_FRONTNED_URL } = require("../../../config");
+const { REACT_APP_FRONTEND_URL } = require("../../../config");
 const router = express.Router();
 
 // Google Auth Routes
@@ -16,10 +16,10 @@ router.get(
 router.get(
   "/google/callback",
   passport.authenticate("google", {
-    failureRedirect: `${REACT_APP_FRONTNED_URL}/login`,
+    failureRedirect: `${REACT_APP_FRONTEND_URL}/login`,
   }),
   function (req, res) {
-    res.redirect(`${REACT_APP_FRONTNED_URL}`);
+    res.redirect(`${REACT_APP_FRONTEND_URL}`);
   }
 );
 
