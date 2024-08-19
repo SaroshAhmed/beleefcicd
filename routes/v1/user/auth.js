@@ -1,8 +1,8 @@
 // routes/auth.js
 const express = require("express");
 const passport = require("passport");
-const Session = require("../../models/Session");
-const { REACT_APP_FRONTNED_URL } = require("../../config");
+const Session = require("../../../models/Session");
+const { REACT_APP_FRONTNED_URL } = require("../../../config");
 const router = express.Router();
 
 // Google Auth Routes

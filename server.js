@@ -4,7 +4,7 @@ const cors = require("cors");
 const passport = require("passport");
 const MongoStore = require("connect-mongo");
 const databaseConnect = require("./config/database");
-const authRoutes = require("./routes/v1/auth");
+const routes = require('./routes/v1');
 const { MONGO_URI, SECRET_KEY } = require("./config");
 
 const app = express();
@@ -52,7 +52,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use("/api/v1/auth", authRoutes);
+app.use('/api/v1', routes); 
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -66,8 +66,8 @@ app.get("/", (req, res) => {
               <title>Welcome</title>
           </head>
           <body>
-              <h1>Welcome to Beleef Backend APIs</h1>
-              <p>This is backend page.</p>
+              <h1>Welcome to Beleef Backend</h1>
+              <p>This is backend page</p>
           </body>
       </html>
   `;
