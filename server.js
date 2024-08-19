@@ -4,8 +4,8 @@ const cors = require("cors");
 const passport = require("passport");
 const MongoStore = require("connect-mongo");
 const databaseConnect = require("./config/database");
-const routes = require('./routes/v1');
-const { MONGO_URI, SECRET_KEY,REACT_APP_FRONTEND_URL } = require("./config");
+const routes = require("./routes/v1");
+const { MONGO_URI, SECRET_KEY, REACT_APP_FRONTEND_URL } = require("./config");
 
 const app = express();
 require("./config/passport");
@@ -46,7 +46,7 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.use('/api/v1', routes); 
+app.use("/api/v1", routes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
