@@ -46,12 +46,6 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Example logging in middleware to track session IDs
-app.use((req, res, next) => {
-  console.log("Session ID in middleware:", req.sessionID);
-  next();
-});
-
 app.use('/api/v1', routes); 
 
 app.use((err, req, res, next) => {
