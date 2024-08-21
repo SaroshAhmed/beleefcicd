@@ -1,7 +1,7 @@
 const axios = require("axios");
 const Property = require("../models/Property");
 const ErrorLog = require("../models/ErrorLog");
-const { analyzeImagesAIUrls } = require("../utils/openai");
+const { analyzeImagesAIUrls, guessBattleAxe } = require("../utils/openai");
 const databaseConnect = require("../config/database");
 
 // Connect to the database
@@ -10,7 +10,7 @@ databaseConnect();
 // Fetch properties from the Property table
 async function fetchProperties() {
   try {
-    return await Property.find({ isCleaned: false });
+    return await Property.find({ isCleaned: false, suburb: "PEAKHURST" });
   } catch (error) {
     console.error("Error fetching properties:", error.message);
     throw error;
@@ -28,33 +28,51 @@ async function generatePromptAndAnalyze(property) {
     landArea,
     propertyId,
     listingId,
+    propertyType,
   } = property;
 
-  // Construct the prompt with provided data
+  // Base prompt construction
   let prompt = `Suburb: ${suburb}\nAddress: ${address}\nHeadline: ${headline}\nDescription: ${description}\n`;
   prompt += `Output should be in JSON format and include the following fields:\n`;
-  prompt += `{
-    "buildType": "[enum: 1 storey, 2 storey, 3 storey, 4+ storey]",
-    "wallMaterial": "[enum: Brick, Double brick, Clad, Fibro, Hebel]",
-    "waterViews": "[enum: Yes, No, Deep water, Tidal water, Waterfront reserve, Waterfront with jetty]",
-    "finishes": "[enum: High-end finishes, Standard finishes, Low-end finishes, Updated, Original]",
-    "streetTraffic": "[enum: Low traffic, Moderate traffic, High traffic]",
-    "topography": "multiples can be selected but from this list only [High side, Low side, Level block, Irregular block, Unusable land]",
-    "frontage": "Extract from the description (its type should be a number). If not present then put null",
-    "landArea": "${
-      landArea
-        ? landArea
-        : "Extract from the description or floorplan (its type should be a number). Donot confuse it with internal space that is different. If not present then put null"
-    }",
-    "configurationPlan": "Write about the configuration plan in a short paragraph and in sales advertising style",
-    "developmentPotential": "First check in the description if the word developmentPotential is present. If present, specify which type [enum: Childcare, Duplex site, Townhouse site, Unit site]. If not present, put null",
-    "grannyFlat": "[enum: Yes, No]"
-  }\n`;
 
-  // Filter and include the first 5 image URLs from the media array
+  // JSON structure for property details
+  let jsonStructure = {
+    buildType: "[enum: 1 storey, 2 storey, 3 storey, 4+ storey]",
+    wallMaterial: "[enum: Brick, Double brick, Clad, Fibro, Hebel]",
+    waterViews:
+      "[enum: Yes, No, Deep water, Tidal water, Waterfront reserve, Waterfront with jetty]",
+    finishes: "[enum: High-end finishes, Updated, Original]",
+    streetTraffic: "[enum: Low traffic, Moderate traffic, High traffic]",
+    topography:
+      "multiples can be selected but only from this list [High side, Low side, Level block, Irregular block, Unusable land]",
+    frontage:
+      "Extract frontage value from the description or headline only. Donot give a range. (its type should be a number). If not present then put null",
+    landArea:
+      landArea ||
+      "Extract landArea value from the description or headline only. Donot give a range.(its type should be a number). Do not confuse it with internal space that is different. If not present then put null",
+    configurationPlan:
+      "Write about the configuration plan in a short paragraph and in sales advertising style",
+    developmentPotential:
+      "First check in the description if the word developmentPotential is present. If present, specify which type. Note if there are multiple matches, you can select only one otherwise it will give an error because it's an enum. [enum: Childcare, Duplex site, Townhouse site, Unit site]. If not present, then put null",
+    grannyFlat: "[enum: Yes, No]",
+  };
+
+  // Override certain fields if the property type is VacantLand
+  if (propertyType === "VacantLand") {
+    jsonStructure.buildType = null;
+    jsonStructure.wallMaterial = null;
+    jsonStructure.finishes = null;
+    jsonStructure.configurationPlan = null;
+    jsonStructure.grannyFlat = null;
+  }
+
+  // Construct the JSON structure into a string and add it to the prompt
+  prompt += JSON.stringify(jsonStructure, null, 2);
+
+  // Filter and include the image URLs from the media array
   const imageUrls = media
     .filter((item) => item.type === "photo")
-    .slice(0, 5)
+    .slice(0, 19)
     .map((item) => item.url);
 
   // Add floorplan image if available
@@ -66,13 +84,20 @@ async function generatePromptAndAnalyze(property) {
   // Call the OpenAI service with the constructed prompt and images
   try {
     const result = await analyzeImagesAIUrls(imageUrls, prompt);
+    Object.keys(result).forEach((key) => {
+      if (result[key] === "null") {
+        result[key] = null;
+      }
+    });
 
     // Log the result and update the property in the database
-    console.log("PropertyId:", propertyId, "cleaned");
+    console.log(
+      `ListingId: ${listingId} with PropertyId:${propertyId} is cleaned`
+    );
 
     // Update the Property table with the analyzed data
     await Property.updateOne(
-      { propertyId },
+      { listingId },
       {
         ...result,
         isCleaned: true, // Set isCleaned to true
@@ -93,6 +118,7 @@ async function generatePromptAndAnalyze(property) {
 async function processProperties() {
   try {
     const properties = await fetchProperties();
+
     for (const property of properties) {
       await generatePromptAndAnalyze(property);
     }

@@ -9,6 +9,7 @@ databaseConnect();
 // Fetch all properties where propertyId is null
 async function fetchPropertiesWithoutPropertyId() {
   try {
+    // when run listings api for new ones added only have to run listing by id api
     return await Property.find({ propertyId: null, isNewDevelopment: null });
   } catch (error) {
     console.error(
@@ -74,8 +75,10 @@ async function processProperties() {
             listingDetails.saleDetails?.saleMethod,
           channel: listingDetails.channel,
           isNewDevelopment: listingDetails.isNewDevelopment,
+          listingStatus: listingDetails.status,
+          saleMode: listingDetails.saleMode,
         };
-
+        
         await updateProperty(property.listingId, updateData);
       } catch (error) {
         console.error(

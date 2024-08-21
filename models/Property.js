@@ -57,7 +57,7 @@ const mediaSchema = new Schema({
 
 const propertySchema = new Schema(
   {
-    propertyId: { type: String, default: null }, 
+    propertyId: { type: String, default: null },
     listingId: { type: String, unique: true, required: true },
     address: { type: String, required: true },
     listingType: { type: String, enum: ["Sale", "Sold"], required: true },
@@ -113,13 +113,7 @@ const propertySchema = new Schema(
     vendorDetails: { type: vendorDetailsSchema, default: null },
     finishes: {
       type: String,
-      enum: [
-        "High-end finishes",
-        "Standard finishes",
-        "Low-end finishes",
-        "Updated",
-        "Original",
-      ],
+      enum: ["High-end finishes", "Updated", "Original"],
       default: null,
     },
     streetTraffic: {
@@ -168,6 +162,28 @@ const propertySchema = new Schema(
     channel: {
       type: String,
       enum: ["residential", "commercial", "business"],
+      default: null,
+    },
+    listingStatus: {
+      type: String,
+      enum: [
+        "unknown",
+        "archived",
+        "underOffer",
+        "sold",
+        "leased",
+        "newDevelopment",
+        "recentlyUpdated",
+        "new",
+        "live",
+        "pending",
+        "depositTaken",
+      ],
+      default: null,
+    },
+    saleMode: {
+      type: String,
+      enum: ["buy", "rent", "share", "sold", "leased", "archived"],
       default: null,
     },
     logicalPrice: { type: String, default: null },
