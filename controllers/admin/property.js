@@ -55,6 +55,7 @@ const calculateScoreMatch = async (req, res) => {
     latitude: sourceLat,
     longitude: sourceLon,
     suburb: sourceSuburb,
+    propertyType:sourcePropertyType
   } = property;
 
   // Helper function to convert degrees to radians
@@ -86,6 +87,7 @@ const calculateScoreMatch = async (req, res) => {
     {
       $match: {
         suburb: sourceSuburb,
+        propertyType:sourcePropertyType,
         _id: { $ne: property._id },
       },
     },
