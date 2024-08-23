@@ -151,7 +151,20 @@ const calculateScoreMatch = async (req, res) => {
     }
 
     // Build Type and Wall Material
+    // if one is two story and other is single 
+    // singleStory & single Story =7
+    // singleStory & double Story and onwards =0
+    // two Story & single Story=0
+    // two Story & two Story=7
+    // two Story & three story and onwards=4
+    // three story & two story=4
+    // three story & three story=7
+    // 4+ story & two story=4
+    // 4+ story & three story=4
+    // 4+ story & 4+ story=7
     if (property.buildType === targetProperty.buildType) score += 7;
+
+
     if (property.wallMaterial === targetProperty.wallMaterial) {
       score += 7;
       keyMatches.push("Wall material");
@@ -177,10 +190,11 @@ const calculateScoreMatch = async (req, res) => {
     }
 
     // Water Views, Granny Flat, Finishes, Street Traffic, Development Potential
-    if (property.waterViews === targetProperty.waterViews) {
+    if (property.waterViews!=="No" && targetProperty.waterViews!=="No") {
       score += 7;
       keyMatches.push("Water views");
     }
+
     if (property.grannyFlat === targetProperty.grannyFlat) {
       score += 7;
       keyMatches.push("Granny flat");
