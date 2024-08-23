@@ -61,6 +61,7 @@ const calculateScoreMatch = async (req, res) => {
     longitude: sourceLon,
     suburb: sourceSuburb,
     propertyType: sourcePropertyType,
+    developmentPotential: sourceDevelopmentPotential,
   } = property;
 
   // Helper function to convert degrees to radians
@@ -93,6 +94,8 @@ const calculateScoreMatch = async (req, res) => {
       $match: {
         suburb: sourceSuburb,
         propertyType: sourcePropertyType,
+        developmentPotential:
+          sourceDevelopmentPotential === null ? null : { $ne: null },
         _id: { $ne: property._id },
       },
     },
@@ -102,7 +105,6 @@ const calculateScoreMatch = async (req, res) => {
     let score = 0;
     const keyMatches = [];
 
-    // Calculate addressScore
     const distance = calculateDistance(
       sourceLat,
       sourceLon,
@@ -113,9 +115,6 @@ const calculateScoreMatch = async (req, res) => {
     else if (distance > 0.8 && distance <= 1.5) score += 7;
     else if (distance > 1.5 && distance <= 2.5) score += 3;
 
-    // Property Type
-    if (property.propertyType === targetProperty.propertyType) score += 7;
-
     // Land Area
     if (property.landArea && targetProperty.landArea) {
       if (Math.abs(property.landArea - targetProperty.landArea) <= 100)
@@ -123,17 +122,15 @@ const calculateScoreMatch = async (req, res) => {
       keyMatches.push("Land area");
     } else if (!property.landArea && !targetProperty.landArea) {
       score += 7;
-      keyMatches.push("Land area");
     }
 
     // Frontage
     if (property.frontage && targetProperty.frontage) {
-      if (Math.abs(property.frontage - targetProperty.frontage) <= 100)
+      if (Math.abs(property.frontage - targetProperty.frontage) <= 50)
         score += 4;
       keyMatches.push("Frontage");
     } else if (!property.frontage && !targetProperty.frontage) {
       score += 4;
-      keyMatches.push("Frontage");
     }
 
     // Bedrooms, Bathrooms, Carspaces
@@ -150,20 +147,22 @@ const calculateScoreMatch = async (req, res) => {
       keyMatches.push("Carspaces");
     }
 
-    // Build Type and Wall Material
-    // if one is two story and other is single 
-    // singleStory & single Story =7
-    // singleStory & double Story and onwards =0
-    // two Story & single Story=0
-    // two Story & two Story=7
-    // two Story & three story and onwards=4
-    // three story & two story=4
-    // three story & three story=7
-    // 4+ story & two story=4
-    // 4+ story & three story=4
-    // 4+ story & 4+ story=7
-    if (property.buildType === targetProperty.buildType) score += 7;
+    // Define the scoring logic for buildType comparison
+    const buildTypeSource = property.buildType;
+    const buildTypeTarget = targetProperty.buildType;
 
+    if (buildTypeSource === buildTypeTarget) {
+      score += 7;
+    } else if (
+      (buildTypeSource === "2 storey" && buildTypeTarget === "3 storey") ||
+      (buildTypeSource === "2 storey" && buildTypeTarget === "4+ storey") ||
+      (buildTypeSource === "3 storey" && buildTypeTarget === "2 storey") ||
+      (buildTypeSource === "3 storey" && buildTypeTarget === "4+ storey") ||
+      (buildTypeSource === "4+ storey" && buildTypeTarget === "2 storey") ||
+      (buildTypeSource === "4+ storey" && buildTypeTarget === "3 storey")
+    ) {
+      score += 4;
+    }
 
     if (property.wallMaterial === targetProperty.wallMaterial) {
       score += 7;
@@ -176,7 +175,9 @@ const calculateScoreMatch = async (req, res) => {
       targetProperty.features?.includes("SwimmingPool") || false;
     if (hasPoolSource === hasPoolTarget) {
       score += 4;
-      keyMatches.push("Pool");
+      if (hasPoolSource && hasPoolTarget) {
+        keyMatches.push("Pool");
+      }
     }
 
     // Tennis Court
@@ -186,29 +187,51 @@ const calculateScoreMatch = async (req, res) => {
       targetProperty.features?.includes("TennisCourt") || false;
     if (hasTennisCourtSource === hasTennisCourtTarget) {
       score += 3;
-      keyMatches.push("Tennis court");
+      if (hasTennisCourtSource && hasTennisCourtTarget) {
+        keyMatches.push("Tennis court");
+      }
     }
 
-    // Water Views, Granny Flat, Finishes, Street Traffic, Development Potential
-    if (property.waterViews!=="No" && targetProperty.waterViews!=="No") {
+    if (property.waterViews === "No" && targetProperty.waterViews === "No") {
+      score += 7;
+    }
+    if (property.waterViews !== "No" && targetProperty.waterViews !== "No") {
       score += 7;
       keyMatches.push("Water views");
     }
 
     if (property.grannyFlat === targetProperty.grannyFlat) {
       score += 7;
-      keyMatches.push("Granny flat");
+      if (
+        property.grannyFlat === "Yes" &&
+        targetProperty.grannyFlat === "Yes"
+      ) {
+        keyMatches.push("Granny flat");
+      }
     }
+
     if (property.finishes === targetProperty.finishes) {
       score += 3;
       keyMatches.push("Finishes");
     }
+
     if (property.streetTraffic === targetProperty.streetTraffic) {
       score += 7;
       keyMatches.push("Street traffic");
     }
-    if (property.developmentPotential === targetProperty.developmentPotential)
+
+    if (
+      property.developmentPotential === null &&
+      targetProperty.developmentPotential === null
+    ) {
       score += 7;
+    }
+    if (
+      property.developmentPotential !== null &&
+      targetProperty.developmentPotential !== null
+    ) {
+      score += 7;
+    }
 
     // Topography
     const topographyMatch = property.topography?.every((item) =>
@@ -216,7 +239,12 @@ const calculateScoreMatch = async (req, res) => {
     );
     if (topographyMatch) {
       score += 7;
-      keyMatches.push("Topography");
+      if (
+        property.topography.length > 0 &&
+        targetProperty.topography.length > 0
+      ) {
+        keyMatches.push("Topography");
+      }
     }
 
     const finalScore = score;
