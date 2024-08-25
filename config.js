@@ -10,5 +10,6 @@ module.exports = {
   RESTRICTED_DOMAIN: process.env.RESTRICTED_DOMAIN,
   SECRET_KEY: process.env.SECRET_KEY,
   DOMAIN_API_KEY:process.env.DOMAIN_API_KEY,
-  OPENAI_API_KEY:process.env.OPENAI_API_KEY
+  OPENAI_API_KEY:process.env.OPENAI_API_KEY,
+  GOOGLE_MAPS_API_KEY:process.env.GOOGLE_MAPS_API_KEY
 };

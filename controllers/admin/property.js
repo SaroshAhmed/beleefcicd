@@ -15,6 +15,7 @@ const getProperties = async (req, res) => {
         daysListed: 1,
         listingType: 1,
         propertyType: 1,
+        battleAxe:1,
       }
     );
 
@@ -192,11 +193,19 @@ const calculateScoreMatch = async (req, res) => {
       }
     }
 
+    // Scoring logic for water views
     if (property.waterViews === "No" && targetProperty.waterViews === "No") {
-      score += 7;
-    }
-    if (property.waterViews !== "No" && targetProperty.waterViews !== "No") {
-      score += 7;
+      score += 4; // Both have "No" water views
+    } else if (property.waterViews === targetProperty.waterViews) {
+      score += 10; // Identical water views (not "No")
+      keyMatches.push("Water views");
+    } else if (
+      property.waterViews !== null &&
+      targetProperty.waterViews !== null &&
+      property.waterViews !== "No" &&
+      targetProperty.waterViews !== "No"
+    ) {
+      score += 5; // Different water views, but neither is "No"
       keyMatches.push("Water views");
     }
 
@@ -210,8 +219,18 @@ const calculateScoreMatch = async (req, res) => {
       }
     }
 
+    if (property.battleAxe === targetProperty.battleAxe) {
+      score += 4;
+      if (
+        property.battleAxe === "Yes" &&
+        targetProperty.battleAxe === "Yes"
+      ) {
+        keyMatches.push("Battleaxe");
+      }
+    }
+
     if (property.finishes === targetProperty.finishes) {
-      score += 3;
+      score += 7;
       keyMatches.push("Finishes");
     }
 

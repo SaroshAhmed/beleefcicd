@@ -79,6 +79,7 @@ const propertySchema = new Schema(
       ],
       required: true,
     },
+    battleAxe: { type: String, enum: ["Yes", "No"], default: null },
     media: { type: [mediaSchema], default: null },
     bedrooms: { type: Number, default: null },
     bathrooms: { type: Number, default: null },

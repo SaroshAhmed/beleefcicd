@@ -2,6 +2,7 @@ const axios = require("axios");
 const Property = require("../models/Property");
 const ErrorLog = require("../models/ErrorLog");
 const { analyzeImagesAIUrls, guessBattleAxe } = require("../utils/openai");
+const { getMapStaticImage } = require("../utils/maps");
 const databaseConnect = require("../config/database");
 
 // Connect to the database
@@ -10,7 +11,8 @@ databaseConnect();
 // Fetch properties from the Property table
 async function fetchProperties() {
   try {
-    return await Property.find({ isCleaned: false, suburb: "PEAKHURST" });
+    return await Property.find({ battleAxe: null, suburb: "PEAKHURST" });
+    // return await Property.find({ propertyId:"IL-2019-FD" });
   } catch (error) {
     console.error("Error fetching properties:", error.message);
     throw error;
@@ -29,6 +31,8 @@ async function generatePromptAndAnalyze(property) {
     propertyId,
     listingId,
     propertyType,
+    latitude,
+    longitude,
   } = property;
 
   // Base prompt construction
@@ -83,12 +87,16 @@ async function generatePromptAndAnalyze(property) {
 
   // Call the OpenAI service with the constructed prompt and images
   try {
-    const result = await analyzeImagesAIUrls(imageUrls, prompt);
-    Object.keys(result).forEach((key) => {
-      if (result[key] === "null") {
-        result[key] = null;
-      }
-    });
+    const imageBuffer = await getMapStaticImage(latitude, longitude);
+    const battleAxe = await guessBattleAxe(imageBuffer);
+    const battleAxeResult = JSON.parse(battleAxe);
+
+    // const result = await analyzeImagesAIUrls(imageUrls, prompt);
+    // Object.keys(result).forEach((key) => {
+    //   if (result[key] === "null") {
+    //     result[key] = null;
+    //   }
+    // });
 
     // Log the result and update the property in the database
     console.log(
@@ -99,8 +107,11 @@ async function generatePromptAndAnalyze(property) {
     await Property.updateOne(
       { listingId },
       {
-        ...result,
-        isCleaned: true, // Set isCleaned to true
+        $set: {
+          battleAxe: battleAxeResult.battleAxe,
+        },
+        //...result
+        // isCleaned: true, // Set isCleaned to true
       }
     );
   } catch (error) {
