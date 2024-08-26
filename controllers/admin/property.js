@@ -238,6 +238,7 @@ const calculateScoreMatch = async (req, res) => {
       keyMatches.push("Street traffic");
     }
 
+    
     if (
       property.developmentPotential === null &&
       targetProperty.developmentPotential === null
