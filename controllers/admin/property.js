@@ -15,7 +15,6 @@ const getProperties = async (req, res) => {
         daysListed: 1,
         listingType: 1,
         propertyType: 1,
-        battleAxe:1,
       }
     );
 
@@ -219,15 +218,15 @@ const calculateScoreMatch = async (req, res) => {
       }
     }
 
-    if (property.battleAxe === targetProperty.battleAxe) {
-      score += 4;
-      if (
-        property.battleAxe === "Yes" &&
-        targetProperty.battleAxe === "Yes"
-      ) {
-        keyMatches.push("Battleaxe");
-      }
-    }
+    // if (property.battleAxe === targetProperty.battleAxe) {
+    //   score += 4;
+    //   if (
+    //     property.battleAxe === "Yes" &&
+    //     targetProperty.battleAxe === "Yes"
+    //   ) {
+    //     keyMatches.push("Battleaxe");
+    //   }
+    // }
 
     if (property.finishes === targetProperty.finishes) {
       score += 7;
@@ -243,13 +242,13 @@ const calculateScoreMatch = async (req, res) => {
       property.developmentPotential === null &&
       targetProperty.developmentPotential === null
     ) {
-      score += 7;
+      score += 11;
     }
     if (
       property.developmentPotential !== null &&
       targetProperty.developmentPotential !== null
     ) {
-      score += 7;
+      score += 11;
     }
 
     // Topography

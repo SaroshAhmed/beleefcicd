@@ -11,7 +11,7 @@ databaseConnect();
 // Fetch properties from the Property table
 async function fetchProperties() {
   try {
-    return await Property.find({ battleAxe: null, suburb: "PEAKHURST" });
+    return await Property.find({ suburb: "PEAKHURST" });
     // return await Property.find({ propertyId:"IL-2019-FD" });
   } catch (error) {
     console.error("Error fetching properties:", error.message);
@@ -87,9 +87,9 @@ async function generatePromptAndAnalyze(property) {
 
   // Call the OpenAI service with the constructed prompt and images
   try {
-    const imageBuffer = await getMapStaticImage(latitude, longitude);
-    const battleAxe = await guessBattleAxe(imageBuffer);
-    const battleAxeResult = JSON.parse(battleAxe);
+    // const imageBuffer = await getMapStaticImage(latitude, longitude);
+    // const battleAxe = await guessBattleAxe(imageBuffer);
+    // const battleAxeResult = JSON.parse(battleAxe);
 
     // const result = await analyzeImagesAIUrls(imageUrls, prompt);
     // Object.keys(result).forEach((key) => {
@@ -104,16 +104,21 @@ async function generatePromptAndAnalyze(property) {
     );
 
     // Update the Property table with the analyzed data
-    await Property.updateOne(
-      { listingId },
-      {
-        $set: {
-          battleAxe: battleAxeResult.battleAxe,
-        },
-        //...result
-        // isCleaned: true, // Set isCleaned to true
-      }
-    );
+    if (
+      ["ApartmentUnitFlat", "Terrace", "Townhouse", "Villa"].includes(
+        propertyType
+      )
+    )
+      await Property.updateOne(
+        { listingId },
+        {
+          $set: {
+            battleAxe: "No",
+          },
+          //...result
+          // isCleaned: true, // Set isCleaned to true
+        }
+      );
   } catch (error) {
     console.error(`Error analyzing propertyId ${propertyId}:`, error.message);
     await ErrorLog.create({
