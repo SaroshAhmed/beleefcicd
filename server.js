@@ -38,7 +38,7 @@ app.use(
     store: MongoStore.create({ mongoUrl: MONGO_URI }),
     cookie: {
       secure: false, // Use secure: true if using HTTPS
-      maxAge: 10 * 60 * 1000, // Set the session to expire after 10 minute (in milliseconds)
+      // maxAge: 30 * 60 * 1000, // Set the session to expire after 30 minutes (in milliseconds)
     },
   })
 );

@@ -5,7 +5,7 @@ const {
   GOOGLE_CALLBACK_URL,
   GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET,
-  RESTRICTED_DOMAIN, // Ensure this is defined in your config
+  RESTRICTED_DOMAIN,
 } = require("../config");
 
 passport.use(
@@ -15,7 +15,7 @@ passport.use(
       clientSecret: GOOGLE_CLIENT_SECRET,
       callbackURL: GOOGLE_CALLBACK_URL,
       scope: ["profile", "email", "https://www.googleapis.com/auth/calendar"],
-      passReqToCallback: true, // Enable passing req to the callback
+      passReqToCallback: true,
     },
     async (req, accessToken, refreshToken, profile, done) => {
       try {

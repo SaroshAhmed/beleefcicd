@@ -9,6 +9,10 @@ const userSchema = new mongoose.Schema({
   conjunctionAgent: String,
   googleId: { type: String, required: true, unique: true },
   profileComplete: { type: Boolean, default: false },
+  stripeCustomerId: { type: String }, // Stripe Customer ID
+  paymentMethods: [{
+    type: String, // Stripe Payment Method ID
+  }],
 }, {
   timestamps: true
 });
