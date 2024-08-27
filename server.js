@@ -19,29 +19,24 @@ app.use(
 
 app.use(express.json());
 
-// app.use(session({
-//   secret: 'your-secret-key',
-//   resave: false,
-//   saveUninitialized: false,
-//   store: MongoStore.create({ mongoUrl: MONGO_URI }),
-//   cookie: {
-//     secure: false, // Use secure: true if using HTTPS
-//     maxAge: 24 * 60 * 60 * 1000 // Set the session to expire after 1 day (in milliseconds)
-//   }
-// }));
-
 app.use(
   session({
     secret: SECRET_KEY,
     resave: false,
     saveUninitialized: false,
-    store: MongoStore.create({ mongoUrl: MONGO_URI }),
+    store: MongoStore.create({
+      mongoUrl: MONGO_URI,
+      collectionName: 'sessions', // Ensure the collection name is correctly defined
+      autoRemove: 'native', // Automatically remove expired sessions
+      stringify: false, // Avoids issues with saving undefined or null values as strings
+    }),
     cookie: {
       secure: false, // Use secure: true if using HTTPS
-      // maxAge: 30 * 60 * 1000, // Set the session to expire after 30 minutes (in milliseconds)
+      maxAge: 30 * 60 * 1000, // Set the session to expire after 30 minutes (in milliseconds)
     },
   })
 );
+
 
 app.use(passport.initialize());
 app.use(passport.session());
