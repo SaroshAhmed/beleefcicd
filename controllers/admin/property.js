@@ -100,178 +100,254 @@ const calculateScoreMatch = async (req, res) => {
       },
     },
   ]);
+  let results;
 
-  const results = matchedProperties.map((targetProperty) => {
-    let score = 0;
-    const keyMatches = [];
+  if (sourcePropertyType === "ApartmentUnitFlat") {
+    results = matchedProperties.map((targetProperty) => {
+      let score = 0;
+      const keyMatches = [];
 
-    const distance = calculateDistance(
-      sourceLat,
-      sourceLon,
-      targetProperty.latitude,
-      targetProperty.longitude
-    );
-    if (distance <= 0.8) score += 10;
-    else if (distance > 0.8 && distance <= 1.5) score += 7;
-    else if (distance > 1.5 && distance <= 2.5) score += 3;
+      const distance = calculateDistance(
+        sourceLat,
+        sourceLon,
+        targetProperty.latitude,
+        targetProperty.longitude
+      );
+      if (distance <= 0.8) score += 10;
+      else if (distance > 0.8 && distance <= 1.5) score += 7;
+      else if (distance > 1.5 && distance <= 2.5) score += 3;
 
-    // Land Area
-    if (property.landArea && targetProperty.landArea) {
-      if (Math.abs(property.landArea - targetProperty.landArea) <= 100)
+      // Building Area
+      if (property.buildingArea && targetProperty.buildingArea) {
+        if (Math.abs(property.buildingArea - targetProperty.buildingArea) <= 10)
+          score += 9;
+        keyMatches.push("Floor area");
+      } else if (!property.buildingArea && !targetProperty.buildingArea) {
+        score += 9;
+      }
+
+      // Bedrooms, Bathrooms, Carspaces
+      if (property.bedrooms === targetProperty.bedrooms) {
+        score += 40;
+        keyMatches.push("Bedrooms");
+      }
+      if (property.bathrooms === targetProperty.bathrooms) {
+        score += 5;
+        keyMatches.push("Bathrooms");
+      }
+      if (property.carspaces === targetProperty.carspaces) {
+        score += 5;
+        keyMatches.push("Carspaces");
+      }
+
+      if (property.wallMaterial === targetProperty.wallMaterial) {
         score += 7;
-      keyMatches.push("Land area");
-    } else if (!property.landArea && !targetProperty.landArea) {
-      score += 7;
-    }
+        keyMatches.push("Wall material");
+      }
 
-    // Frontage
-    if (property.frontage && targetProperty.frontage) {
-      if (Math.abs(property.frontage - targetProperty.frontage) <= 50)
+      // Scoring logic for water views
+      if (property.waterViews === "No" && targetProperty.waterViews === "No") {
+        score += 4; // Both have "No" water views
+      } else if (property.waterViews === targetProperty.waterViews) {
+        score += 10; // Identical water views (not "No")
+        keyMatches.push("Water views");
+      } else if (
+        property.waterViews !== null &&
+        targetProperty.waterViews !== null &&
+        property.waterViews !== "No" &&
+        targetProperty.waterViews !== "No"
+      ) {
+        score += 5; // Different water views, but neither is "No"
+        keyMatches.push("Water views");
+      }
+
+      if (property.finishes === targetProperty.finishes) {
+        score += 7;
+        keyMatches.push("Finishes");
+      }
+
+      if (property.streetTraffic === targetProperty.streetTraffic) {
+        score += 7;
+        keyMatches.push("Street traffic");
+      }
+
+      const finalScore = score;
+      return finalScore > 55
+        ? { property: targetProperty, score: finalScore, keyMatches }
+        : null;
+    });
+  } else {
+    results = matchedProperties.map((targetProperty) => {
+      let score = 0;
+      const keyMatches = [];
+
+      const distance = calculateDistance(
+        sourceLat,
+        sourceLon,
+        targetProperty.latitude,
+        targetProperty.longitude
+      );
+      if (distance <= 0.8) score += 10;
+      else if (distance > 0.8 && distance <= 1.5) score += 7;
+      else if (distance > 1.5 && distance <= 2.5) score += 3;
+
+      // Land Area
+      if (property.landArea && targetProperty.landArea) {
+        if (Math.abs(property.landArea - targetProperty.landArea) <= 100)
+          score += 7;
+        keyMatches.push("Land area");
+      } else if (!property.landArea && !targetProperty.landArea) {
+        score += 7;
+      }
+
+      // Frontage
+      if (property.frontage && targetProperty.frontage) {
+        if (Math.abs(property.frontage - targetProperty.frontage) <= 50)
+          score += 4;
+        keyMatches.push("Frontage");
+      } else if (!property.frontage && !targetProperty.frontage) {
         score += 4;
-      keyMatches.push("Frontage");
-    } else if (!property.frontage && !targetProperty.frontage) {
-      score += 4;
-    }
-
-    // Bedrooms, Bathrooms, Carspaces
-    if (property.bedrooms === targetProperty.bedrooms) {
-      score += 3;
-      keyMatches.push("Bedrooms");
-    }
-    if (property.bathrooms === targetProperty.bathrooms) {
-      score += 3;
-      keyMatches.push("Bathrooms");
-    }
-    if (property.carspaces === targetProperty.carspaces) {
-      score += 3;
-      keyMatches.push("Carspaces");
-    }
-
-    // Define the scoring logic for buildType comparison
-    const buildTypeSource = property.buildType;
-    const buildTypeTarget = targetProperty.buildType;
-
-    if (buildTypeSource === buildTypeTarget) {
-      score += 7;
-    } else if (
-      (buildTypeSource === "2 storey" && buildTypeTarget === "3 storey") ||
-      (buildTypeSource === "2 storey" && buildTypeTarget === "4+ storey") ||
-      (buildTypeSource === "3 storey" && buildTypeTarget === "2 storey") ||
-      (buildTypeSource === "3 storey" && buildTypeTarget === "4+ storey") ||
-      (buildTypeSource === "4+ storey" && buildTypeTarget === "2 storey") ||
-      (buildTypeSource === "4+ storey" && buildTypeTarget === "3 storey")
-    ) {
-      score += 4;
-    }
-
-    if (property.wallMaterial === targetProperty.wallMaterial) {
-      score += 7;
-      keyMatches.push("Wall material");
-    }
-
-    // Pool
-    const hasPoolSource = property.features?.includes("SwimmingPool") || false;
-    const hasPoolTarget =
-      targetProperty.features?.includes("SwimmingPool") || false;
-    if (hasPoolSource === hasPoolTarget) {
-      score += 4;
-      if (hasPoolSource && hasPoolTarget) {
-        keyMatches.push("Pool");
       }
-    }
 
-    // Tennis Court
-    const hasTennisCourtSource =
-      property.features?.includes("TennisCourt") || false;
-    const hasTennisCourtTarget =
-      targetProperty.features?.includes("TennisCourt") || false;
-    if (hasTennisCourtSource === hasTennisCourtTarget) {
-      score += 3;
-      if (hasTennisCourtSource && hasTennisCourtTarget) {
-        keyMatches.push("Tennis court");
+      // Bedrooms, Bathrooms, Carspaces
+      if (property.bedrooms === targetProperty.bedrooms) {
+        score += 3;
+        keyMatches.push("Bedrooms");
       }
-    }
+      if (property.bathrooms === targetProperty.bathrooms) {
+        score += 3;
+        keyMatches.push("Bathrooms");
+      }
+      if (property.carspaces === targetProperty.carspaces) {
+        score += 3;
+        keyMatches.push("Carspaces");
+      }
 
-    // Scoring logic for water views
-    if (property.waterViews === "No" && targetProperty.waterViews === "No") {
-      score += 4; // Both have "No" water views
-    } else if (property.waterViews === targetProperty.waterViews) {
-      score += 10; // Identical water views (not "No")
-      keyMatches.push("Water views");
-    } else if (
-      property.waterViews !== null &&
-      targetProperty.waterViews !== null &&
-      property.waterViews !== "No" &&
-      targetProperty.waterViews !== "No"
-    ) {
-      score += 5; // Different water views, but neither is "No"
-      keyMatches.push("Water views");
-    }
+      // Define the scoring logic for buildType comparison
+      const buildTypeSource = property.buildType;
+      const buildTypeTarget = targetProperty.buildType;
 
-    if (property.grannyFlat === targetProperty.grannyFlat) {
-      score += 7;
-      if (
-        property.grannyFlat === "Yes" &&
-        targetProperty.grannyFlat === "Yes"
+      if (buildTypeSource === buildTypeTarget) {
+        score += 7;
+      } else if (
+        (buildTypeSource === "2 storey" && buildTypeTarget === "3 storey") ||
+        (buildTypeSource === "2 storey" && buildTypeTarget === "4+ storey") ||
+        (buildTypeSource === "3 storey" && buildTypeTarget === "2 storey") ||
+        (buildTypeSource === "3 storey" && buildTypeTarget === "4+ storey") ||
+        (buildTypeSource === "4+ storey" && buildTypeTarget === "2 storey") ||
+        (buildTypeSource === "4+ storey" && buildTypeTarget === "3 storey")
       ) {
-        keyMatches.push("Granny flat");
+        score += 4;
       }
-    }
 
-    // if (property.battleAxe === targetProperty.battleAxe) {
-    //   score += 4;
-    //   if (
-    //     property.battleAxe === "Yes" &&
-    //     targetProperty.battleAxe === "Yes"
-    //   ) {
-    //     keyMatches.push("Battleaxe");
-    //   }
-    // }
+      if (property.wallMaterial === targetProperty.wallMaterial) {
+        score += 7;
+        keyMatches.push("Wall material");
+      }
 
-    if (property.finishes === targetProperty.finishes) {
-      score += 7;
-      keyMatches.push("Finishes");
-    }
+      // Pool
+      const hasPoolSource =
+        property.features?.includes("SwimmingPool") || false;
+      const hasPoolTarget =
+        targetProperty.features?.includes("SwimmingPool") || false;
+      if (hasPoolSource === hasPoolTarget) {
+        score += 4;
+        if (hasPoolSource && hasPoolTarget) {
+          keyMatches.push("Pool");
+        }
+      }
 
-    if (property.streetTraffic === targetProperty.streetTraffic) {
-      score += 7;
-      keyMatches.push("Street traffic");
-    }
+      // Tennis Court
+      const hasTennisCourtSource =
+        property.features?.includes("TennisCourt") || false;
+      const hasTennisCourtTarget =
+        targetProperty.features?.includes("TennisCourt") || false;
+      if (hasTennisCourtSource === hasTennisCourtTarget) {
+        score += 3;
+        if (hasTennisCourtSource && hasTennisCourtTarget) {
+          keyMatches.push("Tennis court");
+        }
+      }
 
-    
-    if (
-      property.developmentPotential === null &&
-      targetProperty.developmentPotential === null
-    ) {
-      score += 11;
-    }
-    if (
-      property.developmentPotential !== null &&
-      targetProperty.developmentPotential !== null
-    ) {
-      score += 11;
-    }
-
-    // Topography
-    const topographyMatch = property.topography?.every((item) =>
-      targetProperty.topography?.includes(item)
-    );
-    if (topographyMatch) {
-      score += 7;
-      if (
-        property.topography.length > 0 &&
-        targetProperty.topography.length > 0
+      // Scoring logic for water views
+      if (property.waterViews === "No" && targetProperty.waterViews === "No") {
+        score += 4; // Both have "No" water views
+      } else if (property.waterViews === targetProperty.waterViews) {
+        score += 10; // Identical water views (not "No")
+        keyMatches.push("Water views");
+      } else if (
+        property.waterViews !== null &&
+        targetProperty.waterViews !== null &&
+        property.waterViews !== "No" &&
+        targetProperty.waterViews !== "No"
       ) {
-        keyMatches.push("Topography");
+        score += 5; // Different water views, but neither is "No"
+        keyMatches.push("Water views");
       }
-    }
 
-    const finalScore = score;
-    return finalScore > 55
-      ? { property: targetProperty, score: finalScore, keyMatches }
-      : null;
-  });
+      if (property.grannyFlat === targetProperty.grannyFlat) {
+        score += 7;
+        if (
+          property.grannyFlat === "Yes" &&
+          targetProperty.grannyFlat === "Yes"
+        ) {
+          keyMatches.push("Granny flat");
+        }
+      }
 
+      // if (property.battleAxe === targetProperty.battleAxe) {
+      //   score += 4;
+      //   if (
+      //     property.battleAxe === "Yes" &&
+      //     targetProperty.battleAxe === "Yes"
+      //   ) {
+      //     keyMatches.push("Battleaxe");
+      //   }
+      // }
+
+      if (property.finishes === targetProperty.finishes) {
+        score += 7;
+        keyMatches.push("Finishes");
+      }
+
+      if (property.streetTraffic === targetProperty.streetTraffic) {
+        score += 7;
+        keyMatches.push("Street traffic");
+      }
+
+      if (
+        property.developmentPotential === null &&
+        targetProperty.developmentPotential === null
+      ) {
+        score += 11;
+      }
+      if (
+        property.developmentPotential !== null &&
+        targetProperty.developmentPotential !== null
+      ) {
+        score += 11;
+      }
+
+      // Topography
+      const topographyMatch = property.topography?.every((item) =>
+        targetProperty.topography?.includes(item)
+      );
+      if (topographyMatch) {
+        score += 7;
+        if (
+          property.topography.length > 0 &&
+          targetProperty.topography.length > 0
+        ) {
+          keyMatches.push("Topography");
+        }
+      }
+
+      const finalScore = score;
+      return finalScore > 55
+        ? { property: targetProperty, score: finalScore, keyMatches }
+        : null;
+    });
+  }
   // Filter out null values and separate by listing type
   const validResults = results.filter((result) => result !== null);
   const recommendedSales = validResults.filter(
