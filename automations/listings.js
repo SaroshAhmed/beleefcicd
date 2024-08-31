@@ -145,6 +145,7 @@ async function insertListing(listing) {
       bathrooms: listing.propertyDetails.bathrooms,
       carspaces: listing.propertyDetails.carspaces,
       landArea: listing.propertyDetails.landArea,
+      buildingArea: listing.propertyDetails.buildingArea,
       features: listing.propertyDetails.features,
       dateListed: listing.dateListed,
       daysListed,

@@ -85,6 +85,7 @@ const propertySchema = new Schema(
     bathrooms: { type: Number, default: null },
     carspaces: { type: Number, default: null },
     landArea: { type: Number, default: null },
+    buildingArea: { type: Number, default: null },
     buildType: {
       type: String,
       enum: ["1 storey", "2 storey", "3 storey", "4+ storey"],
