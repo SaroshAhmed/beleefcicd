@@ -13,6 +13,8 @@ const userSchema = new mongoose.Schema({
   paymentMethods: [{
     type: String, // Stripe Payment Method ID
   }],
+  accessToken: String,
+  refreshToken: String,
 }, {
   timestamps: true
 });

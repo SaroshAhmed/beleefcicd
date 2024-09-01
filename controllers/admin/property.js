@@ -100,6 +100,7 @@ const calculateScoreMatch = async (req, res) => {
       },
     },
   ]);
+
   let results;
 
   if (sourcePropertyType === "ApartmentUnitFlat") {
