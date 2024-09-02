@@ -20,14 +20,14 @@ passport.use(
     async (req, accessToken, refreshToken, profile, done) => {
       try {
         const email = profile.emails[0].value;
-        const domain = email.split("@")[1];
+        // const domain = email.split("@")[1];
 
-        // Check if the domain matches the restricted domain
-        if (domain !== RESTRICTED_DOMAIN) {
-          return done(null, false, {
-            message: `Only users with the domain ${RESTRICTED_DOMAIN} can sign in.`,
-          });
-        }
+        // // Check if the domain matches the restricted domain
+        // if (domain !== RESTRICTED_DOMAIN) {
+        //   return done(null, false, {
+        //     message: `Only users with the domain ${RESTRICTED_DOMAIN} can sign in.`,
+        //   });
+        // }
 
         let user = await User.findOne({ googleId: profile.id });
 
