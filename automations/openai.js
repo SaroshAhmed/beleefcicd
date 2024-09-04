@@ -11,7 +11,10 @@ databaseConnect();
 // Fetch properties from the Property table
 async function fetchProperties() {
   try {
-    return await Property.find({ suburb: "PEAKHURST" });
+    return await Property.find({
+      suburb: { $in: ["PEAKHURST", "CONNELLS POINT"] },
+      isCleaned: false
+    });
     // return await Property.find({ propertyId:"IL-2019-FD" });
   } catch (error) {
     console.error("Error fetching properties:", error.message);
@@ -41,24 +44,24 @@ async function generatePromptAndAnalyze(property) {
 
   // JSON structure for property details
   let jsonStructure = {
-    buildType: "[enum: 1 storey, 2 storey, 3 storey, 4+ storey]",
-    wallMaterial: "[enum: Brick, Double brick, Clad, Fibro, Hebel]",
+    // buildType: "[enum: 1 storey, 2 storey, 3 storey, 4+ storey]",
+    // wallMaterial: "[enum: Brick, Double brick, Clad, Fibro, Hebel]",
     waterViews:
-      "[enum: Yes, No, Deep water, Tidal water, Waterfront reserve, Waterfront with jetty]",
-    finishes: "[enum: High-end finishes, Updated, Original]",
-    streetTraffic: "[enum: Low traffic, Moderate traffic, High traffic]",
-    topography:
-      "multiples can be selected but only from this list [High side, Low side, Level block, Irregular block, Unusable land]",
-    frontage:
-      "Extract frontage value from the description or headline only. Donot give a range. (its type should be a number). If not present then put null",
-    landArea:
-      landArea ||
-      "Extract landArea value from the description or headline only. Donot give a range.(its type should be a number). Do not confuse it with internal space that is different. If not present then put null",
-    configurationPlan:
-      "Write about the configuration plan in a short paragraph and in sales advertising style",
-    developmentPotential:
-      "First check in the description if the word developmentPotential is present. If present, specify which type. Note if there are multiple matches, you can select only one otherwise it will give an error because it's an enum. [enum: Childcare, Duplex site, Townhouse site, Unit site]. If not present, then put null",
-    grannyFlat: "[enum: Yes, No]",
+      "[enum: No, Water views, Deep waterfront with jetty, Tidal waterfront with jetty, Waterfront reserve]",
+    // finishes: "[enum: High-end finishes, Updated, Original]",
+    // streetTraffic: "[enum: Low traffic, Moderate traffic, High traffic]",
+    // topography:
+    //   "multiples can be selected but only from this list [High side, Low side, Level block, Irregular block, Unusable land]",
+    // frontage:
+    //   "Extract frontage value from the description or headline only. Donot give a range. (its type should be a number). If not present then put null",
+    // landArea:
+    //   landArea ||
+    //   "Extract landArea value from the description or headline only. Donot give a range.(its type should be a number). Do not confuse it with internal space that is different. If not present then put null",
+    // configurationPlan:
+    //   "Write about the configuration plan in a short paragraph and in sales advertising style",
+    // developmentPotential:
+    //   "First check in the description if the word developmentPotential is present. If present, specify which type. Note if there are multiple matches, you can select only one otherwise it will give an error because it's an enum. [enum: Childcare, Duplex site, Townhouse site, Unit site]. If not present, then put null",
+    // grannyFlat: "[enum: Yes, No]",
   };
 
   // Override certain fields if the property type is VacantLand
@@ -91,34 +94,27 @@ async function generatePromptAndAnalyze(property) {
     // const battleAxe = await guessBattleAxe(imageBuffer);
     // const battleAxeResult = JSON.parse(battleAxe);
 
-    // const result = await analyzeImagesAIUrls(imageUrls, prompt);
-    // Object.keys(result).forEach((key) => {
-    //   if (result[key] === "null") {
-    //     result[key] = null;
-    //   }
-    // });
-
+    const result = await analyzeImagesAIUrls(imageUrls, prompt);
+    Object.keys(result).forEach((key) => {
+      if (result[key] === "null") {
+        result[key] = null;
+      }
+    });
+console.log(result)
     // Log the result and update the property in the database
     console.log(
       `ListingId: ${listingId} with PropertyId:${propertyId} is cleaned`
     );
 
     // Update the Property table with the analyzed data
-    if (
-      ["ApartmentUnitFlat", "Terrace", "Townhouse", "Villa"].includes(
-        propertyType
-      )
-    )
-      await Property.updateOne(
-        { listingId },
-        {
-          $set: {
-            battleAxe: "No",
-          },
-          //...result
-          // isCleaned: true, // Set isCleaned to true
-        }
-      );
+
+    await Property.updateOne(
+      { listingId },
+      {
+        ...result,
+        isCleaned: true, // Set isCleaned to true
+      }
+    );
   } catch (error) {
     console.error(`Error analyzing propertyId ${propertyId}:`, error.message);
     await ErrorLog.create({
