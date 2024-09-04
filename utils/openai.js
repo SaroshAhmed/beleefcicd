@@ -76,6 +76,34 @@ const analyzeImagesAIUrls = async (files, prompt) => {
   }
 };
 
+const chatCompletion = async (systemPrompt, userInput) => {
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "user",
+          content: userInput,
+        },
+      ],
+      response_format: { type: "json_object" },
+      n: 1,
+      temperature: 0,
+    });
+
+    const jsonString = response.choices[0].message.content;
+
+    return JSON.parse(jsonString);
+  } catch (error) {
+    console.error("Error analyzing file: ", error.message);
+    throw error;
+  }
+};
+
 // const guessBattleAxe = async (files) => {
 //   const filesIsArray = Array.isArray(files);
 //   const filesList = filesIsArray ? files : [files];
@@ -210,4 +238,5 @@ const guessBattleAxe = async (imageBuffer) => {
 module.exports = {
   analyzeImagesAIUrls,
   guessBattleAxe,
+  chatCompletion
 };

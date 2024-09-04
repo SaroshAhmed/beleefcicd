@@ -4,13 +4,15 @@ const {
   createProperty,
   getPropertiesAddress,
   getPropertyByAddress,
-  calculateScoreMatch
+  calculateScoreMatch,
+  getAreaDynamics
 } = require("../../../controllers/user/property");
 const { isAuthenticated } = require("../../../middleware/auth");
 
 router.post("/", isAuthenticated, createProperty);
 router.get("/address", isAuthenticated, getPropertiesAddress);
 router.get("/:address", isAuthenticated, getPropertyByAddress);
-router.get("/recommend/:id", calculateScoreMatch);
+router.post("/recommend", calculateScoreMatch);
+router.get('/suburb/:suburb', getAreaDynamics);
 
 module.exports = router;
