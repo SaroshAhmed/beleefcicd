@@ -26,7 +26,6 @@ router.get(
 
 router.get("/status", (req, res) => {
   if (req.isAuthenticated()) {
-    console.log(req.user)
     return res.status(200).json({ success: true, data: req.user });
   } else {
     return res.status(200).json({ success: false, data: null });

@@ -138,8 +138,8 @@ const propertySchema = new Schema(
     beleefSaleProcess: {
       type: String,
       enum: [
-        "Private Treaty",
-        "Private Treaty Adjustment",
+        "Private treaty",
+        "Private treaty adjustment",
         "Auction",
         "Not sold at auction",
         "Withdrawn",

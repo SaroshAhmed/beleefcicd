@@ -1,6 +1,5 @@
 const axios = require("axios");
 const Property = require("../models/Property");
-const ErrorLog = require("../models/ErrorLog");
 const { analyzeImagesAIUrls, guessBattleAxe } = require("../utils/openai");
 const { getMapStaticImage } = require("../utils/maps");
 const databaseConnect = require("../config/database");
@@ -117,12 +116,6 @@ console.log(result)
     );
   } catch (error) {
     console.error(`Error analyzing propertyId ${propertyId}:`, error.message);
-    await ErrorLog.create({
-      error: `Error cleaning data for listingId ${listingId} and propertyId: ${propertyId}`,
-      api: "openai",
-      type: "AIcleaning",
-      details: { error: error.message },
-    });
   }
 }
 

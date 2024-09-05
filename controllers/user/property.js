@@ -238,7 +238,7 @@ exports.calculateScoreMatch = async (req, res) => {
           }
 
           const finalScore = score;
-          return finalScore > 55
+          return finalScore > 60
             ? { property: targetProperty, score: finalScore, keyMatches }
             : null;
         });
@@ -408,7 +408,7 @@ exports.calculateScoreMatch = async (req, res) => {
           }
 
           const finalScore = score;
-          return finalScore > 55
+          return finalScore > 60
             ? { property: targetProperty, score: finalScore, keyMatches }
             : null;
         });
@@ -468,7 +468,7 @@ exports.calculateScoreMatch = async (req, res) => {
     recommendedSales = recommendedSales.sort((a, b) => b.score - a.score);
     recommendedSold = recommendedSold.sort((a, b) => b.score - a.score);
 
-    const systemPrompt = `Return response in json format {logicalPrice:""}`;
+    const systemPrompt = `Return response in json format {logicalPrice:"",logicalReasoning:"}`;
     const userInput = `You are an expert in pricing property and use recent sales comparable data, which I will give you to price property. I will give you an address and you will give me an accurate indication of its value. You will also determine the best price to list to generate the most amount of enquiry. You will observe the land size, the topography of the land, finishes and if it has a pool or not. You will make adjustments accordingly. You are to give us a range within 10%. You will give us the range like this $1.8-$2.0M which is just the figure. No explanation or description is needed.
  
  Here is the property 
@@ -506,15 +506,17 @@ ${recommendedSold
 **Pool**: ${comp.property.features.includes("SwimmingPool") ? "Yes" : "No"}
 **Water views**: ${comp.property.waterViews}
 **Street traffic**: ${comp.property.streetTraffic}
-**Finishes**: ${comp.property.finishes}`
+**Finishes**: ${comp.property.finishes}
+
+After finding logicalPrice you have to give logicalReasoning in one paragraph for that property.`
   )
   .join("\n")}
     `;
 
-    const logicalPrice = await chatCompletion(systemPrompt, userInput);
+    const logical = await chatCompletion(systemPrompt, userInput);
     return res.status(200).json({
       success: true,
-      data: { logicalPrice, recommendedSales, recommendedSold },
+      data: { logical, recommendedSales, recommendedSold },
     });
   } catch (error) {
     console.error("Error in user calculateScoreMatch API: ", error.message);
@@ -525,12 +527,11 @@ ${recommendedSold
 exports.getAreaDynamics = async (req, res) => {
   try {
     const { suburb } = req.params; // Suburb comes from the request params
-    console.log(suburb);
+
     // Find the suburb document
     const suburbData = await Suburb.findOne({
       suburb: { $regex: new RegExp(suburb, "i") },
     });
-    console.log(suburbData);
 
     if (!suburbData) {
       return res.status(404).json({
@@ -564,6 +565,44 @@ exports.getAreaDynamics = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Server Error",
+    });
+  }
+};
+
+exports.getBeleefSaleProcess = async (req, res) => {
+  try {
+    const { suburb } = req.params; // Suburb comes from the request params
+
+    const saleProcesses = await Property.aggregate([
+      {
+        $match: {
+          suburb: suburb, // Filter documents by the given suburb
+        },
+      },
+      {
+        $group: {
+          _id: "$beleefSaleProcess", // Group by beleefSaleProcess
+          count: { $sum: 1 }, // Count occurrences
+        },
+      },
+    ]);
+
+    // Convert the result to the desired format
+    const formattedResult = saleProcesses.reduce((acc, process) => {
+      acc[process._id] = process.count;
+      return acc;
+    }, {});
+
+    // Send the response
+    res.status(200).json({
+      success: true,
+      data: formattedResult,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
     });
   }
 };
