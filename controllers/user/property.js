@@ -468,11 +468,11 @@ exports.calculateScoreMatch = async (req, res) => {
     recommendedSales = recommendedSales.sort((a, b) => b.score - a.score);
     
     // recommendedSold = recommendedSold.sort((a, b) => b.score - a.score);
-    
+
     recommendedSold = recommendedSold.sort((a, b) => b.property.price - a.property.price);
 
     const systemPrompt = `Return response in json format {logicalPrice:"",logicalReasoning:"}`;
-    const userInput = `You are an expert in pricing property and use recent sales comparable data, which I will give you to price property. I will give you an address and you will give me an accurate indication of its value. You will also determine the best price to list to generate the most amount of enquiry. You will observe the land size, water views, the topography of the land, finishes, development potential (if exists) and if it has a pool or not. You will make adjustments accordingly. You are to give us a range within 10%. You will give us the range like this in million format for example: $low(decimalNo)-$high(decimalNo)M which is just the figure. No explanation or description is needed.
+    const userInput = `You are an expert in pricing property and use recent sales comparable data, which I will give you to price property. I will give you an address and you will give me an accurate indication of its value. You will also determine the best price to list to generate the most amount of enquiry. You will observe below property features. You are to give us a range within 10%. You will give us the range like this in million format for example: $low(decimalNo)-$high(decimalNo)M which is just the figure. No explanation or description is needed.
 
     Here is the property:
       
