@@ -159,7 +159,7 @@ const userPropertySchema = new Schema(
       ],
       default: null,
     },
-    additionalFeatures: { type: String, default: null },
+    additionalInformation: { type: String, default: null },
     saleProcess: { type: String, default: null },
     beleefSaleProcess: {
       type: String,
