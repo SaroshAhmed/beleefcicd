@@ -2,9 +2,9 @@
 const express = require("express");
 const passport = require("passport");
 const Session = require("../../../models/Session");
-const { REACT_APP_FRONTEND_URL } = require("../../../config");
+const { REACT_APP_FRONTEND_URL, SECRET_KEY } = require("../../../config");
 const router = express.Router();
-
+const cookieParser = require("cookie-parser");
 
 // Google Auth Routes
 router.get(
@@ -25,12 +25,28 @@ router.get(
 );
 
 router.get("/status", (req, res) => {
-  if (req.isAuthenticated()) {
-    console.log(req.user)
-    return res.status(200).json({ success: true, data: req.user });
-  } else {
-    return res.status(200).json({ success: false, data: null });
-  }
+  const signedCookie = req.cookies['connect.sid'];
+  // console.log("req.cookies",req.cookies['connect.sid']);
+  console.log('signed Session ID:', signedCookie);
+  const unsignedCookie = cookieParser.signedCookie(signedCookie, SECRET_KEY);
+
+// Output the unsigned cookie (session ID)
+console.log('Unsigned Session ID:', unsignedCookie);
+if (signedCookie && unsignedCookie && req.isAuthenticated()) {
+  return res.status(200).json({ success: true, data: req.user, cookies: signedCookie });
+} else {
+  // If the session or cookie has expired, destroy the session
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('Error destroying session:', err);
+      return res.status(500).json({ success: false, message: 'Failed to logout' });
+    }
+    
+    // Clear the cookie to log the user out
+    res.clearCookie('connect.sid');
+    return res.status(200).json({ success: false, data: null, message: 'Session expired' });
+  });
+}
 });
 
 
