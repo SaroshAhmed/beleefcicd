@@ -6,7 +6,7 @@ const adminSchema = new mongoose.Schema({
   role: { type: String},
   password: String,
   confirmPassword: String,
-  token :{
+  resetPasswordToken :{
     type:String,
   },
   resetPasswordExpires: {

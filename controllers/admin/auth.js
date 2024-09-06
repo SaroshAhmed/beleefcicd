@@ -200,7 +200,7 @@ exports.resetPasswordToken = async (req, res) => {
         const updatedDetails = await Admin.findOneAndUpdate(
                                             {email:email},
                                             {
-                                                token:token,
+                                                resetPasswordToken,
                                                 resetPasswordExpires: Date.now() + 5*60*1000,
                                             },
                                             {new:true}
@@ -209,14 +209,14 @@ exports.resetPasswordToken = async (req, res) => {
 
         //link generation...
         //create url
-        const url = `http://localhost:8080/update-password/${token}`;
+        const url = `http://localhost:8080/update-password/${resetPasswordToken}`;
        
 
         //sending... mail
         await sendEmail(email, 
             " Reset Ur Password => ",
             `Password Reset Link: ${url}`);
-            console.log("token ==>", token);
+            console.log("token ==>", resetPasswordToken);
 
         //returning... final response
         return res.json({
@@ -240,9 +240,9 @@ exports.resetPasswordToken = async (req, res) => {
 exports.resetPassword = async (req, res) => {
     try {
         // fetching... data
-        const {password, confirmPassword, token} = req.body;
+        const {password, confirmPassword, resetPasswordToken} = req.body;
        
-        console.log("token---------------------->", token);
+        console.log("token---------------------->", resetPasswordToken);
         //validation
         if(password !== confirmPassword) {
             return res.json({
@@ -251,7 +251,7 @@ exports.resetPassword = async (req, res) => {
             });
         }
         //getting.. userdetails from db using token
-        const userDetails = await Admin.findOne({token: token});
+        const userDetails = await Admin.findOne({resetPasswordToken:resetPasswordToken});
         //if no entry - invalid token
         if(!userDetails) {
             return res.json({
@@ -271,7 +271,7 @@ exports.resetPassword = async (req, res) => {
 
         // updating password
         await User.findOneAndUpdate(
-            {token:token},
+            {resetPasswordToken:resetPasswordToken},
             {password:hashedPassword},
             {new:true},
         );
