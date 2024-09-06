@@ -1,7 +1,10 @@
-const User = require("../../models/User");
+const Admin= require("../../models/Admin");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
+const sendEmail  = require("../../utils/email");
+const crypto = require("crypto");
+
 
 
 exports.signup = async (req, res) => {
@@ -33,17 +36,17 @@ exports.signup = async (req, res) => {
 			});
 		}
 
-		const existingUser = await User.findOne({ email });
+		const existingUser = await Admin.findOne({ email });
 		if (existingUser) {
 			return res.status(400).json({
 				success: false,
-				message: "User already exists. Please sign in to continue.",
+				message: "User already exists with the same email",
 			});
 		}
 
 		const hashedPassword = await bcrypt.hash(password, 10);
 
-		const user = await User.create({
+		const user = await Admin.create({
 			name,
 			email,
 			password: hashedPassword,
@@ -80,7 +83,7 @@ exports.login = async (req, res) => {
             });
         }
 
-        const user = await User.findOne({email})
+        const user = await Admin.findOne({email})
         if(!user){
             return res.status(401).json({
                 success:false,
@@ -91,7 +94,6 @@ exports.login = async (req, res) => {
        
         if(await bcrypt.compare(password, user.password)) {
             const payload = {
-                email: user.email,
                 id: user._id,
                 role:user.role,
                 tokenVersion: user.tokenVersion,
@@ -151,7 +153,7 @@ exports.logoutFromAllDevices = async (req, res) => {
         const { id } = req.user; 
 
         
-        const user = await User.findById(id);
+        const user = await Admin.findById(id);
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -178,3 +180,112 @@ exports.logoutFromAllDevices = async (req, res) => {
         });
     }
 };
+
+
+//resetPasswordTOKEN
+exports.resetPasswordToken = async (req, res) => {
+    try{
+        const email = req.body.email;
+
+        const user = await Admin.findOne({email: email});
+            if(!user) {
+                return res.json({success:false,
+                message:'Your Email is not registered with us'});
+            }
+
+        //generating... token
+        const token  = crypto.randomBytes(20).toString("hex");
+
+        //updating... user by adding token and expirationTime
+        const updatedDetails = await Admin.findOneAndUpdate(
+                                            {email:email},
+                                            {
+                                                token:token,
+                                                resetPasswordExpires: Date.now() + 5*60*1000,
+                                            },
+                                            {new:true}
+
+        );
+
+        //link generation...
+        //create url
+        const url = `http://localhost:8080/update-password/${token}`;
+       
+
+        //sending... mail
+        await sendEmail(email, 
+            " Reset Ur Password => ",
+            `Password Reset Link: ${url}`);
+            console.log("token ==>", token);
+
+        //returning... final response
+        return res.json({
+            success:true,
+            message:'Email sent successfully, please check email and change password',
+        });
+
+    } catch(error){
+        console.log(error);
+        return res.status(500).json({
+            success:false,
+            message:'Something went wrong while sending reset PASSWORD mail'
+        })
+
+    }
+    
+}
+
+//resetPassword
+
+exports.resetPassword = async (req, res) => {
+    try {
+        // fetching... data
+        const {password, confirmPassword, token} = req.body;
+       
+        console.log("token---------------------->", token);
+        //validation
+        if(password !== confirmPassword) {
+            return res.json({
+                success:false,
+                message:'Password does not MATCHED',
+            });
+        }
+        //getting.. userdetails from db using token
+        const userDetails = await Admin.findOne({token: token});
+        //if no entry - invalid token
+        if(!userDetails) {
+            return res.json({
+                success:false, 
+                message:'Token is invalid',
+            });
+        }
+        //token time check 
+        if( userDetails.resetPasswordExpires < Date.now()  ) {
+                return res.json({
+                    success:false,
+                    message:'Token is expired, please regenerate your token',
+                });
+        }
+        //hashing... password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // updating password
+        await User.findOneAndUpdate(
+            {token:token},
+            {password:hashedPassword},
+            {new:true},
+        );
+        //sending... final response
+        return res.status(200).json({
+            success:true,
+            message:'Password reset successful',
+        });
+    }
+    catch(error) {
+        console.log(error);
+        return res.status(500).json({
+            success:false,
+            message:'Something went wrong while sending reset pwd mail'
+        })
+    }
+}

@@ -5,12 +5,10 @@ const {
     login,
     signup,
     logout,
-    logoutFromAllDevices
-  } = require("../../../controllers/admin/auth")
-const {
+    logoutFromAllDevices,
     resetPasswordToken,
-    resetPassword,
-  } = require("../../../controllers/admin/resetPassword");
+    resetPassword
+  } = require("../../../controllers/admin/auth")
 const { auth } = require("../../../middleware/auth");
 
 
