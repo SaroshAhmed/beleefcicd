@@ -469,7 +469,7 @@ exports.calculateScoreMatch = async (req, res) => {
     recommendedSold = recommendedSold.sort((a, b) => b.score - a.score);
 
     const systemPrompt = `Return response in json format {logicalPrice:"",logicalReasoning:"}`;
-    const userInput = `You are an expert in pricing property and use recent sales comparable data, which I will give you to price property. I will give you an address and you will give me an accurate indication of its value. You will also determine the best price to list to generate the most amount of enquiry. You will observe the land size, year built, the topography of the land, water views, renovated or unrenovated and if it has a pool or not. You will make adjustments accordingly. You are to give us a range within 10%. You will give us the range like this $1.5-$1.65M which is just the figure. No explanation or description is needed.
+    const userInput = `You are an expert in pricing property and use recent sales comparable data, which I will give you to price property. I will give you an address and you will give me an accurate indication of its value. You will also determine the best price to list to generate the most amount of enquiry. You will observe the land size, year built, the topography of the land, water views, renovated or unrenovated and if it has a pool or not. You will make adjustments accordingly. You are to give us a range within 10%. For Example: You will give us the range like this $1.5-$1.65M which is just the figure. No explanation or description is needed.
 
  Here is the property 
   
@@ -484,8 +484,8 @@ exports.calculateScoreMatch = async (req, res) => {
  Topography: ${property.topography}
  Construction: ${property.buildType}
  Wall Material: ${property.wallMaterial}
- Pool: ${property.features.includes("SwimmingPool") ? "Yes" : "No"}
- Tennis Court: ${property.features.includes("TennisCourt") ? "Yes" : "No"}
+ Pool: ${property.features?.includes("SwimmingPool") ? "Yes" : "No"}
+ Tennis Court: ${property.features?.includes("TennisCourt") ? "Yes" : "No"}
  Water views: ${property.waterViews}
  Street traffic: ${property.streetTraffic}
  Finishes: ${property.finishes}
@@ -497,7 +497,7 @@ Now, find an estimate for this property using the following comparable sales
 Recent properties that have been sold: 
 
 ${recommendedSold
-  .slice(0, 3)
+  .slice(0, 5)
   .map(
     (comp) => `
  Address: ${comp.address}
@@ -511,8 +511,8 @@ ${recommendedSold
  Topography: ${comp.topography}
  Construction: ${comp.buildType}
  Wall Material: ${comp.wallMaterial}
- Pool: ${comp.features.includes("SwimmingPool") ? "Yes" : "No"}
- Tennis Court: ${comp.features.includes("TennisCourt") ? "Yes" : "No"}
+ Pool: ${comp.features?.includes("SwimmingPool") ? "Yes" : "No"}
+ Tennis Court: ${comp.features?.includes("TennisCourt") ? "Yes" : "No"}
  Water views: ${comp.waterViews}
  Street traffic: ${comp.streetTraffic}
  Finishes: ${comp.finishes}
