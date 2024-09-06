@@ -5,6 +5,8 @@ const Session = require("../../../models/Session");
 const { REACT_APP_FRONTEND_URL, SECRET_KEY } = require("../../../config");
 const router = express.Router();
 const cookieParser = require("cookie-parser");
+const { google } = require('googleapis');
+const calendar = google.calendar('v3');
 
 // Google Auth Routes
 router.get(
@@ -23,6 +25,28 @@ router.get(
     res.redirect(`${REACT_APP_FRONTEND_URL}`);
   }
 );
+
+router.get('/calendar/events', (req, res) => {
+  if (!req.isAuthenticated()) {
+      return res.redirect('/auth/google');
+  }
+
+  const oauth2Client = new google.auth.OAuth2();
+  console.log("req.user.accessToken",req.user.accessToken)
+  oauth2Client.setCredentials({
+      access_token: req.user.accessToken
+  });
+
+  calendar.events.list({
+      calendarId: 'primary',
+      auth: oauth2Client,
+  }, (err, result) => {
+      if (err) {
+          return res.status(500).json({ error: err.message });
+      }
+      res.json(result.data.items);
+  });
+});
 
 router.get("/status", (req, res) => {
   const signedCookie = req.cookies['connect.sid'];

@@ -1,99 +1,100 @@
-// In-memory booking store
-let bookings = [];
-let bookingIdCounter = 1;
+const { google } = require('googleapis');
+const calendar = google.calendar('v3');
 
-// Sample data
-const sampleBookings = [
-    {
-        bookingId: 'booking-1',
-        eventId: 'event-1',
-        startTime: '2023-09-06T10:00:00Z',
-        endTime: '2023-09-06T11:00:00Z',
-        duration: 60,
-        customer: {
-            name: 'Alice Smith',
-            email: 'alice@example.com',
-            phone: '123-456-7890'
-        },
-        service: {
-            type: 'Consultation',
-            description: 'General consultation'
-        },
-        notes: 'First-time client',
-        status: 'confirmed',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-    },
-    {
-        bookingId: 'booking-2',
-        eventId: 'event-2',
-        startTime: '2023-09-07T14:00:00Z',
-        endTime: '2023-09-07T15:00:00Z',
-        duration: 60,
-        customer: {
-            name: 'Bob Johnson',
-            email: 'bob@example.com',
-            phone: '987-654-3210'
-        },
-        service: {
-            type: 'Follow-up',
-            description: 'Follow-up appointment'
-        },
-        notes: 'Requesting additional information',
-        status: 'confirmed',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-    }
-];
-
-// Initialize bookings with sample data
-bookings = sampleBookings;
-
-// Create Booking
 exports.createBooking=(req, res) => {
-    const booking = {
-        bookingId: `booking-${bookingIdCounter++}`,
-        ...req.body,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+    console.log("hello")
+    if (!req.isAuthenticated()) {
+        return res.redirect('/auth/google');
+    }
+
+    const { startTime, endTime } = req.body;
+
+    const oauth2Client = new google.auth.OAuth2();
+    oauth2Client.setCredentials({
+        access_token: req.user.accessToken
+    });
+
+    const event = {
+        summary: 'Reserved Time Slot', 
+        start: {
+            dateTime: startTime,
+            timeZone: 'UTC',
+        },
+        end: {
+            dateTime: endTime,
+            timeZone: 'UTC',
+        },
     };
-    bookings.push(booking);
-    res.status(201).json({ bookingId: booking.bookingId, message: 'Booking created successfully' });
+
+    calendar.events.insert({
+        auth: oauth2Client,
+        calendarId: 'primary',
+        resource: event,
+    }, (err, event) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.status(201).json({ message: 'Booking created', event: event.data });
+    });
+};
+//reshedulde event 
+exports.rescheduleBooking= (req, res) => {
+    if (!req.isAuthenticated()) {
+        return res.redirect('/auth/google');
+    }
+
+    const { eventId } = req.params;
+    const { startTime, endTime } = req.body;
+
+    const oauth2Client = new google.auth.OAuth2();
+    oauth2Client.setCredentials({
+        access_token: req.user.accessToken
+    });
+
+    calendar.events.patch({
+        auth: oauth2Client,
+        calendarId: 'primary',
+        eventId,
+        resource: {
+            start: {
+                dateTime: startTime,
+                timeZone: 'UTC',
+            },
+            end: {
+                dateTime: endTime,
+                timeZone: 'UTC',
+            },
+        },
+    }, (err, event) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.status(200).json({ message: 'Booking rescheduled', event: event.data });
+    });
 };
 
 // Cancel Booking
-exports.cancelBooking=(req, res) => {
-    const { id } = req.params;
-    const index = bookings.findIndex(b => b.bookingId === id);
-    
-    if (index === -1) {
-        return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Booking not found' } });
+exports.cancelBooking= (req, res) => {
+    if (!req.isAuthenticated()) {
+        return res.redirect('/auth/google');
     }
-    
-    bookings.splice(index, 1);
-    res.status(200).json({ message: 'Booking canceled successfully' });
+
+    const { eventId } = req.params;
+
+    const oauth2Client = new google.auth.OAuth2();
+    oauth2Client.setCredentials({
+        access_token: req.user.accessToken
+    });
+
+    calendar.events.delete({
+        auth: oauth2Client,
+        calendarId: 'primary',
+        eventId,
+    }, (err) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.status(200).json({ message: 'Booking canceled' });
+    });
 };
 
-// Reschedule Booking
-exports.rescheduleBooking= (req, res) => {
-    const { id } = req.params;
-    const booking = bookings.find(b => b.bookingId === id);
-    
-    if (!booking) {
-        return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Booking not found' } });
-    }
-    
-    const { startTime, endTime, duration } = req.body;
-    
-    // Update booking details
-    booking.startTime = startTime || booking.startTime;
-    booking.endTime = endTime || booking.endTime;
-    booking.duration = duration || booking.duration;
-    booking.updatedAt = new Date().toISOString();
-
-    res.status(200).json({ message: 'Booking rescheduled successfully', booking });
-};
-//Get All Booking
-exports.getAllBookings= (req, res) => {
-    res.status(200).json(bookings);
-};

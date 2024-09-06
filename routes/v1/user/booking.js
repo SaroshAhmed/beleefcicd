@@ -4,12 +4,11 @@ const {
     createBooking,
     cancelBooking,
     rescheduleBooking,
-    getAllBookings
 } = require("../../../controllers/user/booking");
+const { isAuthenticated } = require("../../../middleware/auth");
 
 
-router.get("/all",getAllBookings);
-router.post("/",createBooking );
-router.delete("/:id",cancelBooking);
-router.put("/:id/reschedule",rescheduleBooking);
+router.post("/",isAuthenticated,createBooking );
+router.delete("/:eventId",isAuthenticated,cancelBooking);
+router.put("/:eventId/reschedule",isAuthenticated,rescheduleBooking);
 module.exports = router;
