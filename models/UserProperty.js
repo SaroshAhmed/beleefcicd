@@ -126,12 +126,11 @@ const userPropertySchema = new Schema(
     waterViews: {
       type: String,
       enum: [
-        "Yes",
         "No",
-        "Deep water",
-        "Tidal water",
+        "Water views",
+        "Deep waterfront with jetty",
+        "Tidal waterfront with jetty",
         "Waterfront reserve",
-        "Waterfront with jetty",
       ],
       default: null,
     },
@@ -164,8 +163,8 @@ const userPropertySchema = new Schema(
     beleefSaleProcess: {
       type: String,
       enum: [
-        "Private Treaty",
-        "Private Treaty Adjustment",
+        "Private treaty",
+        "Private treaty adjustment",
         "Auction",
         "Not sold at auction",
         "Withdrawn",
