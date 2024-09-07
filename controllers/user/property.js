@@ -238,7 +238,7 @@ exports.calculateScoreMatch = async (req, res) => {
           }
 
           const finalScore = score;
-          return finalScore > 60
+          return finalScore > 50
             ? { property: targetProperty, score: finalScore, keyMatches }
             : null;
         });
@@ -408,7 +408,7 @@ exports.calculateScoreMatch = async (req, res) => {
           }
 
           const finalScore = score;
-          return finalScore > 60
+          return finalScore > 50
             ? { property: targetProperty, score: finalScore, keyMatches }
             : null;
         });
@@ -466,10 +466,12 @@ exports.calculateScoreMatch = async (req, res) => {
     }
 
     recommendedSales = recommendedSales.sort((a, b) => b.score - a.score);
-    
+
     // recommendedSold = recommendedSold.sort((a, b) => b.score - a.score);
 
-    recommendedSold = recommendedSold.sort((a, b) => b.property.price - a.property.price);
+    recommendedSold = recommendedSold.sort(
+      (a, b) => b.property.price - a.property.price
+    );
 
     const systemPrompt = `Return response in json format {logicalPrice:"",logicalReasoning:"}`;
     const userInput = `You are an expert in pricing property and use recent sales comparable data, which I will give you to price property. I will give you an address and you will give me an accurate indication of its value. You will also determine the best price to list to generate the most amount of enquiry. You will observe below property features. You are to give us a range within 10%. You will give us the range like this in million format for example: $low(decimalNo)-$high(decimalNo)M which is just the figure. No explanation or description is needed.
@@ -493,8 +495,16 @@ exports.calculateScoreMatch = async (req, res) => {
     Street traffic: ${property.streetTraffic}
     Finishes: ${property.finishes}
     Granny Flat: ${property.grannyFlat}
-    ${property.developmentPotential ? `Development Potential: ${property.developmentPotential}` : ""}
-    ${property.additionalInformation ? `Additional Information: ${property.additionalInformation}` : ""}
+    ${
+      property.developmentPotential
+        ? `Development Potential: ${property.developmentPotential}`
+        : ""
+    }
+    ${
+      property.additionalInformation
+        ? `Additional Information: ${property.additionalInformation}`
+        : ""
+    }
     
     Now, find an estimate for this property using the following comparable sales:
     
@@ -509,7 +519,11 @@ exports.calculateScoreMatch = async (req, res) => {
     Price: Property type: ${comp.property.price}
     ${comp.property.landArea ? `Land area: ${comp.property.landArea}` : ""}
     ${comp.property.frontage ? `Frontage: ${comp.property.frontage}` : ""}
-    ${comp.property.buildingArea ? `Building area: ${comp.property.buildingArea}` : ""}
+    ${
+      comp.property.buildingArea
+        ? `Building area: ${comp.property.buildingArea}`
+        : ""
+    }
     Beds: ${comp.property.bedrooms}
     Bath: ${comp.property.bathrooms}
     Car spaces: ${comp.property.carspaces}
@@ -517,20 +531,30 @@ exports.calculateScoreMatch = async (req, res) => {
     Construction: ${comp.property.buildType}
     Wall Material: ${comp.property.wallMaterial}
     Pool: ${comp.property.features?.includes("SwimmingPool") ? "Yes" : "No"}
-    Tennis Court: ${comp.property.features?.includes("TennisCourt") ? "Yes" : "No"}
+    Tennis Court: ${
+      comp.property.features?.includes("TennisCourt") ? "Yes" : "No"
+    }
     Water views: ${comp.property.waterViews}
     Street traffic: ${comp.property.streetTraffic}
     Finishes: ${comp.property.finishes}
     Granny Flat: ${comp.property.grannyFlat}
-    ${comp.property.developmentPotential ? `Development Potential: ${comp.property.developmentPotential}` : ""}
-    ${comp.property.additionalInformation ? `Additional Information: ${comp.property.additionalInformation}` : ""}
+    ${
+      comp.property.developmentPotential
+        ? `Development Potential: ${comp.property.developmentPotential}`
+        : ""
+    }
+    ${
+      comp.property.additionalInformation
+        ? `Additional Information: ${comp.property.additionalInformation}`
+        : ""
+    }
     `
       )
       .join("\n")}
     
     After finding the logical price, you have to give logical reasoning in one paragraph for that property.`;
-    
-    console.log(userInput)
+
+    console.log(userInput);
 
     const logical = await chatCompletion(systemPrompt, userInput);
     return res.status(200).json({
