@@ -14,6 +14,6 @@ const promptSchema = new mongoose.Schema({
     timestamps: true // Adds createdAt and updatedAt fields
 });
 
-const Item = mongoose.model('Prompt', promptSchema);
+const Prompt = mongoose.model('Prompt', promptSchema);
 
-module.exports = Item;
+module.exports = Prompt;
