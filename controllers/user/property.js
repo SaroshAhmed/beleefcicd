@@ -70,7 +70,7 @@ exports.getPropertiesAddress = async (req, res) => {
     return res.status(200).json({ success: true, data: properties });
   } catch (error) {
     console.error("Error fetching properties:", error.message);
-    return res.status(500).json({ success: false, message: "Server error" });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -87,7 +87,7 @@ exports.getUserPropertyByAddress = async (req, res) => {
     return res.status(200).json({ success: true, data: userProperty });
   } catch (error) {
     console.error("Error in getPropertyByAddress: ", error.message);
-    return res.status(500).json({ success: false, message: "Server error" });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -554,8 +554,6 @@ exports.calculateScoreMatch = async (req, res) => {
     
     After finding the logical price, you have to give logical reasoning in one paragraph for that property.`;
 
-    console.log(userInput);
-
     const logical = await chatCompletion(systemPrompt, userInput);
     return res.status(200).json({
       success: true,
@@ -607,7 +605,7 @@ exports.getAreaDynamics = async (req, res) => {
     console.error("Error fetching area dynamics data: ", error.message);
     return res.status(500).json({
       success: false,
-      message: "Server Error",
+      message: error.message,
     });
   }
 };
@@ -645,7 +643,7 @@ exports.getBeleefSaleProcess = async (req, res) => {
     console.error(error);
     res.status(500).json({
       success: false,
-      message: "Server error",
+      message: error.message,
     });
   }
 };

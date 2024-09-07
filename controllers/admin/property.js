@@ -21,7 +21,7 @@ const getProperties = async (req, res) => {
     return res.status(200).json({ success: true, data: properties });
   } catch (error) {
     console.error("Error fetching properties:", error.message);
-    return res.status(500).json({ success: false, message: "Server error" });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -41,7 +41,7 @@ const getPropertyById = async (req, res) => {
     return res.status(200).json({ success: true, data: property });
   } catch (error) {
     console.error(`Error fetching property with ID ${id}:`, error.message);
-    return res.status(500).json({ success: false, message: "Server error" });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 

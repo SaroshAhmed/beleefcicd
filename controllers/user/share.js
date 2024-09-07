@@ -34,7 +34,7 @@ exports.createQuickSearch = async (req, res) => {
     res.status(200).json({ success: true, data: shareableLink });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -53,6 +53,6 @@ exports.getQuickSearch = async (req, res) => {
     res.status(200).json({ success: true, data: quickSearch });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
