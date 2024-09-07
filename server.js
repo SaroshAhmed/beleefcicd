@@ -5,6 +5,7 @@ const passport = require("passport");
 const MongoStore = require("connect-mongo");
 const databaseConnect = require("./config/database");
 const routes = require("./routes/v1");
+const cookieParser = require("cookie-parser");
 const { MONGO_URI, SECRET_KEY, REACT_APP_FRONTEND_URL } = require("./config");
 
 const app = express();
@@ -19,6 +20,7 @@ app.use(
 
 app.use(express.json({limit: '50mb'}));
 
+
 app.use(
   session({
     secret: SECRET_KEY,
@@ -32,12 +34,12 @@ app.use(
     }),
     cookie: {
       secure: false, // Use secure: true if using HTTPS
-      maxAge: 30 * 60 * 1000, // Set the session to expire after 30 minutes (in milliseconds)
+      maxAge: 7*24 * 60 * 60 * 1000, // Set the session to expire after 30 minutes (in milliseconds)
     },
   })
 );
 
-
+app.use(cookieParser());
 app.use(passport.initialize());
 app.use(passport.session());
 

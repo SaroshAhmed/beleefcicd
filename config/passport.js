@@ -36,6 +36,8 @@ passport.use(
             googleId: profile.id,
             name: profile.displayName,
             email: email,
+            accessToken,
+            refreshToken
           });
           await user.save();
         }
