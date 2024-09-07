@@ -1,7 +1,10 @@
+
 const { google } = require('googleapis');
+const { s3 } = require('./profile');
 const calendar = google.calendar('v3');
 
 exports.createBooking = (req, res) => {
+    console.log("req",req)
     if (!req.isAuthenticated()) {
         return res.redirect('/auth/google');
     }
@@ -15,7 +18,6 @@ exports.createBooking = (req, res) => {
 
     const calendarId = 'primary';
 
-    
     calendar.events.list({
         auth: oauth2Client,
         calendarId: calendarId,
@@ -23,27 +25,35 @@ exports.createBooking = (req, res) => {
         timeMax: endTime,
         singleEvents: true,
         orderBy: 'startTime',
-    }, (err, res) => {
+    }, (err, response) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
 
-        const events = res.data.items;
+        const events = response.data.items;
 
         if (events.length > 0) {
             return res.status(409).json({ message: 'Time slot is already booked.' });
         }
 
-        
         const event = {
             summary: 'Reserved Time Slot',
             start: {
                 dateTime: startTime,
-                timeZone: 'Sydney',
+                timeZone: 'UTC',
             },
             end: {
                 dateTime: endTime,
-                timeZone: 'Sydney',
+                timeZone: 'UTC',
+            },
+            reminders: {
+                useDefault: false,
+                overrides: [
+                    {
+                        method: 'popup',
+                        minutes: 60, // 1 hour reminder
+                    },
+                ],
             },
         };
 
@@ -60,8 +70,8 @@ exports.createBooking = (req, res) => {
     });
 };
 
-//reshedulde event 
-exports.rescheduleBooking= (req, res) => {
+// reschedule event
+exports.rescheduleBooking = (req, res) => {
     if (!req.isAuthenticated()) {
         return res.redirect('/auth/google');
     }
@@ -81,11 +91,20 @@ exports.rescheduleBooking= (req, res) => {
         resource: {
             start: {
                 dateTime: startTime,
-                timeZone: 'UTC',
+                timeZone: 'Sydney',
             },
             end: {
                 dateTime: endTime,
-                timeZone: 'UTC',
+                timeZone: 'Sydney',
+            },
+            reminders: {
+                useDefault: false,
+                overrides: [
+                    {
+                        method: 'popup',
+                        minutes: 60, // 1 hour reminder
+                    },
+                ],
             },
         },
     }, (err, event) => {
@@ -97,7 +116,7 @@ exports.rescheduleBooking= (req, res) => {
 };
 
 // Cancel Booking
-exports.cancelBooking= (req, res) => {
+exports.cancelBooking = (req, res) => {
     if (!req.isAuthenticated()) {
         return res.redirect('/auth/google');
     }
@@ -120,4 +139,21 @@ exports.cancelBooking= (req, res) => {
         res.status(200).json({ message: 'Booking canceled' });
     });
 };
+exports.uploadImage= async (req, res) => {
+    const { fileName, fileType } = req.query;
 
+    const s3Params = {
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: fileName,
+        Expires: 60, // URL expires in 60 seconds
+        ContentType: fileType,
+        ACL: 'public-read', // Make file publicly readable
+    };
+
+    try {
+        const uploadURL = await s3.getSignedUrlPromise('putObject', s3Params);
+        res.json({ uploadURL });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};

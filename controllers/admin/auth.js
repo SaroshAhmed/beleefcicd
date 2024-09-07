@@ -194,7 +194,20 @@ exports.resetPasswordToken = async (req, res) => {
             }
 
         //generating... token
-        const token  = crypto.randomBytes(20).toString("hex");
+        let  resetPasswordToken;
+        const randomString = crypto.randomBytes(20).toString('hex');
+
+        // Hash the random string using bcrypt
+        const saltRounds = 10;
+        bcrypt.hash(randomString, saltRounds, function(err, hashedToken) {
+            if (err) {
+                console.error('Error hashing token:', err);
+            } else {
+                console.log('Hashed Token:', hashedToken);
+                resetPasswordToken = hashedToken;
+                // You can now use this hashedToken as your secure token
+            }
+        });
 
         //updating... user by adding token and expirationTime
         const updatedDetails = await Admin.findOneAndUpdate(

@@ -5,12 +5,13 @@ const AWS = require("aws-sdk");
 const express = require("express");
 const router = express.Router();
 
-const s3 = new AWS.S3({
+ const s3 = new AWS.S3({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   region: process.env.AWS_REGION,
   signatureVersion: "v4",
 });
+// module.exports=s3
 
 exports.createSetupIntent = async (req, res) => {
   const { id } = req.user;
@@ -113,5 +114,17 @@ exports.saveProfile = async (req, res) => {
   } catch (error) {
     console.error("Error saving profile:", error);
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.uploadImage=async (req, res) => {
+  const { profilePictureUrl } = req.body;
+  const userId = req.user.id;
+
+  try {
+      const user = await User.findByIdAndUpdate(userId, { picture: profilePictureUrl }, { new: true });
+      res.json({ user });
+  } catch (err) {
+      res.status(500).json({ error: err.message });
   }
 };
