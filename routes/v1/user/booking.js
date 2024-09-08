@@ -10,5 +10,5 @@ const { isAuthenticated } = require("../../../middleware/auth");
 
 router.post("/",isAuthenticated,createBooking );
 router.delete("/:eventId",isAuthenticated,cancelBooking);
-router.put("/:eventId/reschedule",isAuthenticated,rescheduleBooking);
+router.patch("/:eventId/reschedule",isAuthenticated,rescheduleBooking);
 module.exports = router;
