@@ -119,6 +119,7 @@ exports.saveProfile = async (req, res) => {
 
 exports.uploadImage=async (req, res) => {
   const { profilePictureUrl } = req.body;
+  console.log("profilePictureUrl: " + profilePictureUrl);
   const userId = req.user.id;
 
   try {

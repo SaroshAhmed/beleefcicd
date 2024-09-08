@@ -40,11 +40,11 @@ exports.createBooking = (req, res) => {
             summary: 'Reserved Time Slot',
             start: {
                 dateTime: startTime,
-                timeZone: 'UTC',
+                timeZone: 'Australia/Sydney',
             },
             end: {
                 dateTime: endTime,
-                timeZone: 'UTC',
+                timeZone: 'Australia/Sydney',
             },
             reminders: {
                 useDefault: false,
@@ -91,11 +91,11 @@ exports.rescheduleBooking = (req, res) => {
         resource: {
             start: {
                 dateTime: startTime,
-                timeZone: 'Sydney',
+                timeZone: 'Australia/Sydney',
             },
             end: {
                 dateTime: endTime,
-                timeZone: 'Sydney',
+                timeZone: 'Australia/Sydney',
             },
             reminders: {
                 useDefault: false,
