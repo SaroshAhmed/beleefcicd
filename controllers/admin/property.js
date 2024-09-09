@@ -323,8 +323,8 @@ const calculateScoreMatch = async (req, res) => {
       }
 
       if (property.finishes === targetProperty.finishes) {
-        score += 7;
-        keyMatches["Finishes"] = 7;
+        score += 10;
+        keyMatches["Finishes"] = 10;
       }
 
       if (property.streetTraffic === targetProperty.streetTraffic) {
