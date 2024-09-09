@@ -318,27 +318,22 @@ exports.calculateScoreMatch = async (req, res) => {
           }
 
           // Pool
-          const hasPoolSource =
-            property.features?.includes("SwimmingPool") || false;
-          const hasPoolTarget =
-            targetProperty.features?.includes("SwimmingPool") || false;
-          if (hasPoolSource === hasPoolTarget) {
+          if(property.pool==="Yes" && targetProperty.pool==="Yes"){
             score += 7;
-            if (hasPoolSource && hasPoolTarget) {
-              keyMatches.push("Pool");
-            }
+            keyMatches.push("Pool");
+          }
+          if(property.pool==="No" && targetProperty.pool==="No"){
+            score += 7;
           }
 
+
           // Tennis Court
-          const hasTennisCourtSource =
-            property.features?.includes("TennisCourt") || false;
-          const hasTennisCourtTarget =
-            targetProperty.features?.includes("TennisCourt") || false;
-          if (hasTennisCourtSource === hasTennisCourtTarget) {
+          if(property.tennisCourt==="Yes" && targetProperty.tennisCourt==="Yes"){
             score += 3;
-            if (hasTennisCourtSource && hasTennisCourtTarget) {
-              keyMatches.push("Tennis court");
-            }
+            keyMatches.push("Tennis Court");
+          }
+          if(property.tennisCourt==="No" && targetProperty.tennisCourt==="No"){
+            score += 3;
           }
 
           // Scoring logic for water views
@@ -412,6 +407,10 @@ exports.calculateScoreMatch = async (req, res) => {
             buildTypeTarget === "1 storey" &&
             targetProperty.finishes !== "High-end finishes"
           ) {
+            score = 0;
+          }
+
+          if (property.bedrooms > targetProperty.bedrooms) {
             score = 0;
           }
 

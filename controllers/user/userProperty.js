@@ -41,11 +41,22 @@ exports.createProperty = async (req, res) => {
       { name: "onMarket", status: "unlock" },
     ];
 
+    const processChain = [
+      { label: "1", name: "Views", selected: null },
+      { label: "2", name: "Enquiry", selected: null },
+      { label: "3", name: "Inspection", selected: null },
+      { label: "4", name: "Offers", selected: null },
+      { label: "5", name: "Close Feedback", selected: null },
+      { label: "6", name: "Vendor Acceptance", selected: null },
+      { label: "7", name: "Solid", selected: null },
+    ];
+
     // Create a new UserProperty document
     const userProperty = await UserProperty.create({
       userId: id,
       ...propertyData,
       boxStatus,
+      processChain,
     });
 
     return res.status(200).json({ success: true, data: userProperty });

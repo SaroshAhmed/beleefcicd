@@ -8,46 +8,46 @@ const vendorDetailsSchema = new mongoose.Schema({
   mobile: { type: String, default: null },
 });
 
-const historySchema = new Schema({
-  sales: [
-    {
-      first: {
-        advertisedDate: { type: Date, default: null },
-        agency: { type: String, default: null },
-        agencyId: { type: Number, default: null },
-        type: { type: String, default: null },
-      },
-      last: {
-        advertisedDate: { type: Date, default: null },
-        agency: { type: String, default: null },
-        agencyId: { type: Number, default: null },
-        type: { type: String, default: null },
-      },
-      date: { type: Date, default: null },
-      daysOnMarket: { type: Number, default: null },
-      documentedAsSold: { type: Boolean, default: null },
-      price: { type: Number, default: null },
-      reportedAsSold: { type: Boolean, default: null },
-      type: { type: String, default: null },
-    },
-  ],
-  rentals: [
-    {
-      first: {
-        advertisedDate: { type: Date, default: null },
-        agency: { type: String, default: null },
-        agencyId: { type: Number, default: null },
-        type: { type: String, default: null },
-      },
-      last: {
-        advertisedDate: { type: Date, default: null },
-        agency: { type: String, default: null },
-        agencyId: { type: Number, default: null },
-        type: { type: String, default: null },
-      },
-    },
-  ],
-});
+// const historySchema = new Schema({
+//   sales: [
+//     {
+//       first: {
+//         advertisedDate: { type: Date, default: null },
+//         agency: { type: String, default: null },
+//         agencyId: { type: Number, default: null },
+//         type: { type: String, default: null },
+//       },
+//       last: {
+//         advertisedDate: { type: Date, default: null },
+//         agency: { type: String, default: null },
+//         agencyId: { type: Number, default: null },
+//         type: { type: String, default: null },
+//       },
+//       date: { type: Date, default: null },
+//       daysOnMarket: { type: Number, default: null },
+//       documentedAsSold: { type: Boolean, default: null },
+//       price: { type: Number, default: null },
+//       reportedAsSold: { type: Boolean, default: null },
+//       type: { type: String, default: null },
+//     },
+//   ],
+//   rentals: [
+//     {
+//       first: {
+//         advertisedDate: { type: Date, default: null },
+//         agency: { type: String, default: null },
+//         agencyId: { type: Number, default: null },
+//         type: { type: String, default: null },
+//       },
+//       last: {
+//         advertisedDate: { type: Date, default: null },
+//         agency: { type: String, default: null },
+//         agencyId: { type: Number, default: null },
+//         type: { type: String, default: null },
+//       },
+//     },
+//   ],
+// });
 
 const mediaSchema = new Schema({
   category: { type: String, required: true },
@@ -123,6 +123,8 @@ const userPropertySchema = new Schema(
       default: null,
     },
     features: [{ type: String, default: null }],
+    pool: { type: String, enum: ["Yes", "No"], default: null },
+    tennisCourt: { type: String, enum: ["Yes", "No"], default: null },
     waterViews: {
       type: String,
       enum: [
@@ -181,7 +183,7 @@ const userPropertySchema = new Schema(
     },
     description: { type: String, default: null },
     headline: { type: String, default: null },
-    history: { type: historySchema, default: null },
+    history: { type: Schema.Types.Mixed, default: null },
     isNewDevelopment: { type: Boolean, default: null },
     canonicalUrl: { type: String, default: null },
     urlSlug: { type: String, default: null },
@@ -217,6 +219,10 @@ const userPropertySchema = new Schema(
     engagedPurchaser: { type: String, default: null },
     isCleaned: { type: Boolean, default: false },
     boxStatus: { type: [boxSchema], default: null },
+    processChain: {
+      type: [Schema.Types.Mixed],
+      default: null,
+    },
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date, default: null },
   },

@@ -8,8 +8,8 @@ async function addPropertyIdNull() {
   try {
     // Update all documents where propertyId is missing
     await Property.updateMany(
-      { propertyId: { $exists: false } }, // Check if propertyId does not exist
-      { $set: { propertyId: null } }      // Set propertyId to null
+      // { propertyId: { $exists: false } }, // Check if propertyId does not exist
+      { $set: { isCleaned: false } }      // Set propertyId to null
     );
 
     console.log("propertyId set to null on all relevant documents.");

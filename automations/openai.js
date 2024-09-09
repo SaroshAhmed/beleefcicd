@@ -11,7 +11,8 @@ databaseConnect();
 async function fetchProperties() {
   try {
     return await Property.find({
-      suburb: { $in: ["CONNELLS POINT"] },
+      // suburb: { $in: ["PEAKHURST", "CONNELLS POINT"] },
+      postcode:"2210",
       isCleaned: false,
     });
     // return await Property.find({ propertyId:"IL-2019-FD" });
@@ -42,12 +43,16 @@ async function generatePromptAndAnalyze(property) {
 
   // JSON structure for property details
   let jsonStructure = {
+    aiPropertyType:
+      "enum: [ApartmentUnitFlat, Duplex, House, Terrace, Townhouse, VacantLand, Villa]",
     buildType: "[enum: 1 storey, 2 storey, 3 storey, 4+ storey]",
     wallMaterial: "[enum: Brick, Double brick, Clad, Fibro, Hebel]",
     waterViews:
       "[enum: No, Water views, Deep waterfront with jetty, Tidal waterfront with jetty, Waterfront reserve]",
     finishes: "[enum: High-end finishes, Updated, Original]",
     streetTraffic: "[enum: Low traffic, Moderate traffic, High traffic]",
+    pool: "[enum: Yes, No]",
+    tennisCourt: "[enum: Yes, No]",
     topography:
       "type array. multiples can be selected but only from this list [High side, Low side, Level block, Irregular block, Unusable land]",
     frontage:

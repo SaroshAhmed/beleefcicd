@@ -8,46 +8,46 @@ const vendorDetailsSchema = new mongoose.Schema({
   mobile: { type: String, default: null },
 });
 
-const historySchema = new Schema({
-  sales: [
-    {
-      first: {
-        advertisedDate: { type: Date, default: null },
-        agency: { type: String, default: null },
-        agencyId: { type: Number, default: null },
-        type: { type: String, default: null },
-      },
-      last: {
-        advertisedDate: { type: Date, default: null },
-        agency: { type: String, default: null },
-        agencyId: { type: Number, default: null },
-        type: { type: String, default: null },
-      },
-      date: { type: Date, default: null },
-      daysOnMarket: { type: Number, default: null },
-      documentedAsSold: { type: Boolean, default: null },
-      price: { type: Number, default: null },
-      reportedAsSold: { type: Boolean, default: null },
-      type: { type: String, default: null },
-    },
-  ],
-  rentals: [
-    {
-      first: {
-        advertisedDate: { type: Date, default: null },
-        agency: { type: String, default: null },
-        agencyId: { type: Number, default: null },
-        type: { type: String, default: null },
-      },
-      last: {
-        advertisedDate: { type: Date, default: null },
-        agency: { type: String, default: null },
-        agencyId: { type: Number, default: null },
-        type: { type: String, default: null },
-      },
-    },
-  ],
-});
+// const historySchema = new Schema({
+//   sales: [
+//     {
+//       first: {
+//         advertisedDate: { type: Date, default: null },
+//         agency: { type: String, default: null },
+//         agencyId: { type: Number, default: null },
+//         type: { type: String, default: null },
+//       },
+//       last: {
+//         advertisedDate: { type: Date, default: null },
+//         agency: { type: String, default: null },
+//         agencyId: { type: Number, default: null },
+//         type: { type: String, default: null },
+//       },
+//       date: { type: Date, default: null },
+//       daysOnMarket: { type: Number, default: null },
+//       documentedAsSold: { type: Boolean, default: null },
+//       price: { type: Number, default: null },
+//       reportedAsSold: { type: Boolean, default: null },
+//       type: { type: String, default: null },
+//     },
+//   ],
+//   rentals: [
+//     {
+//       first: {
+//         advertisedDate: { type: Date, default: null },
+//         agency: { type: String, default: null },
+//         agencyId: { type: Number, default: null },
+//         type: { type: String, default: null },
+//       },
+//       last: {
+//         advertisedDate: { type: Date, default: null },
+//         agency: { type: String, default: null },
+//         agencyId: { type: Number, default: null },
+//         type: { type: String, default: null },
+//       },
+//     },
+//   ],
+// });
 
 const mediaSchema = new Schema({
   category: { type: String, required: true },
@@ -79,6 +79,19 @@ const propertySchema = new Schema(
       ],
       required: true,
     },
+    aiPropertyType: {
+      type: String,
+      enum: [
+        "ApartmentUnitFlat",
+        "Duplex",
+        "House",
+        "Terrace",
+        "Townhouse",
+        "VacantLand",
+        "Villa",
+      ],
+      required: true,
+    },
     battleAxe: { type: String, enum: ["Yes", "No"], default: null },
     media: { type: [mediaSchema], default: null },
     bedrooms: { type: Number, default: null },
@@ -98,6 +111,8 @@ const propertySchema = new Schema(
       default: null,
     },
     features: [{ type: String, default: null }],
+    pool: { type: String, enum: ["Yes", "No"], default: null },
+    tennisCourt: { type: String, enum: ["Yes", "No"], default: null },
     waterViews: {
       type: String,
       enum: [
@@ -156,7 +171,7 @@ const propertySchema = new Schema(
     },
     description: { type: String, default: null },
     headline: { type: String, default: null },
-    history: { type: historySchema, default: null },
+    history: { type: Schema.Types.Mixed, default: null },
     isNewDevelopment: { type: Boolean, default: null },
     canonicalUrl: { type: String, default: null },
     urlSlug: { type: String, default: null },
