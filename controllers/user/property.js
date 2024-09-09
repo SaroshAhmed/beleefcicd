@@ -183,10 +183,10 @@ exports.calculateScoreMatch = async (req, res) => {
               Math.abs(property.buildingArea - targetProperty.buildingArea) <=
               10
             )
-              score += 9;
-            keyMatches.push("Floor area");
+              score += 10;
+            keyMatches.push("Building area");
           } else if (!property.buildingArea && !targetProperty.buildingArea) {
-            score += 9;
+            score += 10;
           }
 
           // Bedrooms, Bathrooms, Carspaces
@@ -228,7 +228,7 @@ exports.calculateScoreMatch = async (req, res) => {
           }
 
           if (property.finishes === targetProperty.finishes) {
-            score += 7;
+            score += 10;
             keyMatches.push("Finishes");
           }
 
@@ -238,7 +238,7 @@ exports.calculateScoreMatch = async (req, res) => {
           }
 
           const finalScore = score;
-          return finalScore > 50
+          return finalScore > 55
             ? { property: targetProperty, score: finalScore, keyMatches }
             : null;
         });
@@ -261,10 +261,10 @@ exports.calculateScoreMatch = async (req, res) => {
           // Land Area
           if (property.landArea && targetProperty.landArea) {
             if (Math.abs(property.landArea - targetProperty.landArea) <= 100)
-              score += 7;
+              score += 10;
             keyMatches.push("Land area");
           } else if (!property.landArea && !targetProperty.landArea) {
-            score += 7;
+            score += 10;
           }
 
           // Frontage
@@ -278,7 +278,7 @@ exports.calculateScoreMatch = async (req, res) => {
 
           // Bedrooms, Bathrooms, Carspaces
           if (property.bedrooms === targetProperty.bedrooms) {
-            score += 3;
+            score += 5;
             keyMatches.push("Bedrooms");
           }
           if (property.bathrooms === targetProperty.bathrooms) {
@@ -323,7 +323,7 @@ exports.calculateScoreMatch = async (req, res) => {
           const hasPoolTarget =
             targetProperty.features?.includes("SwimmingPool") || false;
           if (hasPoolSource === hasPoolTarget) {
-            score += 4;
+            score += 7;
             if (hasPoolSource && hasPoolTarget) {
               keyMatches.push("Pool");
             }
@@ -384,13 +384,13 @@ exports.calculateScoreMatch = async (req, res) => {
             property.developmentPotential === null &&
             targetProperty.developmentPotential === null
           ) {
-            score += 11;
+            score += 7;
           }
           if (
             property.developmentPotential !== null &&
             targetProperty.developmentPotential !== null
           ) {
-            score += 11;
+            score += 7;
           }
 
           // Topography
@@ -407,8 +407,16 @@ exports.calculateScoreMatch = async (req, res) => {
             }
           }
 
+          if (
+            buildTypeSource !== "1 storey" &&
+            buildTypeTarget === "1 storey" &&
+            targetProperty.finishes !== "High-end finishes"
+          ) {
+            score = 0;
+          }
+
           const finalScore = score;
-          return finalScore > 50
+          return finalScore > 55
             ? { property: targetProperty, score: finalScore, keyMatches }
             : null;
         });
@@ -467,11 +475,11 @@ exports.calculateScoreMatch = async (req, res) => {
 
     recommendedSales = recommendedSales.sort((a, b) => b.score - a.score);
 
-    // recommendedSold = recommendedSold.sort((a, b) => b.score - a.score);
+    recommendedSold = recommendedSold.sort((a, b) => b.score - a.score);
 
-    recommendedSold = recommendedSold.sort(
-      (a, b) => b.property.price - a.property.price
-    );
+    // recommendedSold = recommendedSold.sort(
+    //   (a, b) => b.property.price - a.property.price
+    // );
 
     const systemPrompt = `Return response in json format {logicalPrice:"",logicalReasoning:"}`;
     const userInput = `You are an expert in pricing property and use recent sales comparable data, which I will give you to price property. I will give you an address and you will give me an accurate indication of its value. You will also determine the best price to list to generate the most amount of enquiry. You will observe below property features. You are to give us a range within 10%. You will give us the range like this in million format for example: $low(decimalNo)-$high(decimalNo)M which is just the figure. No explanation or description is needed.
@@ -511,12 +519,12 @@ exports.calculateScoreMatch = async (req, res) => {
     Recent properties that have been sold:
     
     ${recommendedSold
-      .slice(0, 3)
+      .slice(0, 4)
       .map(
         (comp) => `
     Address: ${comp.property.address}
     Property type: ${comp.property.propertyType}
-    Price: Property type: ${comp.property.price}
+    Price: ${comp.property.price}
     ${comp.property.landArea ? `Land area: ${comp.property.landArea}` : ""}
     ${comp.property.frontage ? `Frontage: ${comp.property.frontage}` : ""}
     ${
