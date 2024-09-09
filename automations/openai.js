@@ -11,7 +11,7 @@ databaseConnect();
 async function fetchProperties() {
   try {
     return await Property.find({
-      suburb: { $in: ["PEAKHURST"] },
+      suburb: { $in: ["CONNELLS POINT"] },
       isCleaned: false,
     });
     // return await Property.find({ propertyId:"IL-2019-FD" });

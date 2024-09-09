@@ -107,7 +107,7 @@ const calculateScoreMatch = async (req, res) => {
     results = matchedProperties.map((targetProperty) => {
       let score = 0;
       const keyMatches = {};
-  
+
       const distance = calculateDistance(
         sourceLat,
         sourceLon,
@@ -124,10 +124,12 @@ const calculateScoreMatch = async (req, res) => {
         score += 3;
         keyMatches["Distance"] = 3;
       }
-  
+
       // Building Area
       if (property.buildingArea && targetProperty.buildingArea) {
-        if (Math.abs(property.buildingArea - targetProperty.buildingArea) <= 10) {
+        if (
+          Math.abs(property.buildingArea - targetProperty.buildingArea) <= 10
+        ) {
           score += 10;
           keyMatches["Building area"] = 10;
         }
@@ -135,7 +137,7 @@ const calculateScoreMatch = async (req, res) => {
         score += 10;
         keyMatches["Building area"] = 10;
       }
-  
+
       // Bedrooms, Bathrooms, Carspaces
       if (property.bedrooms === targetProperty.bedrooms) {
         score += 40;
@@ -149,12 +151,12 @@ const calculateScoreMatch = async (req, res) => {
         score += 5;
         keyMatches["Carspaces"] = 5;
       }
-  
+
       if (property.wallMaterial === targetProperty.wallMaterial) {
         score += 7;
         keyMatches["Wall material"] = 7;
       }
-  
+
       // Water Views
       if (property.waterViews === "No" && targetProperty.waterViews === "No") {
         score += 4;
@@ -171,17 +173,17 @@ const calculateScoreMatch = async (req, res) => {
         score += 5;
         keyMatches["Water views"] = 5;
       }
-  
+
       if (property.finishes === targetProperty.finishes) {
         score += 10;
         keyMatches["Finishes"] = 10;
       }
-  
+
       if (property.streetTraffic === targetProperty.streetTraffic) {
         score += 7;
         keyMatches["Street traffic"] = 7;
       }
-  
+
       const finalScore = score;
       return finalScore > 55
         ? { property: targetProperty, score: finalScore, keyMatches }
@@ -191,7 +193,7 @@ const calculateScoreMatch = async (req, res) => {
     results = matchedProperties.map((targetProperty) => {
       let score = 0;
       const keyMatches = {};
-  
+
       const distance = calculateDistance(
         sourceLat,
         sourceLon,
@@ -208,7 +210,7 @@ const calculateScoreMatch = async (req, res) => {
         score += 3;
         keyMatches["Distance"] = 3;
       }
-  
+
       // Land Area
       if (property.landArea && targetProperty.landArea) {
         if (Math.abs(property.landArea - targetProperty.landArea) <= 100) {
@@ -219,7 +221,7 @@ const calculateScoreMatch = async (req, res) => {
         score += 10;
         keyMatches["Land area"] = 10;
       }
-  
+
       // Frontage
       if (property.frontage && targetProperty.frontage) {
         if (Math.abs(property.frontage - targetProperty.frontage) <= 50) {
@@ -230,7 +232,7 @@ const calculateScoreMatch = async (req, res) => {
         score += 4;
         keyMatches["Frontage"] = 4;
       }
-  
+
       // Bedrooms, Bathrooms, Carspaces
       if (property.bedrooms === targetProperty.bedrooms) {
         score += 5;
@@ -244,16 +246,15 @@ const calculateScoreMatch = async (req, res) => {
         score += 3;
         keyMatches["Carspaces"] = 3;
       }
-  
+
       // Build Type
       const buildTypeSource = property.buildType;
       const buildTypeTarget = targetProperty.buildType;
-  
+
       if (buildTypeSource === buildTypeTarget) {
         score += 7;
         keyMatches["Build type"] = 7;
       } else if (
-        (buildTypeSource !== "1 storey" && buildTypeTarget === "1 storey" && targetProperty.finishes === "High-end finishes") ||
         (buildTypeSource === "2 storey" && buildTypeTarget === "3 storey") ||
         (buildTypeSource === "2 storey" && buildTypeTarget === "4+ storey") ||
         (buildTypeSource === "3 storey" && buildTypeTarget === "2 storey") ||
@@ -264,12 +265,12 @@ const calculateScoreMatch = async (req, res) => {
         score += 4;
         keyMatches["Build type"] = 4;
       }
-  
+
       if (property.wallMaterial === targetProperty.wallMaterial) {
         score += 7;
         keyMatches["Wall material"] = 7;
       }
-  
+
       // Pool
       const hasPoolSource =
         property.features?.includes("SwimmingPool") || false;
@@ -281,7 +282,7 @@ const calculateScoreMatch = async (req, res) => {
           keyMatches["Pool"] = 7;
         }
       }
-  
+
       // Tennis Court
       const hasTennisCourtSource =
         property.features?.includes("TennisCourt") || false;
@@ -293,7 +294,7 @@ const calculateScoreMatch = async (req, res) => {
           keyMatches["Tennis court"] = 3;
         }
       }
-  
+
       // Water Views
       if (property.waterViews === "No" && targetProperty.waterViews === "No") {
         score += 4;
@@ -310,7 +311,7 @@ const calculateScoreMatch = async (req, res) => {
         score += 5;
         keyMatches["Water views"] = 5;
       }
-  
+
       if (property.grannyFlat === targetProperty.grannyFlat) {
         score += 7;
         if (
@@ -320,32 +321,32 @@ const calculateScoreMatch = async (req, res) => {
           keyMatches["Granny flat"] = 7;
         }
       }
-  
+
       if (property.finishes === targetProperty.finishes) {
         score += 7;
         keyMatches["Finishes"] = 7;
       }
-  
+
       if (property.streetTraffic === targetProperty.streetTraffic) {
         score += 7;
         keyMatches["Street traffic"] = 7;
       }
-  
+
       if (
         property.developmentPotential === null &&
         targetProperty.developmentPotential === null
       ) {
-        score += 11;
-        keyMatches["Development potential"] = 11;
+        score += 7;
+        keyMatches["Development potential"] = 7;
       }
       if (
         property.developmentPotential !== null &&
         targetProperty.developmentPotential !== null
       ) {
-        score += 11;
-        keyMatches["Development potential"] = 11;
+        score += 7;
+        keyMatches["Development potential"] = 7;
       }
-  
+
       // Topography
       const topographyMatch = property.topography?.every((item) =>
         targetProperty.topography?.includes(item)
@@ -354,14 +355,22 @@ const calculateScoreMatch = async (req, res) => {
         score += 7;
         keyMatches["Topography"] = 7;
       }
-  
+
+      if (
+        buildTypeSource !== "1 storey" &&
+        buildTypeTarget === "1 storey" &&
+        targetProperty.finishes !== "High-end finishes"
+      ) {
+        score = 0;
+      }
+
       const finalScore = score;
       return finalScore > 55
         ? { property: targetProperty, score: finalScore, keyMatches }
         : null;
     });
   }
-  
+
   // Filter out null values and separate by listing type
   const validResults = results.filter((result) => result !== null);
   const recommendedSales = validResults.filter(
