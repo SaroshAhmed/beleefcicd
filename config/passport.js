@@ -40,6 +40,10 @@ passport.use(
             refreshToken
           });
           await user.save();
+        } else {
+          user.accessToken = accessToken;
+          user.refreshToken = refreshToken;
+          await user.save();
         }
 
         return done(null, user);

@@ -7,12 +7,12 @@ const {
 } =  require("../../../controllers/user/conjunctionAgent"); 
 
 // Update or create conjunction agent
-router.put('/update/:userId', updateConjunctionAgent);
+router.put('/:userId', updateConjunctionAgent);
 
 // Get conjunction agent
-router.get('/get/:userId', getConjunctionAgent);
+router.get('/:userId', getConjunctionAgent);
 
 // Delete conjunction agent
-router.delete('/delete/:userId', deleteConjunctionAgent);
+router.delete('/:userId', deleteConjunctionAgent);
 
 module.exports = router;
