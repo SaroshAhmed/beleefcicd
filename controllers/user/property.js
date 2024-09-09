@@ -446,8 +446,10 @@ exports.calculateScoreMatch = async (req, res) => {
       (result) => result.property.listingType === "Sold"
     );
 
-    // If recommendedSales or recommendedSold is less than 3, rerun with postcode-based query
-    if (recommendedSales.length < 3 || recommendedSold.length < 3) {
+    console.log(recommendedSales.length)
+    console.log(recommendedSold.length)
+    // If recommendedSales is less than 3, rerun with postcode-based query
+    if (recommendedSales.length < 3) {
       matchedProperties = await Property.aggregate([
         {
           $match: {
@@ -456,20 +458,31 @@ exports.calculateScoreMatch = async (req, res) => {
             developmentPotential:
               sourceDevelopmentPotential === null ? null : { $ne: null },
             _id: { $ne: new ObjectId(property._id) },
+            listingType:"Sale"
           },
         },
       ]);
 
       // Calculate matches for postcode-based properties
-      results = await calculateMatches(matchedProperties);
+      recommendedSales = await calculateMatches(matchedProperties);
+    }
 
-      // Filter by listing type again
-      recommendedSales = results.filter(
-        (result) => result.property.listingType === "Sale"
-      );
-      recommendedSold = results.filter(
-        (result) => result.property.listingType === "Sold"
-      );
+    if (recommendedSold.length < 3) {
+      matchedProperties = await Property.aggregate([
+        {
+          $match: {
+            postcode: sourcePostcode,
+            propertyType: sourcePropertyType,
+            developmentPotential:
+              sourceDevelopmentPotential === null ? null : { $ne: null },
+            _id: { $ne: new ObjectId(property._id) },
+            listingType:"Sold"
+          },
+        },
+      ]);
+
+      // Calculate matches for postcode-based properties
+      recommendedSold = await calculateMatches(matchedProperties);
     }
 
     recommendedSales = recommendedSales.sort((a, b) => b.score - a.score);
@@ -496,8 +509,8 @@ exports.calculateScoreMatch = async (req, res) => {
     Topography: ${property.topography}
     Construction: ${property.buildType}
     Wall Material: ${property.wallMaterial}
-    Pool: ${property.features?.includes("SwimmingPool") ? "Yes" : "No"}
-    Tennis Court: ${property.features?.includes("TennisCourt") ? "Yes" : "No"}
+    Pool: ${property.pool}
+    Tennis Court: ${property.tennisCourt}
     Water views: ${property.waterViews}
     Street traffic: ${property.streetTraffic}
     Finishes: ${property.finishes}
@@ -537,10 +550,8 @@ exports.calculateScoreMatch = async (req, res) => {
     Topography: ${comp.property.topography}
     Construction: ${comp.property.buildType}
     Wall Material: ${comp.property.wallMaterial}
-    Pool: ${comp.property.features?.includes("SwimmingPool") ? "Yes" : "No"}
-    Tennis Court: ${
-      comp.property.features?.includes("TennisCourt") ? "Yes" : "No"
-    }
+    Pool: ${comp.pool}
+    Tennis Court: ${comp.tennisCourt}
     Water views: ${comp.property.waterViews}
     Street traffic: ${comp.property.streetTraffic}
     Finishes: ${comp.property.finishes}
