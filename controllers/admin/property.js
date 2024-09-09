@@ -128,12 +128,12 @@ const calculateScoreMatch = async (req, res) => {
       // Building Area
       if (property.buildingArea && targetProperty.buildingArea) {
         if (Math.abs(property.buildingArea - targetProperty.buildingArea) <= 10) {
-          score += 9;
-          keyMatches["Building area"] = 9;
+          score += 10;
+          keyMatches["Building area"] = 10;
         }
       } else if (!property.buildingArea && !targetProperty.buildingArea) {
-        score += 9;
-        keyMatches["Building area"] = 9;
+        score += 10;
+        keyMatches["Building area"] = 10;
       }
   
       // Bedrooms, Bathrooms, Carspaces
@@ -173,8 +173,8 @@ const calculateScoreMatch = async (req, res) => {
       }
   
       if (property.finishes === targetProperty.finishes) {
-        score += 7;
-        keyMatches["Finishes"] = 7;
+        score += 10;
+        keyMatches["Finishes"] = 10;
       }
   
       if (property.streetTraffic === targetProperty.streetTraffic) {
@@ -212,12 +212,12 @@ const calculateScoreMatch = async (req, res) => {
       // Land Area
       if (property.landArea && targetProperty.landArea) {
         if (Math.abs(property.landArea - targetProperty.landArea) <= 100) {
-          score += 7;
-          keyMatches["Land area"] = 7;
+          score += 10;
+          keyMatches["Land area"] = 10;
         }
       } else if (!property.landArea && !targetProperty.landArea) {
-        score += 7;
-        keyMatches["Land area"] = 7;
+        score += 10;
+        keyMatches["Land area"] = 10;
       }
   
       // Frontage
@@ -233,8 +233,8 @@ const calculateScoreMatch = async (req, res) => {
   
       // Bedrooms, Bathrooms, Carspaces
       if (property.bedrooms === targetProperty.bedrooms) {
-        score += 3;
-        keyMatches["Bedrooms"] = 3;
+        score += 5;
+        keyMatches["Bedrooms"] = 5;
       }
       if (property.bathrooms === targetProperty.bathrooms) {
         score += 3;
@@ -253,6 +253,7 @@ const calculateScoreMatch = async (req, res) => {
         score += 7;
         keyMatches["Build type"] = 7;
       } else if (
+        (buildTypeSource !== "1 storey" && buildTypeTarget === "1 storey" && targetProperty.finishes === "High-end finishes") ||
         (buildTypeSource === "2 storey" && buildTypeTarget === "3 storey") ||
         (buildTypeSource === "2 storey" && buildTypeTarget === "4+ storey") ||
         (buildTypeSource === "3 storey" && buildTypeTarget === "2 storey") ||
@@ -275,9 +276,9 @@ const calculateScoreMatch = async (req, res) => {
       const hasPoolTarget =
         targetProperty.features?.includes("SwimmingPool") || false;
       if (hasPoolSource === hasPoolTarget) {
-        score += 4;
+        score += 7;
         if (hasPoolSource && hasPoolTarget) {
-          keyMatches["Pool"] = 4;
+          keyMatches["Pool"] = 7;
         }
       }
   
