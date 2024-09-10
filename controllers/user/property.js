@@ -318,21 +318,26 @@ exports.calculateScoreMatch = async (req, res) => {
           }
 
           // Pool
-          if(property.pool==="Yes" && targetProperty.pool==="Yes"){
+          if (property.pool === "Yes" && targetProperty.pool === "Yes") {
             score += 7;
             keyMatches.push("Pool");
           }
-          if(property.pool==="No" && targetProperty.pool==="No"){
+          if (property.pool === "No" && targetProperty.pool === "No") {
             score += 7;
           }
 
-
           // Tennis Court
-          if(property.tennisCourt==="Yes" && targetProperty.tennisCourt==="Yes"){
+          if (
+            property.tennisCourt === "Yes" &&
+            targetProperty.tennisCourt === "Yes"
+          ) {
             score += 3;
             keyMatches.push("Tennis Court");
           }
-          if(property.tennisCourt==="No" && targetProperty.tennisCourt==="No"){
+          if (
+            property.tennisCourt === "No" &&
+            targetProperty.tennisCourt === "No"
+          ) {
             score += 3;
           }
 
@@ -428,6 +433,7 @@ exports.calculateScoreMatch = async (req, res) => {
           propertyType: sourcePropertyType,
           developmentPotential:
             sourceDevelopmentPotential === null ? null : { $ne: null },
+          address: { $ne: property.address }, // user property sai aarha oski apni id hai thats why address lia hai
           _id: { $ne: new ObjectId(property._id) }, // Use new keyword here
         },
       },
@@ -442,8 +448,8 @@ exports.calculateScoreMatch = async (req, res) => {
       (result) => result.property.listingType === "Sold"
     );
 
-    console.log(recommendedSales.length)
-    console.log(recommendedSold.length)
+    console.log(recommendedSales.length);
+    console.log(recommendedSold.length);
     // If recommendedSales is less than 3, rerun with postcode-based query
     if (recommendedSales.length < 3) {
       matchedProperties = await Property.aggregate([
@@ -453,8 +459,9 @@ exports.calculateScoreMatch = async (req, res) => {
             propertyType: sourcePropertyType,
             developmentPotential:
               sourceDevelopmentPotential === null ? null : { $ne: null },
+            address: { $ne: property.address }, // user property sai aarha oski apni id hai thats why address lia hai
             _id: { $ne: new ObjectId(property._id) },
-            listingType:"Sale"
+            listingType: "Sale",
           },
         },
       ]);
@@ -472,7 +479,7 @@ exports.calculateScoreMatch = async (req, res) => {
             developmentPotential:
               sourceDevelopmentPotential === null ? null : { $ne: null },
             _id: { $ne: new ObjectId(property._id) },
-            listingType:"Sold"
+            listingType: "Sold",
           },
         },
       ]);
@@ -490,7 +497,7 @@ exports.calculateScoreMatch = async (req, res) => {
     // );
 
     const systemPrompt = `Return response in json format {logicalPrice:"",logicalReasoning:"}`;
-    const userInput = `You are an expert in pricing property and use recent sales comparable data, which I will give you to price property. I will give you an address and you will give me an accurate indication of its value. You will also determine the best price to list to generate the most amount of enquiry. You will observe below property features. You are to give us a range within 10%. You will give us the range like this in million format for example: $low(decimalNo)-$high(decimalNo)M which is just the figure. No explanation or description is needed.
+    const userInput = `You are an expert in pricing property and use recent sales comparable data, which I will give you to price property. I will give you an address and you will give me an accurate indication of its value. You will also determine the best price to list to generate the most amount of enquiry. You will observe below property features. You are to give us a range within 10%. You will give us the range like this in million format for example: $low(decimalNo)-high(decimalNo)M which is just the figure. No explanation or description is needed.
 
     Here is the property:
       
