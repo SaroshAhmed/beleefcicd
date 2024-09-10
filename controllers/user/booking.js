@@ -1,8 +1,6 @@
 const { google } = require('googleapis');
-const { s3 } = require('./profile');
 const Booking = require('../../models/Booking');
 const calendar = google.calendar('v3');
-
 
 exports.createBooking = async (req, res) => {
     if (!req.isAuthenticated()) {
@@ -95,8 +93,6 @@ exports.createBooking = async (req, res) => {
     }
 };
 
-
-
 // reschedule event
 exports.rescheduleBooking = async (req, res) => {
     if (!req.isAuthenticated()) {
@@ -183,13 +179,11 @@ exports.cancelBooking = async (req, res) => {
     }
 };
 
+//will come from db
 exports.getAllBookings = async (req, res) => {
-    if (!req.isAuthenticated()) {
-        return res.redirect('/auth/google');
-    }
 
     try {
-        const bookings = await Booking.find({}).exec();
+        const bookings = await Booking.find({userId});
 
         if (!bookings.length) {
             return res.status(404).json({ message: 'No bookings found' });
@@ -201,24 +195,3 @@ exports.getAllBookings = async (req, res) => {
     }
 };
 
-
-
-
-// exports.uploadImage= async (req, res) => {
-//     const { fileName, fileType } = req.query;
-
-//     const s3Params = {
-//         Bucket: process.env.S3_BUCKET_NAME,
-//         Key: fileName,
-//         Expires: 60, // URL expires in 60 seconds
-//         ContentType: fileType,
-//         ACL: 'public-read', // Make file publicly readable
-//     };
-
-//     try {
-//         const uploadURL = await s3.getSignedUrlPromise('putObject', s3Params);
-//         res.json({ uploadURL });
-//     } catch (err) {
-//         res.status(500).json({ error: err.message });
-//     }
-// };
