@@ -10,12 +10,12 @@ const {
 const { isAuthenticated } = require("../../../middleware/auth");
 
 
-router.post("/create-prompt", isAuthenticated, createPrompt);
+router.post("/", isAuthenticated, createPrompt);
 
-router.get('/get-all-prompt', isAuthenticated, getAllPrompt);
+router.get('/', isAuthenticated, getAllPrompt);
 
-router.get("/single-prompt", isAuthenticated,singlePrompt );
-router.post("/update-prompt", isAuthenticated, updatePrompt);
-router.delete("/delete-prompt", isAuthenticated, deletePrompt);
+router.get("/:id", isAuthenticated,singlePrompt );
+router.put("/:id", isAuthenticated, updatePrompt);
+router.delete("/:id", isAuthenticated, deletePrompt);
 
 module.exports = router;
