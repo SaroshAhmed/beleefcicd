@@ -433,8 +433,7 @@ exports.calculateScoreMatch = async (req, res) => {
           propertyType: sourcePropertyType,
           developmentPotential:
             sourceDevelopmentPotential === null ? null : { $ne: null },
-          address: { $ne: property.address }, // user property sai aarha oski apni id hai thats why address lia hai
-          _id: { $ne: new ObjectId(property._id) }, // Use new keyword here
+          listingId: { $ne: property.listingId },
         },
       },
     ]);
@@ -448,9 +447,6 @@ exports.calculateScoreMatch = async (req, res) => {
       (result) => result.property.listingType === "Sold"
     );
 
-    console.log(recommendedSales.length);
-    console.log(recommendedSold.length);
-    // If recommendedSales is less than 3, rerun with postcode-based query
     if (recommendedSales.length < 3) {
       matchedProperties = await Property.aggregate([
         {
@@ -459,8 +455,7 @@ exports.calculateScoreMatch = async (req, res) => {
             propertyType: sourcePropertyType,
             developmentPotential:
               sourceDevelopmentPotential === null ? null : { $ne: null },
-            address: { $ne: property.address }, // user property sai aarha oski apni id hai thats why address lia hai
-            _id: { $ne: new ObjectId(property._id) },
+            listingId: { $ne: property.listingId },
             listingType: "Sale",
           },
         },
@@ -478,7 +473,7 @@ exports.calculateScoreMatch = async (req, res) => {
             propertyType: sourcePropertyType,
             developmentPotential:
               sourceDevelopmentPotential === null ? null : { $ne: null },
-            _id: { $ne: new ObjectId(property._id) },
+            listingId: { $ne: property.listingId },
             listingType: "Sold",
           },
         },
@@ -491,10 +486,6 @@ exports.calculateScoreMatch = async (req, res) => {
     recommendedSales = recommendedSales.sort((a, b) => b.score - a.score);
 
     recommendedSold = recommendedSold.sort((a, b) => b.score - a.score);
-
-    // recommendedSold = recommendedSold.sort(
-    //   (a, b) => b.property.price - a.property.price
-    // );
 
     const systemPrompt = `Return response in json format {logicalPrice:"",logicalReasoning:"}`;
     const userInput = `You are an expert in pricing property and use recent sales comparable data, which I will give you to price property. I will give you an address and you will give me an accurate indication of its value. You will also determine the best price to list to generate the most amount of enquiry. You will observe below property features. You are to give us a range within 10%. You will give us the range like this in million format for example: $low(decimalNo)-high(decimalNo)M which is just the figure (range should be within 10% means difference between low high only 10%). No explanation or description is needed.
@@ -576,9 +567,54 @@ exports.calculateScoreMatch = async (req, res) => {
     After finding the logical price, you have to give logical reasoning in one paragraph for that property.`;
 
     const logical = await chatCompletion(systemPrompt, userInput);
+
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    const recentAreaSoldProcessQuery = {
+      suburb: property.suburb,
+      dateListed: { $gte: sixMonthsAgo }, // Last 6 months
+      listingId: { $ne: property.listingId }, // Not equal to property.listingId
+      beleefSaleProcess: {
+        $in: ["Private treaty adjustment", "Not sold at auction", "Withdrawn"],
+      },
+      listingType: "Sold",
+    };
+
+    const currentAreaProcessQuery = {
+      suburb: property.suburb,
+      dateListed: { $gte: sixMonthsAgo }, // Last 6 months
+      listingId: { $ne: property.listingId }, // Not equal to property.listingId
+      beleefSaleProcess: {
+        $in: ["Private treaty adjustment", "Not sold at auction", "Withdrawn"],
+      },
+      listingType: "Sale",
+    };
+
+    const duplexPropertiesQuery = {
+      propertyType: "Duplex",
+      suburb: property.suburb,
+      dateListed: { $gte: sixMonthsAgo }, // Last 6 months
+      listingId: { $ne: property.listingId }, // Not equal to property.listingId
+      listingType: "Sold",
+    };
+
+    const recentAreaSoldProcess = await Property.find(
+      recentAreaSoldProcessQuery
+    );
+    const currentAreaProcess = await Property.find(currentAreaProcessQuery);
+    const duplexProperties = await Property.find(duplexPropertiesQuery).sort({ price: -1 });;
+
     return res.status(200).json({
       success: true,
-      data: { logical, recommendedSales, recommendedSold },
+      data: {
+        logical,
+        recommendedSales,
+        recommendedSold,
+        recentAreaSoldProcess,
+        currentAreaProcess,
+        duplexProperties,
+      },
     });
   } catch (error) {
     console.error("Error in user calculateScoreMatch API: ", error.message);
