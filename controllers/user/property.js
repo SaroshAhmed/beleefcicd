@@ -277,8 +277,8 @@ exports.calculateScoreMatch = async (req, res) => {
           }
 
           // Bedrooms, Bathrooms, Carspaces
-          if (property.bedrooms === targetProperty.bedrooms) {
-            score += 5;
+          if (targetProperty.bedrooms >= property.bedrooms) {
+            score += 7;
             keyMatches.push("Bedrooms");
           }
           if (property.bathrooms === targetProperty.bathrooms) {
@@ -407,10 +407,6 @@ exports.calculateScoreMatch = async (req, res) => {
             buildTypeTarget === "1 storey" &&
             targetProperty.finishes !== "High-end finishes"
           ) {
-            score = 0;
-          }
-
-          if (property.bedrooms > targetProperty.bedrooms) {
             score = 0;
           }
 

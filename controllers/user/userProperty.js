@@ -31,6 +31,9 @@ exports.createProperty = async (req, res) => {
     // Convert the property document to a plain object
     const propertyData = property.toObject();
 
+    // Remove the _id field from the propertyData
+    const { _id, ...restPropertyData } = propertyData;
+
     const boxStatus = [
       { name: "bookAppraisal", status: "unlock" },
       { name: "priceProcess", status: "unlock" },
@@ -54,7 +57,7 @@ exports.createProperty = async (req, res) => {
     // Create a new UserProperty document
     const userProperty = await UserProperty.create({
       userId: id,
-      ...propertyData,
+      ...restPropertyData,
       boxStatus,
       processChain,
     });
