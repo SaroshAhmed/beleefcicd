@@ -19,6 +19,7 @@ const bookingSchema = new mongoose.Schema({
   userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
   name: { type: String, required: true },
   description: { type: String, required: true },
+  address: { type: String, required: true },
   vendors: [vendorSchema],
   agent: agentSchema,
   startTime: { type: Date, required: true },
