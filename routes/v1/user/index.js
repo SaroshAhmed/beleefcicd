@@ -7,6 +7,8 @@ const propertyRoutes = require("./property");
 const shareRoutes = require("./share");
 const userPropertyRoutes = require("./userProperty");
 const bookingRoutes = require("./booking");
+const openaiRoutes = require("./openai");
+const postListRoutes = require("./postList");
 
 router.use("/auth", authRoutes);
 router.use("/profile", profileRoutes);
@@ -14,5 +16,7 @@ router.use("/property", propertyRoutes);
 router.use("/share", shareRoutes);
 router.use("/userProperty", userPropertyRoutes);
 router.use("/bookings", bookingRoutes);
+router.use("/openai", openaiRoutes);
+router.use("/postList", postListRoutes);
 
 module.exports = router;

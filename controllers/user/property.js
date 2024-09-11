@@ -566,7 +566,7 @@ exports.calculateScoreMatch = async (req, res) => {
     
     After finding the logical price, you have to give logical reasoning in one paragraph for that property.`;
 
-    const logical = await chatCompletion(systemPrompt, userInput);
+    const logical = await chatCompletion(systemPrompt, userInput,jsonFormat=true);
 
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);

@@ -76,28 +76,89 @@ const analyzeImagesAIUrls = async (files, prompt) => {
   }
 };
 
-const chatCompletion = async (systemPrompt, userInput) => {
+const chatCompletion = async (systemPrompt, userInput, jsonFormat = false) => {
   try {
-    const response = await openai.chat.completions.create({
+    // Build the messages array
+    const messages = [
+      {
+        role: "system",
+        content: systemPrompt,
+      },
+      {
+        role: "user",
+        content: userInput,
+      },
+    ];
+
+    // Build the options object, conditionally adding response_format if jsonFormat is true
+    const options = {
       model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt,
-        },
-        {
-          role: "user",
-          content: userInput,
-        },
-      ],
-      response_format: { type: "json_object" },
+      messages,
       n: 1,
       temperature: 0,
-    });
+      ...(jsonFormat && { response_format: { type: "json_object" } }), // Conditionally add response_format
+    };
+
+    // Call the OpenAI API
+    const response = await openai.chat.completions.create(options);
 
     const jsonString = response.choices[0].message.content;
 
-    return JSON.parse(jsonString);
+    // Parse the JSON response if jsonFormat is true, otherwise return raw string
+    return jsonFormat ? JSON.parse(jsonString) : jsonString;
+  } catch (error) {
+    console.error("Error in chatCompletion: ", error.message);
+    throw error;
+  }
+};
+
+const imageCompletion = async (
+  files,
+  systemPrompt,
+  userInput,
+  jsonFormat = false
+) => {
+  console.log(systemPrompt, userInput);
+  const filesIsArray = Array.isArray(files);
+  const filesList = filesIsArray ? files : [files];
+  try {
+    let messages = {
+      role: "user",
+      content: [
+        {
+          type: "text",
+          text: systemPrompt + userInput,
+        },
+      ],
+    };
+    // for (const file of filesList) {
+    //   messages[1].content.push({
+    //     type: "image_url",
+    //     image_url: { url: file },
+    //   });
+    // }
+    for (const file of filesList) {
+      const base64Image = `data:${file.mimetype};base64,${file.buffer.toString(
+        "base64"
+      )}`;
+
+      messages.content.push({
+        type: "image_url",
+        image_url: { url: base64Image },
+      });
+    }
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [messages],
+      n: 1,
+      temperature: 0,
+      ...(jsonFormat && { response_format: { type: "json_object" } }), // Conditionally add response_format
+    });
+
+    const jsonString = response.choices[0].message.content;
+    console.log(jsonString);
+    return jsonFormat ? JSON.parse(jsonString) : jsonString;
   } catch (error) {
     console.error("Error analyzing file: ", error.message);
     throw error;
@@ -238,5 +299,6 @@ const guessBattleAxe = async (imageBuffer) => {
 module.exports = {
   analyzeImagesAIUrls,
   guessBattleAxe,
-  chatCompletion
+  chatCompletion,
+  imageCompletion,
 };
