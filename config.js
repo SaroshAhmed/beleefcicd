@@ -12,5 +12,7 @@ module.exports = {
   DOMAIN_API_KEY:process.env.DOMAIN_API_KEY,
   OPENAI_API_KEY:process.env.OPENAI_API_KEY,
   GOOGLE_MAPS_API_KEY:process.env.GOOGLE_MAPS_API_KEY,
-  STRIPE_PRIVATE_KEY:process.env.STRIPE_PRIVATE_KEY
+  STRIPE_PRIVATE_KEY:process.env.STRIPE_PRIVATE_KEY,
+  MAIL_USER:process.env.MAILUSER,
+  MAIL_PASS:process.env.MAILPASS
 };

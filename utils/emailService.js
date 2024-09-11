@@ -1,19 +1,19 @@
 // utils/email.js
 const nodemailer = require("nodemailer");
-const { mailUser, mailPass } = require("../config");
+const { MAIL_USER,MAIL_PASS } = require("../config");
 
 const transporter = nodemailer.createTransport({
   service: "Gmail",
   auth: {
-    user: mailUser,
-    pass: mailPass,
+    user: MAIL_USER,
+    pass: MAIL_PASS,
   },
 });
 
 const sendEmail = (to, subject, text) => {
   const mailOptions = {
     // from: mailUser,
-    from: `Melo <${mailUser}>`,
+    from: `Beleef <${mailUser}>`,
     to,
     subject,
     html: text,
