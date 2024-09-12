@@ -131,21 +131,22 @@ const imageCompletion = async (
         },
       ],
     };
-    // for (const file of filesList) {
-    //   messages[1].content.push({
-    //     type: "image_url",
-    //     image_url: { url: file },
-    //   });
-    // }
-    for (const file of filesList) {
-      const base64Image = `data:${file.mimetype};base64,${file.buffer.toString(
-        "base64"
-      )}`;
 
-      messages.content.push({
-        type: "image_url",
-        image_url: { url: base64Image },
-      });
+    // If files are provided, process them, otherwise just handle the text
+    if (files) {
+      const filesIsArray = Array.isArray(files);
+      const filesList = filesIsArray ? files : [files];
+
+      for (const file of filesList) {
+        const base64Image = `data:${
+          file.mimetype
+        };base64,${file.buffer.toString("base64")}`;
+
+        messages.content.push({
+          type: "image_url",
+          image_url: { url: base64Image },
+        });
+      }
     }
 
     const response = await openai.chat.completions.create({

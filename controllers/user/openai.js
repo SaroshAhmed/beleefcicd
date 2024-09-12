@@ -45,12 +45,12 @@ exports.image = async (req, res) => {
     const { systemPrompt, userMessage } = req.body;
 
     // Validate the inputs
-    if (!systemPrompt || !userMessage || !listFiles.length) {
+    if (!systemPrompt) {
       return res
         .status(400)
         .json({
           success: false,
-          message: "Invalid request data or no files uploaded",
+          message: "Invalid request data",
         });
     }
 
@@ -72,7 +72,7 @@ exports.image = async (req, res) => {
     }
 
     const response = await imageCompletion(
-      listFiles,
+      listFiles && listFiles.length ? listFiles : null,
       prompt.description,
       userMessage,
       (jsonFormat = true)
