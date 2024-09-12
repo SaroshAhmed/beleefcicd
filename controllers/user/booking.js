@@ -2,11 +2,44 @@ const { google } = require("googleapis");
 const Booking = require("../../models/Booking");
 const calendar = google.calendar("v3");
 const { sendEmail } = require("../../utils/emailService");
+const { sendSms } = require("../../utils/smsService");
+const { v4: uuidv4 } = require("uuid");
+const { REACT_APP_FRONTEND_URL } = require("../../config");
+
+const path = require("path");
+
+// // Initialize the Google API client with the service account for sending emails as keyevents@ausrealty.com.au
+const initializeServiceAccountClient = () => {
+  const client = new google.auth.GoogleAuth({
+    keyFile: path.join(__dirname, "../../appausrealty-4f25138edcaf.json"), // Path to your service account JSON file
+    scopes: ["https://www.googleapis.com/auth/calendar"], // Google Calendar scope
+    clientOptions: {
+      subject: "keyevents@ausrealty.com.au", // Impersonate keyevents@ausrealty.com.au
+    },
+  });
+
+  return client;
+};
 
 exports.createBooking = async (req, res) => {
   if (!req.isAuthenticated()) {
     return res.redirect("/auth/google");
   }
+
+  // Use the authenticated user's OAuth2 credentials for event creation/checking
+  const oauth2Client = new google.auth.OAuth2();
+  oauth2Client.setCredentials({
+    access_token: req.user.accessToken, // Using logged-in user's access token
+  });
+
+  const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+
+  // Use the service account for sending invitations as keyevents@ausrealty.com.au
+  const serviceAccountClient = initializeServiceAccountClient();
+  const serviceOauth2Client = await serviceAccountClient.getClient(); // Get the authenticated client
+
+  // Create a unique identifier for the property (could also be a slug or hash)
+  const uniqueId = uuidv4();
 
   const nameArray = req.user.name.toString().split(" ");
   const firstName = nameArray[0];
@@ -18,24 +51,16 @@ exports.createBooking = async (req, res) => {
     firstName,
     lastName,
     email: req.user.email,
-    mobile: "61415778969",
+    mobile: "61415778969", // This seems hardcoded; change if necessary
   };
 
   const name = "Book Appraisal";
-  const description = "";
-
-  const oauth2Client = new google.auth.OAuth2();
-  oauth2Client.setCredentials({
-    access_token: req.user.accessToken,
-  });
-
-  const calendarId = "primary";
+  const prelistLink = `${REACT_APP_FRONTEND_URL}/prelist/${uniqueId}`;
 
   try {
-    // Check for existing events in the given time slot
+    // Check for existing events in the given time slot using the logged-in user's credentials
     const { data } = await calendar.events.list({
-      auth: oauth2Client,
-      calendarId: calendarId,
+      calendarId: "primary",
       timeMin: startTime,
       timeMax: endTime,
       singleEvents: true,
@@ -45,24 +70,51 @@ exports.createBooking = async (req, res) => {
     const events = data.items;
 
     if (events.length > 0) {
-      return res.status(409).json({ message: "Time slot is already booked." });
+      return res.status(409).json({
+        success: false,
+        message: "Time slot is already booked.",
+      });
     }
 
-    // Create a new event in Google Calendar
+    // Create a new event in Google Calendar using the logged-in user's calendar
     const event = {
-      summary: "Reserved Time Slot",
+      summary: address,
+      description: `Appreciate your time, looking forward to meeting you.
+
+Further details in preparation for our meeting; ${prelistLink}. 
+      
+Regards,
+${agent.firstName} ${agent.lastName}
+      `,
       start: { dateTime: startTime, timeZone: "Australia/Sydney" },
       end: { dateTime: endTime, timeZone: "Australia/Sydney" },
+      attendees: [
+        {
+          email: agent.email, // Agent email
+          displayName: `${agent.firstName} ${agent.lastName}`, // Agent name
+        },
+        ...vendors.map((vendor) => ({
+          email: vendor.email,
+          displayName: `${vendor.firstName} ${vendor.lastName}`,
+        })),
+      ],
       reminders: {
         useDefault: false,
-        overrides: [{ method: "popup", minutes: 60 }],
+        overrides: [
+          { method: "email", minutes: 24 * 60 }, // Send email reminder 1 day before
+          { method: "email", minutes: 5 }, // Send email reminder 5 minutes before
+          { method: "popup", minutes: 10 }, // Show popup reminder 10 minutes before
+        ],
       },
+      sendUpdates: "all", // This ensures the invitation email is sent
     };
 
+    // Insert the event using the service account to ensure keyevents@ausrealty.com.au is the sender
     const eventResponse = await calendar.events.insert({
-      auth: oauth2Client,
-      calendarId: calendarId,
+      auth: serviceOauth2Client, // Use the service account for sending invites
+      calendarId: "primary",
       resource: event,
+      sendUpdates: "all", // Send email invitations to all attendees
     });
 
     // Extract the Google event ID
@@ -70,6 +122,7 @@ exports.createBooking = async (req, res) => {
 
     // Save the booking in MongoDB with the Google event ID
     const booking = new Booking({
+      userId: req.user.id,
       name,
       address,
       vendors,
@@ -77,26 +130,40 @@ exports.createBooking = async (req, res) => {
       startTime,
       endTime,
       googleEventId, // Save the Google event ID
+      prelistLink,
       status: "Active",
     });
 
     await booking.save();
 
-    const recipientEmail = "recipient@example.com";
-    const subject = "Meeting Reminder";
-    const htmlContent =
-      "<h1>Reminder</h1><p>This is a reminder for your upcoming meeting.</p>";
+    try {
+      // Sending SMS to each vendor
+      const smsPromises = vendors.map((vendor) => {
+        const recipient = {
+          firstName: vendor.firstName,
+          lastName: vendor.lastName,
+          mobile: vendor.mobile, // Assuming mobile number is in vendor object
+        };
+  
+        return sendSms("create", recipient, agent, startTime, prelistLink, address)
+          .then(() => {
+            // console.log(`SMS sent successfully to ${vendor.mobile}`);
+          })
+          .catch((err) => {
+            console.error(`Error sending SMS to ${vendor.mobile}`, err);
+          });
+      });
+  
+      // Await all SMS sends
+      await Promise.all(smsPromises);
+  
+      // Sending SMS to the agent/sender
+      await sendSms("create", agent, agent, startTime, prelistLink, address);
 
-    sendEmail(recipientEmail, subject, htmlContent)
-      .then(() => console.log("Email sent successfully"))
-      .catch((err) => console.log("Error sending email", err));
-
-    const recipient = "61415778969";
-    const date = "seems like event Date";
-
-    sendSms("create", recipient.mobile,sender.mobile, date, link, address)
-      .then(() => console.log("SMS sent successfully"))
-      .catch((err) => console.log("Error sending SMS", err));
+    } catch (err) {
+      console.error("Error during booking creation or SMS sending", err);
+      res.status(500).json({ error: err.message });
+    }
 
     res
       .status(201)

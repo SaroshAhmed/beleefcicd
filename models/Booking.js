@@ -18,7 +18,7 @@ const agentSchema = new mongoose.Schema({
 const bookingSchema = new mongoose.Schema({
   userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
   name: { type: String, required: true },
-  description: { type: String, required: true },
+  description: { type: String},
   address: { type: String, required: true },
   vendors: [vendorSchema],
   agent: agentSchema,
@@ -29,6 +29,11 @@ const bookingSchema = new mongoose.Schema({
     type: String,
     enum: ['Active', 'Completed', 'Cancelled'],
     default: 'Active',
+  },
+  prelistLink: {
+    type: String,
+    unique: true,
+    required: true,
   },
 }, { timestamps: true });
 

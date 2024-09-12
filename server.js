@@ -34,7 +34,8 @@ app.use(
     }),
     cookie: {
       secure: false, // Use secure: true if using HTTPS
-      maxAge: 7*24 * 60 * 60 * 1000, // Set the session to expire after 30 minutes (in milliseconds)
+      // maxAge: 7*24 * 60 * 60 * 1000, // Set the session to expire after 30 minutes (in milliseconds)
+      maxAge: 1 * 60 * 60 * 1000, // Set the session to expire after 1 hour (in milliseconds)
     },
   })
 );
