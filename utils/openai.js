@@ -92,7 +92,7 @@ const chatCompletion = async (systemPrompt, userInput, jsonFormat = false) => {
 
     // Build the options object, conditionally adding response_format if jsonFormat is true
     const options = {
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages,
       n: 1,
       temperature: 0,
@@ -150,7 +150,7 @@ const imageCompletion = async (
     }
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [messages],
       n: 1,
       temperature: 0,
