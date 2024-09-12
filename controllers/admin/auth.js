@@ -2,7 +2,7 @@ const Admin= require("../../models/Admin");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-const sendEmail  = require("../../utils/email");
+const sendEmail  = require("../../utils/emailService");
 const crypto = require("crypto");
 
 

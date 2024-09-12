@@ -1,4 +1,4 @@
-// utils/email.js
+// utils/emailService.js
 const nodemailer = require("nodemailer");
 const { MAIL_USER,MAIL_PASS } = require("../config");
 

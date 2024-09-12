@@ -1,7 +1,7 @@
 const { google } = require("googleapis");
 const Booking = require("../../models/Booking");
 const calendar = google.calendar("v3");
-const { sendEmail } = require("./emailService");
+const { sendEmail } = require("../../utils/emailService");
 
 exports.createBooking = async (req, res) => {
   if (!req.isAuthenticated()) {
