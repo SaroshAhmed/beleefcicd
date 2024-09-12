@@ -30,6 +30,11 @@ const bookingSchema = new mongoose.Schema({
     enum: ['Active', 'Completed', 'Cancelled'],
     default: 'Active',
   },
+  prelistId: {
+    type: String,
+    unique: true,
+    required: true,
+  },
   prelistLink: {
     type: String,
     unique: true,

@@ -152,6 +152,7 @@ ${agent.firstName} ${agent.lastName}
       startTime,
       endTime,
       googleEventId, // Save the Google event ID
+      prelistId:uniqueId,
       prelistLink,
       status: "Active",
     });
@@ -418,7 +419,9 @@ exports.cancelBooking = async (req, res) => {
 //will come from db
 exports.getAllBookings = async (req, res) => {
   try {
-    const bookings = await Booking.find({ userId });
+    const { id } = req.user;
+
+    const bookings = await Booking.find({ userId:id });
 
     if (!bookings.length) {
       return res.status(404).json({ message: "No bookings found" });
@@ -427,5 +430,23 @@ exports.getAllBookings = async (req, res) => {
     return res.status(200).json({ success: true, data: bookings });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Controller to get booking by prelistId
+exports.getBookingByPrelistId = async (req, res) => {
+  try {
+    const { prelistId } = req.params;
+
+    // Find the booking with the matching prelistLink
+    const booking = await Booking.findOne({ prelistId });
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    res.status(200).json({ success: true, data: booking });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server Error', error });
   }
 };

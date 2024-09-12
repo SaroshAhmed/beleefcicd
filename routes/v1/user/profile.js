@@ -8,7 +8,6 @@ const {
 } = require("../../../controllers/user/profile");
 const { isAuthenticated } = require("../../../middleware/auth");
 
-
 router.post("/create-setup-intent", isAuthenticated, createSetupIntent);
 
 router.get('/generate-presigned-url', isAuthenticated, generatePresignedUrl);
