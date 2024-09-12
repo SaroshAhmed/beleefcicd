@@ -8,6 +8,8 @@ const routes = require("./routes/v1");
 const cookieParser = require("cookie-parser");
 const { MONGO_URI, SECRET_KEY, REACT_APP_FRONTEND_URL } = require("./config");
 
+const bookingReminder = require("./cronJobs/bookingReminder");
+
 const app = express();
 require("./config/passport");
 
@@ -67,6 +69,7 @@ app.get("/", (req, res) => {
 });
 
 databaseConnect();
+bookingReminder();
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
