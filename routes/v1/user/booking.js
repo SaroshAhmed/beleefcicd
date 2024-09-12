@@ -8,9 +8,8 @@ const {
 } = require("../../../controllers/user/booking");
 const { isAuthenticated } = require("../../../middleware/auth");
 
-
 router.post("/",isAuthenticated,createBooking );
-router.delete("/:eventId",isAuthenticated,cancelBooking);
-router.patch("/:eventId/reschedule",isAuthenticated,rescheduleBooking);
+router.put("/cancel/:id",isAuthenticated,cancelBooking);
+router.put("/:id",isAuthenticated,rescheduleBooking);
 router.get("/",isAuthenticated,getAllBookings);
 module.exports = router;

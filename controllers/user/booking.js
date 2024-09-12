@@ -144,121 +144,252 @@ ${agent.firstName} ${agent.lastName}
           lastName: vendor.lastName,
           mobile: vendor.mobile, // Assuming mobile number is in vendor object
         };
-  
-        return sendSms("create", recipient, agent, startTime, prelistLink, address)
+
+        return sendSms(
+          "create",
+          recipient,
+          agent,
+          startTime,
+          prelistLink,
+          address
+        )
           .then(() => {
             // console.log(`SMS sent successfully to ${vendor.mobile}`);
           })
-          .catch((err) => {
-            console.error(`Error sending SMS to ${vendor.mobile}`, err);
+          .catch((error) => {
+            console.error(`Error sending SMS to ${vendor.mobile}`, error);
           });
       });
-  
+
       // Await all SMS sends
       await Promise.all(smsPromises);
-  
+
       // Sending SMS to the agent/sender
       await sendSms("create", agent, agent, startTime, prelistLink, address);
-
-    } catch (err) {
-      console.error("Error during booking creation or SMS sending", err);
-      res.status(500).json({ error: err.message });
+    } catch (error) {
+      console.error("Error during booking creation or SMS sending", error);
+      res.status(500).json({ success: false, message: error.message });
     }
 
-    res
-      .status(201)
-      .json({ message: "Booking created", event: eventResponse.data, booking });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(201).json({ success: true, data: booking });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// reschedule event
 exports.rescheduleBooking = async (req, res) => {
   if (!req.isAuthenticated()) {
     return res.redirect("/auth/google");
   }
-
-  const { eventId } = req.params; // This should be the Google event ID
-  const { startTime, endTime } = req.body;
-
-  const oauth2Client = new google.auth.OAuth2();
-  oauth2Client.setCredentials({
-    access_token: req.user.accessToken,
-  });
-
+  const { id } = req.params;
+  const { newStartTime, newEndTime } = req.body;
+  const bookingId = id;
   try {
-    // Reschedule the event in Google Calendar
-    const eventResponse = await calendar.events.patch({
-      auth: oauth2Client,
-      calendarId: "primary",
-      eventId,
-      resource: {
-        start: { dateTime: startTime, timeZone: "Australia/Sydney" },
-        end: { dateTime: endTime, timeZone: "Australia/Sydney" },
-        reminders: {
-          useDefault: false,
-          overrides: [{ method: "popup", minutes: 60 }],
-        },
-      },
-    });
-
-    // Update the booking in MongoDB
-    const booking = await Booking.findOneAndUpdate(
-      { googleEventId: eventId }, // Use the Google event ID for the lookup
-      { startTime, endTime },
-      { new: true }
-    );
+    // Find the existing booking by its ID
+    const booking = await Booking.findById(bookingId);
 
     if (!booking) {
-      return res.status(404).json({ message: "Booking not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+
+    const { googleEventId, vendors, address, agent } = booking;
+
+    // Use the authenticated user's OAuth2 credentials for event rescheduling
+    const oauth2Client = new google.auth.OAuth2();
+    oauth2Client.setCredentials({
+      access_token: req.user.accessToken, // Using logged-in user's access token
+    });
+
+    const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+
+    // Use the service account for sending invitations as keyevents@ausrealty.com.au
+    const serviceAccountClient = initializeServiceAccountClient();
+    const serviceOauth2Client = await serviceAccountClient.getClient(); // Get the authenticated client
+
+    // Update the existing event in Google Calendar
+    const updatedEvent = {
+      start: { dateTime: newStartTime, timeZone: "Australia/Sydney" },
+      end: { dateTime: newEndTime, timeZone: "Australia/Sydney" },
+      attendees: [
+        {
+          email: agent.email, // Agent email
+          displayName: `${agent.firstName} ${agent.lastName}`, // Agent name
+        },
+        ...vendors.map((vendor) => ({
+          email: vendor.email,
+          displayName: `${vendor.firstName} ${vendor.lastName}`,
+        })),
+      ],
+      reminders: {
+        useDefault: false,
+        overrides: [
+          { method: "email", minutes: 24 * 60 }, // Send email reminder 1 day before
+          { method: "email", minutes: 5 }, // Send email reminder 5 minutes before
+          { method: "popup", minutes: 10 }, // Show popup reminder 10 minutes before
+        ],
+      },
+      sendUpdates: "all", // Ensure attendees receive an update notification
+    };
+
+    const eventResponse = await calendar.events.patch({
+      auth: serviceOauth2Client, // Use the service account for rescheduling
+      calendarId: "primary",
+      eventId: googleEventId, // Use the event ID stored in MongoDB
+      resource: updatedEvent,
+      sendUpdates: "all", // Notify all attendees of the rescheduling
+    });
+
+    // Update the booking in MongoDB with the new startTime and endTime
+    booking.startTime = newStartTime;
+    booking.endTime = newEndTime;
+    await booking.save();
+
+    // Notify vendors and agent via SMS about the rescheduled event
+    try {
+      // Sending SMS to each vendor about the updated meeting time
+      const smsPromises = vendors.map((vendor) => {
+        const recipient = {
+          firstName: vendor.firstName,
+          lastName: vendor.lastName,
+          mobile: vendor.mobile, // Assuming mobile number is in vendor object
+        };
+
+        return sendSms(
+          "update",
+          recipient,
+          agent,
+          newStartTime,
+          booking.prelistLink,
+          address
+        )
+          .then(() => {})
+          .catch((error) => {
+            console.error(`Error sending SMS to ${vendor.mobile}`, error);
+          });
+      });
+
+      // Await all SMS sends
+      await Promise.all(smsPromises);
+
+      // Sending SMS to the agent/sender
+      await sendSms(
+        "update",
+        agent,
+        agent,
+        newStartTime,
+        booking.prelistLink,
+        address
+      );
+    } catch (error) {
+      console.error("Error during booking rescheduling or SMS sending", error);
+      res.status(500).json({ success: false, message: error.message });
     }
 
     res.status(200).json({
-      message: "Booking rescheduled",
-      event: eventResponse.data,
-      booking,
+      success: true,
+      data: booking,
     });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Cancel Booking
 exports.cancelBooking = async (req, res) => {
   if (!req.isAuthenticated()) {
     return res.redirect("/auth/google");
   }
 
-  const { eventId } = req.params; // This should be the Google event ID
-
-  const oauth2Client = new google.auth.OAuth2();
-  oauth2Client.setCredentials({
-    access_token: req.user.accessToken,
-  });
+  const { id } = req.params; // Booking ID to cancel
 
   try {
-    // Delete the event in Google Calendar
-    await calendar.events.delete({
-      auth: oauth2Client,
-      calendarId: "primary",
-      eventId,
-    });
-
-    // Update the booking status in MongoDB
-    const booking = await Booking.findOneAndUpdate(
-      { googleEventId: eventId }, // Use the Google event ID for the lookup
-      { status: "Cancelled" },
-      { new: true }
-    );
+    // Find the existing booking by its ID
+    const booking = await Booking.findById(id);
 
     if (!booking) {
-      return res.status(404).json({ message: "Booking not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
     }
 
-    res.status(200).json({ message: "Booking canceled", booking });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    const { googleEventId, vendors, agent, address, startTime } = booking;
+
+    // Use the authenticated user's OAuth2 credentials for deleting the event
+    const oauth2Client = new google.auth.OAuth2();
+    oauth2Client.setCredentials({
+      access_token: req.user.accessToken, // Using logged-in user's access token
+    });
+
+    const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+
+    // Use the service account for sending cancellations as keyevents@ausrealty.com.au
+    const serviceAccountClient = initializeServiceAccountClient();
+    const serviceOauth2Client = await serviceAccountClient.getClient(); // Get the authenticated client
+
+    // Cancel the event in Google Calendar
+    try {
+      await calendar.events.delete({
+        auth: serviceOauth2Client, // Use the service account for cancellation
+        calendarId: "primary",
+        eventId: googleEventId, // Use the event ID stored in MongoDB
+        sendUpdates: "all", // Notify all attendees about the cancellation
+      });
+    } catch (error) {
+      console.error("Error deleting Google Calendar event:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+
+    // Update the booking status to "Cancelled" in MongoDB
+    booking.status = "Cancelled";
+    await booking.save();
+
+    // Notify vendors and agent via SMS about the cancellation
+    try {
+      const smsPromises = vendors.map((vendor) => {
+        const recipient = {
+          firstName: vendor.firstName,
+          lastName: vendor.lastName,
+          mobile: vendor.mobile, // Assuming mobile number is in vendor object
+        };
+
+        return sendSms(
+          "cancel",
+          recipient,
+          agent,
+          startTime,
+          booking.prelistLink,
+          address
+        )
+          .then(() => {})
+          .catch((error) => {
+            console.error(`Error sending SMS to ${vendor.mobile}`, error);
+          });
+      });
+
+      // Await all SMS sends
+      await Promise.all(smsPromises);
+
+      // Sending SMS to the agent/sender
+      await sendSms(
+        "cancel",
+        agent,
+        agent,
+        startTime,
+        booking.prelistLink,
+        address
+      );
+    } catch (error) {
+      console.error("Error during booking cancellation or SMS sending", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+
+    return res.status(200).json({ success: true, data: booking });
+  } catch (error) {
+    console.error("Error cancelling booking:", error);
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -271,8 +402,8 @@ exports.getAllBookings = async (req, res) => {
       return res.status(404).json({ message: "No bookings found" });
     }
 
-    res.status(200).json({ bookings });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(200).json({ success: true, data: bookings });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
