@@ -10,7 +10,7 @@ exports.createProperty = async (req, res) => {
     // Check if a UserProperty with the same userId and address already exists
     const userPropertyExists = await UserProperty.findOne({
       userId: id,
-      address,
+      address: { $regex: new RegExp(address, "i") },
     });
 
     if (userPropertyExists) {
@@ -19,7 +19,7 @@ exports.createProperty = async (req, res) => {
 
     // Find the property by address
     const property = await Property.findOne({
-      address,
+      address: { $regex: new RegExp(address, "i") },
     });
 
     if (!property) {
