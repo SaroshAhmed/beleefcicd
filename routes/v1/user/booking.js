@@ -5,7 +5,8 @@ const {
     cancelBooking,
     rescheduleBooking,
     getAllBookings,
-    getBookingByPrelistId
+    getBookingByPrelistId,
+    getBookingsByAddress
 } = require("../../../controllers/user/booking");
 const { isAuthenticated } = require("../../../middleware/auth");
 
@@ -14,5 +15,6 @@ router.put("/cancel/:id",isAuthenticated,cancelBooking);
 router.put("/:id",isAuthenticated,rescheduleBooking);
 router.get("/",isAuthenticated,getAllBookings);
 router.get('/prelist/:prelistId', getBookingByPrelistId);
+router.get('/address/:address', getBookingsByAddress);
 
 module.exports = router;

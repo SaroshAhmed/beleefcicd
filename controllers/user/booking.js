@@ -454,3 +454,21 @@ exports.getBookingByPrelistId = async (req, res) => {
     res.status(500).json({ success: false, message: "Server Error", error });
   }
 };
+
+// Controller to get bookings by address
+exports.getBookingsByAddress = async (req, res) => {
+  try {
+    const { id } = req.user;
+    const { address } = req.params;
+
+    const bookings = await Booking.find({
+      userId: id,
+      address,
+      status: { $ne: "Cancelled" },
+    });
+
+    res.status(200).json({ success: true, data: bookings });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
