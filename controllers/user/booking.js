@@ -26,12 +26,13 @@ const initializeServiceAccountClient = () => {
       type: "service_account",
       project_id: process.env.EVENT_GOOGLE_PROJECT_ID,
       private_key_id: process.env.EVENT_GOOGLE_PRIVATE_KEY_ID,
-      private_key: process.env.EVENT_GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      private_key: process.env.EVENT_GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
       client_email: process.env.EVENT_GOOGLE_CLIENT_EMAIL,
       client_id: process.env.EVENT_GOOGLE_CLIENT_ID,
       auth_uri: process.env.EVENT_GOOGLE_AUTH_URI,
       token_uri: process.env.EVENT_GOOGLE_TOKEN_URI,
-      auth_provider_x509_cert_url: process.env.EVENT_GOOGLE_AUTH_PROVIDER_CERT_URL,
+      auth_provider_x509_cert_url:
+        process.env.EVENT_GOOGLE_AUTH_PROVIDER_CERT_URL,
       client_x509_cert_url: process.env.EVENT_GOOGLE_CLIENT_CERT_URL,
     },
     scopes: ["https://www.googleapis.com/auth/calendar"], // Google Calendar scope
@@ -67,13 +68,14 @@ exports.createBooking = async (req, res) => {
   const firstName = nameArray[0];
   const lastName = nameArray.length > 1 ? nameArray[1] : "";
 
-  const { vendors, startTime, endTime, address } = req.body;
+  const { vendors, startTime, endTime, address,property } = req.body;
 
   const agent = {
     firstName,
     lastName,
     email: req.user.email,
-    mobile: "61415778969", // This seems hardcoded; change if necessary
+    mobile: "61412278969", // This seems hardcoded; change if necessary
+    // mobile: "61415778969", // This seems hardcoded; change if necessary
   };
 
   const name = "Book Appraisal";
@@ -152,9 +154,10 @@ ${agent.firstName} ${agent.lastName}
       startTime,
       endTime,
       googleEventId, // Save the Google event ID
-      prelistId:uniqueId,
+      prelistId: uniqueId,
       prelistLink,
       status: "Active",
+      property
     });
 
     await booking.save();
@@ -421,11 +424,10 @@ exports.getAllBookings = async (req, res) => {
   try {
     const { id } = req.user;
 
-    const bookings = await Booking.find({ userId:id });
-
-    if (!bookings.length) {
-      return res.status(404).json({ message: "No bookings found" });
-    }
+    const bookings = await Booking.find({
+      userId: id,
+      status: { $ne: "Cancelled" },
+    });
 
     return res.status(200).json({ success: true, data: bookings });
   } catch (error) {
@@ -442,11 +444,13 @@ exports.getBookingByPrelistId = async (req, res) => {
     const booking = await Booking.findOne({ prelistId });
 
     if (!booking) {
-      return res.status(404).json({ success: false, message: 'Booking not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Booking not found" });
     }
 
     res.status(200).json({ success: true, data: booking });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server Error', error });
+    res.status(500).json({ success: false, message: "Server Error", error });
   }
 };
