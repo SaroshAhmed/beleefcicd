@@ -40,6 +40,10 @@ const bookingSchema = new mongoose.Schema({
     unique: true,
     required: true,
   },
+  property: {
+    type: Schema.Types.Mixed,
+    required: true,
+  },
 }, { timestamps: true });
 
 const Booking = mongoose.model('Booking', bookingSchema);

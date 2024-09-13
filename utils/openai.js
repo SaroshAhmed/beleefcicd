@@ -138,9 +138,7 @@ const imageCompletion = async (
       const filesList = filesIsArray ? files : [files];
 
       for (const file of filesList) {
-        const base64Image = `data:${
-          file.mimetype
-        };base64,${file.buffer.toString("base64")}`;
+        const base64Image = `data:image/jpeg;base64,${file.buffer.toString("base64")}`;
 
         messages.content.push({
           type: "image_url",

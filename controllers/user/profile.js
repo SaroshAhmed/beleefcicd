@@ -117,15 +117,31 @@ exports.saveProfile = async (req, res) => {
   }
 };
 
-exports.uploadImage=async (req, res) => {
-  const { profilePictureUrl } = req.body;
-  console.log("profilePictureUrl: " + profilePictureUrl);
-  const userId = req.user.id;
-
+exports.uploadImage = async (req, res) => {
   try {
-      const user = await User.findByIdAndUpdate(userId, { picture: profilePictureUrl }, { new: true });
-      res.json({ user });
-  } catch (err) {
-      res.status(500).json({ error: err.message });
+    const key = `profile/${req.user.id}.png`;
+    const params = {
+      Bucket: process.env.S3_BUCKET_NAME,
+      Key: key,
+      Expires: 60,
+      ContentType: "image/png",
+    };
+
+    const uploadURL = await s3.getSignedUrlPromise("putObject", params);
+
+    user.picture = uploadURL;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      uploadURL,
+      key,
+    });
+  } catch (error) {
+    console.error("Error generating pre-signed URL:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to generate pre-signed URL" });
   }
 };
