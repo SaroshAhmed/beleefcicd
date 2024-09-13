@@ -74,8 +74,7 @@ exports.createBooking = async (req, res) => {
     firstName,
     lastName,
     email: req.user.email,
-    mobile: "61412278969", // This seems hardcoded; change if necessary
-    // mobile: "61415778969", // This seems hardcoded; change if necessary
+    mobile: "61415778969", // This seems hardcoded; change if necessary
   };
 
   const name = "Book Appraisal";
