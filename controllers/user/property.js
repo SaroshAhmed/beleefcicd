@@ -415,6 +415,10 @@ exports.calculateScoreMatch = async (req, res) => {
             score = 0;
           }
 
+          if (targetProperty.bedrooms < property.bedrooms-1) {
+            score = 0;
+          }
+
           const finalScore = score;
           return finalScore > 70
             ? { property: targetProperty, score: finalScore, keyMatches }
@@ -566,7 +570,11 @@ exports.calculateScoreMatch = async (req, res) => {
     
     After finding the logical price, you have to give logical reasoning in one paragraph for that property.`;
 
-    const logical = await chatCompletion(systemPrompt, userInput,jsonFormat=true);
+    const logical = await chatCompletion(
+      systemPrompt,
+      userInput,
+      (jsonFormat = true)
+    );
 
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
@@ -603,7 +611,9 @@ exports.calculateScoreMatch = async (req, res) => {
       recentAreaSoldProcessQuery
     );
     const currentAreaProcess = await Property.find(currentAreaProcessQuery);
-    const duplexProperties = await Property.find(duplexPropertiesQuery).sort({ price: -1 });;
+    const duplexProperties = await Property.find(duplexPropertiesQuery).sort({
+      price: -1,
+    });
 
     return res.status(200).json({
       success: true,
@@ -702,5 +712,118 @@ exports.getBeleefSaleProcess = async (req, res) => {
       success: false,
       message: error.message,
     });
+  }
+};
+
+exports.regenerateLogicalPrice = async (req, res) => {
+  try {
+    const { property, checkedProperties } = req.body;
+
+    if (!property || !checkedProperties || checkedProperties.length === 0) {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Property data and checkedProperties are required",
+        });
+    }
+
+    // Function to format the checked properties for the prompt
+    const formatCheckedProperties = (properties) => {
+      return properties
+        .map(
+          (comp) => `
+    Address: ${comp.property.address}
+    Property type: ${comp.property.propertyType}
+    Price: ${comp.property.price}
+    ${comp.property.landArea ? `Land area: ${comp.property.landArea}` : ""}
+    ${comp.property.frontage ? `Frontage: ${comp.property.frontage}` : ""}
+    ${
+      comp.property.buildingArea
+        ? `Building area: ${comp.property.buildingArea}`
+        : ""
+    }
+    Beds: ${comp.property.bedrooms}
+    Bath: ${comp.property.bathrooms}
+    Car spaces: ${comp.property.carspaces}
+    Topography: ${comp.property.topography}
+    Construction: ${comp.property.buildType}
+    Wall Material: ${comp.property.wallMaterial}
+    Pool: ${comp.pool}
+    Tennis Court: ${comp.tennisCourt}
+    Water views: ${comp.property.waterViews}
+    Street traffic: ${comp.property.streetTraffic}
+    Finishes: ${comp.property.finishes}
+    Granny Flat: ${comp.property.grannyFlat}
+    ${
+      comp.property.developmentPotential
+        ? `Development Potential: ${comp.property.developmentPotential}`
+        : ""
+    }
+    ${
+      comp.property.additionalInformation
+        ? `Additional Information: ${comp.property.additionalInformation}`
+        : ""
+    }
+        `
+        )
+        .join("\n");
+    };
+
+    const systemPrompt = `Return response in json format {logicalPrice:"",logicalReasoning:"}`;
+    const userInput = `You are an expert in pricing property and use recent sales comparable data, which I will give you to price property. I will give you an address and you will give me an accurate indication of its value. You will also determine the best price to list to generate the most amount of enquiry. You will observe below property features. You are to give us a range within 10%. You will give us the range like this in million format for example: $low(decimalNo)-high(decimalNo)M (e.g, $2-2.2M: Exactly a 10% difference.) [range should be within 10% means difference between low high only 10%]. No explanation or description is needed.
+
+    Here is the property:
+      
+    Address: ${property.address}
+    Property type: ${property.propertyType}
+    ${property.landArea ? `Land area: ${property.landArea}` : ""}
+    ${property.frontage ? `Frontage: ${property.frontage}` : ""}
+    ${property.buildingArea ? `Building area: ${property.buildingArea}` : ""}
+    Beds: ${property.bedrooms}
+    Bath: ${property.bathrooms}
+    Car spaces: ${property.carspaces}
+    Topography: ${property.topography}
+    Construction: ${property.buildType}
+    Wall Material: ${property.wallMaterial}
+    Pool: ${property.pool}
+    Tennis Court: ${property.tennisCourt}
+    Water views: ${property.waterViews}
+    Street traffic: ${property.streetTraffic}
+    Finishes: ${property.finishes}
+    Granny Flat: ${property.grannyFlat}
+    ${
+      property.developmentPotential
+        ? `Development Potential: ${property.developmentPotential}`
+        : ""
+    }
+    ${
+      property.additionalInformation
+        ? `Additional Information: ${property.additionalInformation}`
+        : ""
+    }
+    
+    Now, find an estimate for this property using the following comparable sales:
+    
+    Recent properties that have been sold:
+    
+    ${formatCheckedProperties(checkedProperties)}
+    
+    After finding the logical price, you have to give logical reasoning in one paragraph for that property.`;
+
+    const logical = await chatCompletion(
+      systemPrompt,
+      userInput,
+      (jsonFormat = true)
+    );
+
+    // Return the logical price and reasoning
+    return res.status(200).json({
+      success: true,
+      data: logical,
+    });
+  } catch (error) {
+    console.error("Error in regenerateLogicalPrice API: ", error.message);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };

@@ -7,6 +7,7 @@ const {
   calculateScoreMatch,
   getAreaDynamics,
   getBeleefSaleProcess,
+  regenerateLogicalPrice,
 } = require("../../../controllers/user/property");
 const { isAuthenticated } = require("../../../middleware/auth");
 
@@ -16,6 +17,7 @@ router.post("/", isAuthenticated, createProperty);
 router.get("/address", isAuthenticated, getPropertiesAddress);
 router.get("/suburb/:suburb", getAreaDynamics); // Specific dynamic route
 router.post("/recommend", calculateScoreMatch);
+router.post("/regenerateLogicalPrice", regenerateLogicalPrice);
 
 // Catch-all dynamic route should be last
 router.get("/address/:address", isAuthenticated, getPropertyByAddress); // <-- Dynamic route last
