@@ -1,7 +1,6 @@
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 module.exports.isAuthenticated = (req, res, next) => {
-    console.log("req",req,req.isAuthenticated());
     if (req.isAuthenticated()) {
       return next();
     } else {
@@ -24,7 +23,6 @@ module.exports.isAuthenticated = (req, res, next) => {
   
           try{
               const decode = jwt.verify(token, process.env.JWT_SECRET);
-              console.log(decode);
               req.user = decode;
   
           } catch (error) {

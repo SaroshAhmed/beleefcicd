@@ -90,7 +90,6 @@ const propertySchema = new Schema(
         "VacantLand",
         "Villa",
       ],
-      required: true,
     },
     battleAxe: { type: String, enum: ["Yes", "No"], default: null },
     media: { type: [mediaSchema], default: null },
@@ -200,6 +199,11 @@ const propertySchema = new Schema(
     saleMode: {
       type: String,
       enum: ["buy", "rent", "share", "sold", "leased", "archived"],
+      default: null,
+    },
+    fetchMode: {
+      type: String,
+      enum: ["automation", "manual"],
       default: null,
     },
     logicalPrice: { type: String, default: null },
