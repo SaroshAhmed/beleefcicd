@@ -3,6 +3,7 @@ const { ObjectId } = mongoose.Types;
 const UserProperty = require("../../models/UserProperty");
 const Property = require("../../models/Property");
 const Suburb = require("../../models/Suburb");
+const Prompt = require("../../models/Prompt");
 const { chatCompletion } = require("../../utils/openai");
 
 exports.createProperty = async (req, res) => {
@@ -576,6 +577,41 @@ exports.calculateScoreMatch = async (req, res) => {
       (jsonFormat = true)
     );
 
+    const prompt = await Prompt.findOne({ name: "POSTLIST_PROMPT_ENGAGED_PURCHASER" });
+    const engagedPurchaser= await chatCompletion(
+      prompt?.description,
+      `Here is the property:
+      
+    Address: ${property.address}
+    Property type: ${property.propertyType}
+    ${property.landArea ? `Land area: ${property.landArea}` : ""}
+    ${property.frontage ? `Frontage: ${property.frontage}` : ""}
+    ${property.buildingArea ? `Building area: ${property.buildingArea}` : ""}
+    Beds: ${property.bedrooms}
+    Bath: ${property.bathrooms}
+    Car spaces: ${property.carspaces}
+    Topography: ${property.topography}
+    Construction: ${property.buildType}
+    Wall Material: ${property.wallMaterial}
+    Pool: ${property.pool}
+    Tennis Court: ${property.tennisCourt}
+    Water views: ${property.waterViews}
+    Street traffic: ${property.streetTraffic}
+    Finishes: ${property.finishes}
+    Granny Flat: ${property.grannyFlat}
+    ${
+      property.developmentPotential
+        ? `Development Potential: ${property.developmentPotential}`
+        : ""
+    }
+    ${
+      property.additionalInformation
+        ? `Additional Information: ${property.additionalInformation}`
+        : ""
+    }`,
+      (jsonFormat = false)
+    );
+
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
@@ -624,6 +660,7 @@ exports.calculateScoreMatch = async (req, res) => {
         recentAreaSoldProcess,
         currentAreaProcess,
         duplexProperties,
+        engagedPurchaser
       },
     });
   } catch (error) {
