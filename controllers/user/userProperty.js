@@ -283,10 +283,10 @@ exports.createProperty = async (req, res) => {
     });
 
     if (!property) {
-      return res
-        .status(404)
-        .json({ success: false, message: "no property found" });
-      // property = await runtimeFetchProperty(address);
+      // return res
+      //   .status(404)
+      //   .json({ success: false, message: "no property found" });
+      property = await runtimeFetchProperty(address);
     }
 
     // Convert the property document to a plain object
