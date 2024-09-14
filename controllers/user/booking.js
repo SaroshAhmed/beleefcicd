@@ -77,8 +77,9 @@ exports.createBooking = async (req, res) => {
     firstName,
     lastName,
     email: req.user.email,
-    mobile: req.user.mobile, // This seems hardcoded; change if necessary
+    mobile: req.user._doc.mobile, // change it later to req.user.mobile since on complete profiel will come
   };
+
 
   const name = "Book Appraisal";
   const prelistLink = `${REACT_APP_FRONTEND_URL}/prelist/${uniqueId}`;
