@@ -22,9 +22,8 @@ const sendSms = async (event, recipient, sender, date, link, property_addr) => {
   };
 
   try {
-    console.log(url)
     const response = await axios.post(url, null, { params });
-    console.log(`SMS sent successfully: ${response.data}`);
+    console.log(`SMS sent successfully: ${recipient.mobile}`);
     return response.data;
   } catch (error) {
     console.error(`Error sending SMS to ${recipient.mobile}: ${error.message}`);
@@ -41,7 +40,6 @@ const getSmsTemplate = (
   link,
   property_addr
 ) => {
-console.log(date)
   // Example HTML anchor tag for the link
   const formattedLink = link; // Just the link in plain text
 
@@ -49,23 +47,23 @@ console.log(date)
 
   switch (event) {
     case "cancel":
-      msg = `https://biturl.top/2EF3ym. Hi ${recipient.firstName} ${recipient.lastName}, our meeting on ${date} for the property ${property_addr} has been cancelled. Thank you.\nRegards, \n${sender.firstName} ${sender.lastName}`;
+      msg = `Hi ${recipient.firstName} ${recipient.lastName}, our meeting on ${date} for the property ${property_addr} has been cancelled. Thank you.\nRegards, \n${sender.firstName} ${sender.lastName}`;
       break;
 
     case "update":
-      msg = `https://biturl.top/2EF3ym. Hi ${recipient.firstName}, your meeting has been updated to ${date} for the property ${property_addr}. \nFurther details can be found here: ${formattedLink} \n${sender.firstName} ${sender.lastName}`;
+      msg = `Hi ${recipient.firstName}, your meeting has been updated to ${date} for the property ${property_addr}. \nFurther details can be found here: ${formattedLink} \n${sender.firstName} ${sender.lastName}`;
       break;
 
     case "reminder":
-      msg = `https://biturl.top/2EF3ym. Hi ${recipient.firstName}, this is a reminder for your meeting on ${date} for the property at ${property_addr}. \nFurther details can be found here: ${formattedLink} \nRegards, \n${sender.firstName} ${sender.lastName}`;
+      msg = `Hi ${recipient.firstName}, this is a reminder for your meeting on ${date} for the property at ${property_addr}. \nFurther details can be found here: ${formattedLink} \nRegards, \n${sender.firstName} ${sender.lastName}`;
       break;
 
     case "create":
-      msg = `https://biturl.top/2EF3ym .Hi ${recipient.firstName} ${recipient.lastName}, appreciate your time, looking forward to meeting you on ${date} for the property at ${property_addr}. \nFurther details can be found here: ${formattedLink} \nRegards, \n${sender.firstName} ${sender.lastName}`;
+      msg = `Hi ${recipient.firstName} ${recipient.lastName}, appreciate your time, looking forward to meeting you on ${date} for the property at ${property_addr}. \nFurther details can be found here: ${formattedLink} \nRegards, \n${sender.firstName} ${sender.lastName}`;
       break;
 
     default:
-      msg = `https://biturl.top/2EF3ym. Hi ${recipient.firstName}, appreciate your time, looking forward to meeting you on ${date} for the property at ${property_addr}. \nFurther details can be found here: ${formattedLink} \nRegards, \n${sender.firstName} ${sender.lastName}`;
+      msg = `Hi ${recipient.firstName}, appreciate your time, looking forward to meeting you on ${date} for the property at ${property_addr}. \nFurther details can be found here: ${formattedLink} \nRegards, \n${sender.firstName} ${sender.lastName}`;
       break;
   }
 

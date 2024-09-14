@@ -168,6 +168,9 @@ ${agent.firstName} ${agent.lastName}
     await booking.save();
 
     try {
+      // Sending SMS to the agent/sender
+      await sendSms("create", agent, agent, startTime, prelistLink, address);
+
       // Sending SMS to each vendor
       const smsPromises = vendors.map((vendor) => {
         const recipient = {
@@ -175,7 +178,7 @@ ${agent.firstName} ${agent.lastName}
           lastName: vendor.lastName,
           mobile: vendor.mobile, // Assuming mobile number is in vendor object
         };
-        console.log(startTime);
+
         return sendSms(
           "create",
           recipient,
@@ -194,9 +197,6 @@ ${agent.firstName} ${agent.lastName}
 
       // Await all SMS sends
       await Promise.all(smsPromises);
-
-      // Sending SMS to the agent/sender
-      await sendSms("create", agent, agent, startTime, prelistLink, address);
     } catch (error) {
       console.error("Error during booking creation or SMS sending", error);
       res.status(500).json({ success: false, message: error.message });

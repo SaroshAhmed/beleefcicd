@@ -14,6 +14,8 @@ const postListSchema = new Schema(
       type: [Schema.Types.Mixed],
       required: true,
     },
+    engagedPurchaser: { type: String },
+    agent: { type: Schema.Types.Mixed, required: true },
     shareableLink: {
       type: String,
       unique: true,
