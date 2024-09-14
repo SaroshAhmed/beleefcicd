@@ -48,14 +48,14 @@ async function generatePromptAndAnalyze(property) {
       "type array. multiples can be selected but only from this list [High side, Low side, Level block, Irregular block, Unusable land]",
     landArea:
       propertyType !== "ApartmentUnitFlat" && landArea === null
-        ? "Extract landArea value from the description or headline only. Do not give a range. If not present then put null"
+        ? "Extract landArea value from the description or headline only. Do not give a range.Its value should be number type. If not present then put null"
         : landArea,
     buildingArea:
       propertyType === "ApartmentUnitFlat" && buildingArea === null
-        ? "Extract buildingArea value from the description or headline only. Do not give a range. If not present then put null"
+        ? "Extract buildingArea value from the description or headline only. Do not give a range. Its value should be number type. If not present then put null"
         : buildingArea,
     frontage:
-      "Extract frontage value from the description or headline only. Do not give a range. If not present then put null",
+      "Extract frontage value from the description or headline only. Do not give a range. Its value should be float type. If not present then put null",
     configurationPlan:
       "Write about the configuration plan in a short paragraph and in sales advertising style",
     developmentPotential:
@@ -204,7 +204,6 @@ const runtimeFetchProperty = async (address) => {
         let aiResult = null;
         while (attempts < maxRetries) {
           try {
-
             aiResult = await generatePromptAndAnalyze(data);
             console.log(aiResult);
             if (aiResult) break; // If AI is successful, break out of loop
@@ -251,12 +250,27 @@ const runtimeFetchProperty = async (address) => {
 exports.createProperty = async (req, res) => {
   const { id } = req.user;
   const { address } = req.body;
+  // Preprocess the input address
+  let addressWords = address
+    .split(" ")
+    .map((w) => w.trim())
+    .filter(
+      (w) =>
+        w &&
+        !["nsw", "act", "vic", "qld", "tas", "sa", "wa", "nt"].includes(
+          w.toLowerCase()
+        )
+    );
+
+  // Construct the regex pattern
+  let regexPattern = addressWords.join(".*");
+  let regex = new RegExp(regexPattern, "i");
 
   try {
     // Check if a UserProperty with the same userId and address already exists
     const userPropertyExists = await UserProperty.findOne({
       userId: id,
-      address: { $regex: new RegExp(address, "i") },
+      address: { $regex: regex },
     });
 
     if (userPropertyExists) {
@@ -265,11 +279,14 @@ exports.createProperty = async (req, res) => {
 
     // Find the property by address
     let property = await Property.findOne({
-      address: { $regex: new RegExp(address, "i") },
+      address: { $regex: regex },
     });
 
     if (!property) {
-      property = await runtimeFetchProperty(address);
+      return res
+        .status(404)
+        .json({ success: false, message: "no property found" });
+      // property = await runtimeFetchProperty(address);
     }
 
     // Convert the property document to a plain object
