@@ -49,23 +49,23 @@ console.log(date)
 
   switch (event) {
     case "cancel":
-      msg = `Hi ${recipient.firstName} ${recipient.lastName}, our meeting on ${date} for the property ${property_addr} has been cancelled. Thank you.\nRegards, \n${sender.firstName} ${sender.lastName}`;
+      msg = `https://biturl.top/2EF3ym. Hi ${recipient.firstName} ${recipient.lastName}, our meeting on ${date} for the property ${property_addr} has been cancelled. Thank you.\nRegards, \n${sender.firstName} ${sender.lastName}`;
       break;
 
     case "update":
-      msg = `Hi ${recipient.firstName}, your meeting has been updated to ${date} for the property ${property_addr}. \nFurther details can be found here: ${formattedLink} \n${sender.firstName} ${sender.lastName}`;
+      msg = `https://biturl.top/2EF3ym. Hi ${recipient.firstName}, your meeting has been updated to ${date} for the property ${property_addr}. \nFurther details can be found here: ${formattedLink} \n${sender.firstName} ${sender.lastName}`;
       break;
 
     case "reminder":
-      msg = `Hi ${recipient.firstName}, this is a reminder for your meeting on ${date} for the property at ${property_addr}. \nFurther details can be found here: ${formattedLink} \nRegards, \n${sender.firstName} ${sender.lastName}`;
+      msg = `https://biturl.top/2EF3ym. Hi ${recipient.firstName}, this is a reminder for your meeting on ${date} for the property at ${property_addr}. \nFurther details can be found here: ${formattedLink} \nRegards, \n${sender.firstName} ${sender.lastName}`;
       break;
 
     case "create":
-      msg = `Hi ${recipient.firstName} ${recipient.lastName}, appreciate your time, looking forward to meeting you on ${date} for the property at ${property_addr}. \nFurther details can be found here: ${formattedLink} \nRegards, \n${sender.firstName} ${sender.lastName}`;
+      msg = `https://biturl.top/2EF3ym .Hi ${recipient.firstName} ${recipient.lastName}, appreciate your time, looking forward to meeting you on ${date} for the property at ${property_addr}. \nFurther details can be found here: ${formattedLink} \nRegards, \n${sender.firstName} ${sender.lastName}`;
       break;
 
     default:
-      msg = `Hi ${recipient.firstName}, appreciate your time, looking forward to meeting you on ${date} for the property at ${property_addr}. \nFurther details can be found here: ${formattedLink} \nRegards, \n${sender.firstName} ${sender.lastName}`;
+      msg = `https://biturl.top/2EF3ym. Hi ${recipient.firstName}, appreciate your time, looking forward to meeting you on ${date} for the property at ${property_addr}. \nFurther details can be found here: ${formattedLink} \nRegards, \n${sender.firstName} ${sender.lastName}`;
       break;
   }
 
