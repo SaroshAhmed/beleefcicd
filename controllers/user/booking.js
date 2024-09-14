@@ -5,7 +5,7 @@ const { sendEmail } = require("../../utils/emailService");
 const { sendSms } = require("../../utils/smsService");
 const { v4: uuidv4 } = require("uuid");
 const { REACT_APP_FRONTEND_URL } = require("../../config");
-const moment = require('moment-timezone');
+const moment = require("moment-timezone");
 
 // // Initialize the Google API client with the service account for sending emails as keyevents@ausrealty.com.au
 // const initializeServiceAccountClient = () => {
@@ -19,7 +19,10 @@ const moment = require('moment-timezone');
 
 //   return client;
 // };
-const privateKey = Buffer.from(process.env.EVENT_GOOGLE_PRIVATE_KEY, 'base64').toString('utf8');
+const privateKey = Buffer.from(
+  process.env.EVENT_GOOGLE_PRIVATE_KEY,
+  "base64"
+).toString("utf8");
 
 const initializeServiceAccountClient = () => {
   const client = new google.auth.GoogleAuth({
@@ -70,7 +73,7 @@ exports.createBooking = async (req, res) => {
   const firstName = nameArray[0];
   const lastName = nameArray.length > 1 ? nameArray[1] : "";
 
-  const { vendors, startTime, endTime, address,property } = req.body;
+  const { vendors, startTime, endTime, address, property } = req.body;
 
   const agent = {
     firstName,
@@ -78,7 +81,6 @@ exports.createBooking = async (req, res) => {
     email: req.user.email,
     mobile: req.user._doc.mobile, // change it later to req.user.mobile since on complete profiel will come
   };
-
 
   const name = "Book Appraisal";
   const prelistLink = `${REACT_APP_FRONTEND_URL}/prelist/${uniqueId}`;
@@ -94,7 +96,6 @@ exports.createBooking = async (req, res) => {
     });
 
     const events = data.items;
-    
 
     // if (events.length > 0) {
     //   return res.status(409).json({
@@ -161,7 +162,7 @@ ${agent.firstName} ${agent.lastName}
       prelistId: uniqueId,
       prelistLink,
       status: "Active",
-      property
+      property,
     });
 
     await booking.save();
@@ -174,12 +175,12 @@ ${agent.firstName} ${agent.lastName}
           lastName: vendor.lastName,
           mobile: vendor.mobile, // Assuming mobile number is in vendor object
         };
-
+        console.log(startTime);
         return sendSms(
           "create",
           recipient,
           agent,
-          moment(startTime).tz('Australia/Sydney').format(),
+          startTime,
           prelistLink,
           address
         )
@@ -291,7 +292,7 @@ exports.rescheduleBooking = async (req, res) => {
           "update",
           recipient,
           agent,
-          moment(newStartTime).tz('Australia/Sydney').format(),
+          newStartTime,
           booking.prelistLink,
           address
         )
@@ -389,7 +390,7 @@ exports.cancelBooking = async (req, res) => {
           "cancel",
           recipient,
           agent,
-          moment(startTime).tz('Australia/Sydney').format(),
+          startTime,
           booking.prelistLink,
           address
         )
