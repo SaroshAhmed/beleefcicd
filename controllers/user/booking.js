@@ -5,8 +5,7 @@ const { sendEmail } = require("../../utils/emailService");
 const { sendSms } = require("../../utils/smsService");
 const { v4: uuidv4 } = require("uuid");
 const { REACT_APP_FRONTEND_URL } = require("../../config");
-
-const path = require("path");
+const moment = require('moment-timezone');
 
 // // Initialize the Google API client with the service account for sending emails as keyevents@ausrealty.com.au
 // const initializeServiceAccountClient = () => {
@@ -180,7 +179,7 @@ ${agent.firstName} ${agent.lastName}
           "create",
           recipient,
           agent,
-          startTime,
+          moment(startTime).tz('Australia/Sydney').format(),
           prelistLink,
           address
         )
@@ -292,7 +291,7 @@ exports.rescheduleBooking = async (req, res) => {
           "update",
           recipient,
           agent,
-          newStartTime,
+          moment(newStartTime).tz('Australia/Sydney').format(),
           booking.prelistLink,
           address
         )
@@ -390,7 +389,7 @@ exports.cancelBooking = async (req, res) => {
           "cancel",
           recipient,
           agent,
-          startTime,
+          moment(startTime).tz('Australia/Sydney').format(),
           booking.prelistLink,
           address
         )
