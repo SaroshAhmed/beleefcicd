@@ -94,13 +94,15 @@ exports.createBooking = async (req, res) => {
     });
 
     const events = data.items;
+    
 
-    if (events.length > 0) {
-      return res.status(409).json({
-        success: false,
-        message: "Time slot is already booked.",
-      });
-    }
+    // if (events.length > 0) {
+    //   return res.status(409).json({
+    //     success: false,
+    //     message: "Time slot is already booked.",
+    //     data:events
+    //   });
+    // }
 
     // Create a new event in Google Calendar using the logged-in user's calendar
     const event = {
