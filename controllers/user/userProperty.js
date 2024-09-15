@@ -133,7 +133,10 @@ const runtimeFetchProperty = async (address) => {
       );
       const propertyDetails = pResponse.data;
 
-      const listingId = propertyDetails.photos[0].advertId;
+      const listingId = propertyDetails?.photos[0]?.advertId;
+      if(!listingId){
+        // return the AI map
+      }
       const lResponse = await axios.get(
         `https://api.domain.com.au/v1/listings/${listingId}`,
         {
@@ -250,22 +253,29 @@ const runtimeFetchProperty = async (address) => {
 exports.createProperty = async (req, res) => {
   const { id } = req.user;
   const { address } = req.body;
-  // Preprocess the input address
-  let addressWords = address
-    .split(" ")
-    .map((w) => w.trim())
-    .filter(
-      (w) =>
-        w &&
-        !["nsw", "act", "vic", "qld", "tas", "sa", "wa", "nt"].includes(
-          w.toLowerCase()
-        )
-    );
 
-  // Construct the regex pattern
-  let regexPattern = addressWords.join(".*");
-  let regex = new RegExp(regexPattern, "i");
+  // Utility function to extract the initial part of the address (street number and name)
+  const extractStreetAddress = (fullAddress) => {
+    let addressWords = fullAddress
+      .replace(/[,]/g, "") // Remove commas
+      .split(" ") // Split by spaces
+      .filter(
+        (w) =>
+          w &&
+          !["nsw", "act", "vic", "qld", "tas", "sa", "wa", "nt"].includes(
+            w.toLowerCase()
+          ) // Ignore state abbreviations
+      );
 
+    // Extract up to the third word (street number and name)
+    return addressWords.slice(0, 3).join(" ");
+  };
+
+  // Preprocess the input address (strip to street number and name)
+  let inputStreetAddress = extractStreetAddress(address);
+
+  // Construct the regex pattern for street number and name
+  let regex = new RegExp(`^${inputStreetAddress}.*`, "i");
   try {
     // Check if a UserProperty with the same userId and address already exists
     const userPropertyExists = await UserProperty.findOne({
