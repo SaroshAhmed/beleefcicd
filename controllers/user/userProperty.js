@@ -48,7 +48,7 @@ async function generatePromptAndAnalyze(property) {
       "type array. multiples can be selected but only from this list [High side, Low side, Level block, Irregular block, Unusable land]",
     landArea:
       propertyType !== "ApartmentUnitFlat" && landArea === null
-        ? "Extract landArea value from the description or headline only. Do not give a range.Its value should be number type. If not present then put null"
+        ? "Extract landArea value from the description or headline only.Donot confuse with internal area or internal space that is different thing. Do not give a range. Its value should be number type. If not present then put null"
         : landArea,
     buildingArea:
       propertyType === "ApartmentUnitFlat" && buildingArea === null

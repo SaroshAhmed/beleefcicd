@@ -43,6 +43,14 @@ async function generatePromptAndAnalyze(property) {
 
   // JSON structure for property details
   let jsonStructure = {
+    landArea:
+    propertyType !== "ApartmentUnitFlat" && landArea === null
+      ? "Extract landArea value from the description or headline only.Donot confuse with internal area or internal space that is different thing. Do not give a range. Its value should be number type. If not present then put null"
+      : landArea,
+  buildingArea:
+    propertyType === "ApartmentUnitFlat" && buildingArea === null
+      ? "Extract buildingArea value from the description or headline only. Do not give a range. Its value should be number type. If not present then put null"
+      : buildingArea,
     aiPropertyType:
       "enum: [ApartmentUnitFlat, Duplex, House, Terrace, Townhouse, VacantLand, Villa]",
     buildType: "[enum: 1 storey, 2 storey, 3 storey, 4+ storey]",
