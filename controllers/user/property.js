@@ -107,6 +107,15 @@ exports.getPropertyByAddress = async (req, res) => {
   }
 };
 
+function datePreviousYear() {
+  const oneYearAgo = new Date();
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+  // We don't need to format it to a string if we're working with MongoDB queries
+  // Return the Date object directly
+  return oneYearAgo;
+}
+
 exports.calculateScoreMatch = async (req, res) => {
   try {
     // const { id } = req.params;
@@ -416,7 +425,7 @@ exports.calculateScoreMatch = async (req, res) => {
             score = 0;
           }
 
-          if (targetProperty.bedrooms < property.bedrooms-1) {
+          if (targetProperty.bedrooms < property.bedrooms - 1) {
             score = 0;
           }
 
@@ -439,6 +448,10 @@ exports.calculateScoreMatch = async (req, res) => {
           developmentPotential:
             sourceDevelopmentPotential === null ? null : { $ne: null },
           listingId: { $ne: property.listingId },
+          $or: [
+            { dateListed: { $gte: datePreviousYear() } },
+            { dateListed: null },
+          ],
         },
       },
     ]);
@@ -462,6 +475,10 @@ exports.calculateScoreMatch = async (req, res) => {
               sourceDevelopmentPotential === null ? null : { $ne: null },
             listingId: { $ne: property.listingId },
             listingType: "Sale",
+            $or: [
+              { dateListed: { $gte: datePreviousYear() } },
+              { dateListed: null },
+            ],
           },
         },
       ]);
@@ -480,6 +497,10 @@ exports.calculateScoreMatch = async (req, res) => {
               sourceDevelopmentPotential === null ? null : { $ne: null },
             listingId: { $ne: property.listingId },
             listingType: "Sold",
+            $or: [
+              { dateListed: { $gte: datePreviousYear() } },
+              { dateListed: null },
+            ],
           },
         },
       ]);
@@ -577,8 +598,10 @@ exports.calculateScoreMatch = async (req, res) => {
       (jsonFormat = true)
     );
 
-    const prompt = await Prompt.findOne({ name: "POSTLIST_PROMPT_ENGAGED_PURCHASER" });
-    const engagedPurchaser= await chatCompletion(
+    const prompt = await Prompt.findOne({
+      name: "POSTLIST_PROMPT_ENGAGED_PURCHASER",
+    });
+    const engagedPurchaser = await chatCompletion(
       prompt?.description,
       `Here is the property:
       
@@ -660,7 +683,7 @@ exports.calculateScoreMatch = async (req, res) => {
         recentAreaSoldProcess,
         currentAreaProcess,
         duplexProperties,
-        engagedPurchaser
+        engagedPurchaser,
       },
     });
   } catch (error) {
@@ -757,12 +780,10 @@ exports.regenerateLogicalPrice = async (req, res) => {
     const { property, checkedProperties } = req.body;
 
     if (!property || !checkedProperties || checkedProperties.length === 0) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Property data and checkedProperties are required",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Property data and checkedProperties are required",
+      });
     }
 
     // Function to format the checked properties for the prompt

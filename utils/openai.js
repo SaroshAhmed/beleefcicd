@@ -92,7 +92,7 @@ const chatCompletion = async (systemPrompt, userInput, jsonFormat = false) => {
 
     // Build the options object, conditionally adding response_format if jsonFormat is true
     const options = {
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       messages,
       n: 1,
       temperature: 0,

@@ -18,6 +18,6 @@ router.put("/:id", isAuthenticated, updatePostList);
 router.get("/:address", isAuthenticated, getPostListByAddress);
 
 // Route to get PostList by shareable link
-router.get("/share/:shareableLink", isAuthenticated, getPostListByShareableLink);
+router.get("/share/:shareableLink", getPostListByShareableLink);
 
 module.exports = router;

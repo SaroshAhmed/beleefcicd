@@ -5,6 +5,7 @@ const postListSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     address: { type: String, required: true },
+    suburb: { type: String, required: true },
     ownerSituation: { type: String, required: true },
     keyFeatures: { type: Schema.Types.Mixed, required: true },
     commissionFee: { type: String },
@@ -19,6 +20,20 @@ const postListSchema = new Schema(
     shareableLink: {
       type: String,
       unique: true,
+      required: true,
+    },
+    processChain: {
+      type: [Schema.Types.Mixed],
+      default: null,
+    },
+    marketingPrice: {
+      type: String,
+    },
+    marketingItems: {
+      type: [String],
+    },
+    vendors: {
+      type: [Schema.Types.Mixed],
       required: true,
     },
     isDeleted: {
