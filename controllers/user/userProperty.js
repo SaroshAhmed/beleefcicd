@@ -41,7 +41,7 @@ async function generatePromptAndAnalyze(property) {
     waterViews:
       "[enum: No, Water views, Deep waterfront with jetty, Tidal waterfront with jetty, Waterfront reserve]",
     finishes: "[enum: High-end finishes, Updated, Original]",
-    streetTraffic: "[enum: Low traffic, Moderate traffic, High traffic]",
+    streetTraffic: "It should be one of the list [enum: Low traffic, Moderate traffic, High traffic]",
     pool: "[enum: Yes, No]",
     tennisCourt: "[enum: Yes, No]",
     topography:
