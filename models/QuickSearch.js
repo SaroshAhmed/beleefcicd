@@ -21,7 +21,7 @@ const quickSearchSchema = new Schema(
       required: true,
     },
     areaDynamics: {
-      type: Object,
+      type:  Schema.Types.Mixed,
       required: true,
     },
     pieChartData: {
@@ -29,7 +29,7 @@ const quickSearchSchema = new Schema(
       required: true,
     },
     agent: {
-      type: Object,
+      type:  Schema.Types.Mixed,
       required: true,
     },
     isDeleted: {
