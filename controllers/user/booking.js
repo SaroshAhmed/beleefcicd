@@ -79,7 +79,7 @@ exports.createBooking = async (req, res) => {
     firstName,
     lastName,
     email: req.user.email,
-    mobile: req.user._doc.mobile, // change it later to req.user.mobile since on complete profiel will come
+    mobile: req.user.mobile, // change it later to req.user.mobile since on complete profiel will come
   };
 
   const name = "Book Appraisal";

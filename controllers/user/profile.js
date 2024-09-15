@@ -4,14 +4,14 @@ const User = require("../../models/User");
 const AWS = require("aws-sdk");
 const express = require("express");
 const router = express.Router();
+const { URL } = require('url');
 
- const s3 = new AWS.S3({
+AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   region: process.env.AWS_REGION,
-  signatureVersion: "v4",
 });
-// module.exports=s3
+const s3 = new AWS.S3();
 
 exports.createSetupIntent = async (req, res) => {
   const { id } = req.user;
@@ -60,6 +60,7 @@ exports.generatePresignedUrl = async (req, res) => {
     };
 
     const uploadURL = await s3.getSignedUrlPromise("putObject", params);
+    console.log(uploadURL)
     res.status(200).json({
       success: true,
       uploadURL,
@@ -72,38 +73,21 @@ exports.generatePresignedUrl = async (req, res) => {
       .json({ success: false, message: "Failed to generate pre-signed URL" });
   }
 };
-
 exports.saveProfile = async (req, res) => {
-  const { paymentMethodId, s3Key } = req.body;
+  const { mobile, s3Key } = req.body;
   const userId = req.user.id;
 
   try {
     const user = await User.findById(userId);
-    if (!user || !user.stripeCustomerId) {
+    if (!user) {
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
     }
 
-    if (!paymentMethodId) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Payment method ID is required" });
-    }
-
-    await stripe.paymentMethods.attach(paymentMethodId, {
-      customer: user.stripeCustomerId,
-    });
-    await stripe.customers.update(user.stripeCustomerId, {
-      invoice_settings: { default_payment_method: paymentMethodId },
-    });
-
-    if (!user.paymentMethods.includes(paymentMethodId)) {
-      user.paymentMethods.push(paymentMethodId);
-    }
-
     user.signature = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`;
 
+    user.mobile=mobile
     user.profileComplete = true;
 
     await user.save();
@@ -116,6 +100,50 @@ exports.saveProfile = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// exports.saveProfile = async (req, res) => {
+//   const { paymentMethodId, s3Key } = req.body;
+//   const userId = req.user.id;
+
+//   try {
+//     const user = await User.findById(userId);
+//     if (!user || !user.stripeCustomerId) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "User not found" });
+//     }
+
+//     if (!paymentMethodId) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Payment method ID is required" });
+//     }
+
+//     await stripe.paymentMethods.attach(paymentMethodId, {
+//       customer: user.stripeCustomerId,
+//     });
+//     await stripe.customers.update(user.stripeCustomerId, {
+//       invoice_settings: { default_payment_method: paymentMethodId },
+//     });
+
+//     if (!user.paymentMethods.includes(paymentMethodId)) {
+//       user.paymentMethods.push(paymentMethodId);
+//     }
+
+//     user.signature = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`;
+
+//     user.profileComplete = true;
+
+//     await user.save();
+
+//     res
+//       .status(200)
+//       .json({ success: true, message: "Profile updated successfully" });
+//   } catch (error) {
+//     console.error("Error saving profile:", error);
+//     res.status(500).json({ success: false, message: error.message });
+//   }
+// };
 
 exports.uploadImage = async (req, res) => {
   try {
@@ -143,5 +171,39 @@ exports.uploadImage = async (req, res) => {
     res
       .status(500)
       .json({ success: false, message: "Failed to generate pre-signed URL" });
+  }
+};
+
+exports.getSignatureUrl = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+
+    if (!user || !user.signature) {
+      return res.status(404).json({ success: false, message: 'Signature not found' });
+    }
+
+    // Extract the Key from the stored signature URL
+    const signatureUrl = user.signature;
+    const urlObj = new URL(signatureUrl);
+    // Remove the leading '/' from pathname to get the Key
+    const key = urlObj.pathname.startsWith('/')
+      ? urlObj.pathname.substring(1)
+      : urlObj.pathname;
+
+    console.log('Extracted Key:', key); // Debugging statement
+
+    const params = {
+      Bucket: process.env.S3_BUCKET_NAME,
+      Key: key,
+      Expires: 300, // URL expires in 5 minutes
+    };
+
+    const url = s3.getSignedUrl('getObject', params);
+
+    res.status(200).json({ success: true, url });
+  } catch (error) {
+    console.error('Error generating signature URL:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
