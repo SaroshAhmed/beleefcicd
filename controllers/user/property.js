@@ -287,7 +287,7 @@ exports.calculateScoreMatch = async (req, res) => {
           }
 
           // Bedrooms, Bathrooms, Carspaces
-          if (targetProperty.bedrooms >= property.bedrooms) {
+          if (targetProperty.bedrooms === property.bedrooms) {
             score += 7;
             keyMatches.push("Bedrooms");
           }
@@ -425,8 +425,26 @@ exports.calculateScoreMatch = async (req, res) => {
             score = 0;
           }
 
-          if (targetProperty.bedrooms < property.bedrooms - 1) {
-            score = 0;
+          if (property.bedrooms === 3) {
+            if (targetProperty.bedrooms < 3 || targetProperty.bedrooms > 4) {
+              score = 0; // No match
+            }
+          } else if (property.bedrooms === 4) {
+            if (targetProperty.bedrooms < 3 || targetProperty.bedrooms > 5) {
+              score = 0; // No match
+            }
+          } else if (property.bedrooms === 5) {
+            if (targetProperty.bedrooms < 4 || targetProperty.bedrooms > 7) {
+              score = 0; // No match
+            }
+          } else if (property.bedrooms === 6) {
+            if (targetProperty.bedrooms < 5 || targetProperty.bedrooms > 7) {
+              score = 0; // No match
+            }
+          } else if (property.bedrooms >= 7) {
+            if (targetProperty.bedrooms < 5) {
+              score = 0; // No match
+            }
           }
 
           const finalScore = score;
@@ -514,7 +532,7 @@ exports.calculateScoreMatch = async (req, res) => {
     recommendedSold = recommendedSold.sort((a, b) => b.score - a.score);
 
     const systemPrompt = `Return response in json format {logicalPrice:"",logicalReasoning:"}`;
-    const userInput = `You are an expert in pricing property and use recent sales comparable data, which I will give you to price property. I will give you an address and you will give me an accurate indication of its value. You will also determine the best price to list to generate the most amount of enquiry. You will observe below property features. You are to give us a range within 10%. You will give us the range like this in million format for example: $low(decimalNo)-high(decimalNo)M (e.g, $2-2.2M: Exactly a 10% difference.) [range should be within 10% means difference between low high only 10%]. No explanation or description is needed.
+    const userInput = `You are an expert in pricing property and use recent sales comparable data, which I will give you to price property. I will give you an address and you will give me an accurate indication of its value. You will also determine the best price to list to generate the most amount of enquiry. You will observe below property features (most important is if developmentPotential is present that is increase up the price). You are to give us a range within 10%. You will give us the range like this in million format for example: $low(decimalNo)-high(decimalNo)M (e.g, $2-2.2M: Exactly a 10% difference.) [range should be within 10% means difference between low high only 10%]. No explanation or description is needed.
 
     Here is the property:
       
@@ -592,6 +610,8 @@ exports.calculateScoreMatch = async (req, res) => {
     
     After finding the logical price, you have to give logical reasoning in one paragraph for that property.`;
 
+    console.log(userInput)
+
     const logical = await chatCompletion(
       systemPrompt,
       userInput,
@@ -660,7 +680,7 @@ exports.calculateScoreMatch = async (req, res) => {
 
     const duplexPropertiesQuery = {
       propertyType: "Duplex",
-      suburb: property.suburb,
+      suburb: { $regex: new RegExp(`^${property.suburb}$`, "i") },
       dateListed: { $gte: sixMonthsAgo }, // Last 6 months
       listingId: { $ne: property.listingId }, // Not equal to property.listingId
       listingType: "Sold",
@@ -744,7 +764,7 @@ exports.getBeleefSaleProcess = async (req, res) => {
     const saleProcesses = await Property.aggregate([
       {
         $match: {
-          suburb: suburb, // Filter documents by the given suburb
+          suburb: { $regex: new RegExp(`^${suburb}$`, "i") }, // Case-insensitive matching for suburb
         },
       },
       {

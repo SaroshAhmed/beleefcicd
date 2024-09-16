@@ -216,6 +216,14 @@ const propertySchema = new Schema(
   { timestamps: true }
 );
 
+propertySchema.pre('save', function (next) {
+  if (this.suburb) {
+    this.suburb = this.suburb.toUpperCase(); // Convert suburb to uppercase
+  }
+  next();
+});
+
+
 const Property = mongoose.model("Property", propertySchema);
 
 module.exports = Property;

@@ -142,7 +142,7 @@ const runtimeFetchProperty = async (address) => {
           listingType: "Sale",
           price: null,
           postcode: propertyDetails.postcode,
-          suburb: propertyDetails.suburb,
+          suburb: propertyDetails.suburb.toUpperCase(),
           latitude: propertyDetails.addressCoordinate.lat,
           longitude: propertyDetails.addressCoordinate.lon,
           propertyType: propertyDetails.propertyType,
@@ -204,7 +204,7 @@ const runtimeFetchProperty = async (address) => {
         listingType: listingDetails.saleMode == "sold" ? "Sold" : "Sale",
         price: listingDetails.saleDetails?.soldDetails?.soldPrice || null,
         postcode: listingDetails.addressParts.postcode,
-        suburb: listingDetails.addressParts.suburb,
+        suburb: listingDetails.addressParts.suburb.toUpperCase(),
         latitude: listingDetails.geoLocation.latitude,
         longitude: listingDetails.geoLocation.longitude,
         propertyType: propertyDetails.propertyType,
@@ -427,6 +427,73 @@ exports.getPropertyByAddress = async (req, res) => {
   }
 };
 
+// exports.updateProperty = async (req, res) => {
+//   const { id } = req.user; // User ID from authenticated user
+//   const { address, boxStatusUpdates, ...updates } = req.body; // Destructure boxStatusUpdates and other updates
+
+//   try {
+//     // Find the property by userId and address
+//     const userProperty = await UserProperty.findOne({
+//       userId: id,
+//       address: { $regex: new RegExp(address, "i") }, // Case-insensitive address match
+//     });
+
+//     if (!userProperty) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Property not found for this user",
+//       });
+//     }
+
+//     // Initialize the update object for other property fields
+//     let updateQuery = {};
+
+//     // Add other property fields to update if provided
+//     if (Object.keys(updates).length > 0) {
+//       updateQuery = { ...updateQuery, ...updates };
+//     }
+
+//     // If boxStatusUpdates is provided, update specific statuses within the boxStatus array
+//     if (boxStatusUpdates && Array.isArray(boxStatusUpdates)) {
+//       boxStatusUpdates.forEach((update, index) => {
+//         const { name, status } = update;
+//         updateQuery[`boxStatus.$[element${index}].status`] = status; // Use `element0`, `element1`, etc.
+//       });
+//     }
+
+//     // Generate unique arrayFilters for each element in boxStatusUpdates
+//     const arrayFilters = boxStatusUpdates
+//       ? boxStatusUpdates.map((update, index) => ({
+//           [`element${index}.name`]: update.name, // Use unique element filters
+//         }))
+//       : [];
+
+//     // Perform the update using $set and arrayFilters
+//     const updatedProperty = await UserProperty.findOneAndUpdate(
+//       { userId: id, address: { $regex: new RegExp(address, "i") } },
+//       {
+//         $set: updateQuery,
+//       },
+//       {
+//         arrayFilters: arrayFilters, // Apply arrayFilters based on unique placeholders
+//         new: true, // Return the updated document
+//       }
+//     );
+
+//     if (!updatedProperty) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Failed to update the property",
+//       });
+//     }
+
+//     return res.status(200).json({ success: true, data: updatedProperty });
+//   } catch (error) {
+//     console.error("Error updating property: ", error.message);
+//     return res.status(500).json({ success: false, message: "Server error" });
+//   }
+// };
+
 exports.updateProperty = async (req, res) => {
   const { id } = req.user; // User ID from authenticated user
   const { address, boxStatusUpdates, ...updates } = req.body; // Destructure boxStatusUpdates and other updates
@@ -445,19 +512,54 @@ exports.updateProperty = async (req, res) => {
       });
     }
 
-    // Initialize the update object for other property fields
-    let updateQuery = {};
+    // Fields allowed to be updated (you can add or remove as needed)
+    const allowedFields = [
+      "listingType",
+      "propertyType",
+      "battleAxe",
+      "bedrooms",
+      "bathrooms",
+      "carspaces",
+      "landArea",
+      "buildingArea",
+      "buildType",
+      "yearBuilt",
+      "wallMaterial",
+      "pool",
+      "tennisCourt",
+      "waterViews",
+      "finishes",
+      "streetTraffic",
+      "topography",
+      "additionalInformation",
+      "frontage",
+      "configurationPlan",
+      "grannyFlat",
+      "developmentPotential",
+      "logicalPrice",
+      "logicalReasoning",
+      "engagedPurchaser",
+      "recommendedSales",
+      "recommendedSold",
+      "recentAreaSoldProcess",
+      "currentAreaProcess",
+      "duplexProperties",
+      "engagedPurchaser",
+    ];
 
-    // Add other property fields to update if provided
-    if (Object.keys(updates).length > 0) {
-      updateQuery = { ...updateQuery, ...updates };
-    }
+    // Build the update query by including only allowed fields
+    let updateQuery = {};
+    Object.keys(updates).forEach((key) => {
+      if (allowedFields.includes(key)) {
+        updateQuery[key] = updates[key]; // Add allowed fields to updateQuery
+      }
+    });
 
     // If boxStatusUpdates is provided, update specific statuses within the boxStatus array
     if (boxStatusUpdates && Array.isArray(boxStatusUpdates)) {
       boxStatusUpdates.forEach((update, index) => {
         const { name, status } = update;
-        updateQuery[`boxStatus.$[element${index}].status`] = status; // Use `element0`, `element1`, etc.
+        updateQuery[`boxStatus.$[element${index}].status`] = status; // Use unique element placeholders
       });
     }
 

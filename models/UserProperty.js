@@ -83,7 +83,7 @@ const userPropertySchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     propertyId: { type: String, default: null },
-    listingId: { type: String},
+    listingId: { type: String },
     address: { type: String, required: true },
     listingType: { type: String, enum: ["Sale", "Sold"], required: true },
     price: { type: Number, default: null },
@@ -217,6 +217,28 @@ const userPropertySchema = new Schema(
     logicalPrice: { type: String, default: null },
     logicalReasoning: { type: String, default: null },
     engagedPurchaser: { type: String, default: null },
+
+    recommendedSales: {
+      type: [Schema.Types.Mixed],
+      default: null,
+    },
+    recommendedSold: {
+      type: [Schema.Types.Mixed],
+      default: null,
+    },
+    recentAreaSoldProcess: {
+      type: [Schema.Types.Mixed],
+      default: null,
+    },
+    currentAreaProcess: {
+      type: [Schema.Types.Mixed],
+      default: null,
+    },
+    duplexProperties: {
+      type: [Schema.Types.Mixed],
+      default: null,
+    },
+
     isCleaned: { type: Boolean, default: false },
     boxStatus: { type: [boxSchema], default: null },
     processChain: {
@@ -228,6 +250,13 @@ const userPropertySchema = new Schema(
   },
   { timestamps: true }
 );
+
+userPropertySchema.pre("save", function (next) {
+  if (this.suburb) {
+    this.suburb = this.suburb.toUpperCase(); // Convert suburb to uppercase
+  }
+  next();
+});
 
 const UserProperty = mongoose.model("UserProperty", userPropertySchema);
 

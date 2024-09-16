@@ -68,8 +68,6 @@ const bookingReminder = () => {
             console.error(`Error sending SMS to agent: ${error.message}`);
           }
         });
-      } else {
-        console.log("No upcoming bookings in the next hour.");
       }
 
       // 3. Find bookings where the end time has passed and mark them as "Completed"
@@ -88,8 +86,6 @@ const bookingReminder = () => {
             );
           })
         );
-      } else {
-        console.log("No bookings to complete.");
       }
     } catch (error) {
       console.error("Error fetching or updating bookings:", error);
