@@ -1,6 +1,28 @@
 const axios = require("axios");
 const moment = require("moment");
 
+
+// Function to normalize mobile numbers to the format accepted by Intelli SMS
+const normalizeMobileNumber = (mobile) => {
+  // Remove spaces or any non-numeric characters for consistency
+  let cleanedMobile = mobile.replace(/\D/g, '');
+
+  // Check if the mobile number starts with '61' (Australian country code)
+  if (cleanedMobile.startsWith("61")) {
+    return cleanedMobile; // Already in the correct format
+  }
+
+  // If the mobile starts with '0', remove it and prepend '61'
+  if (cleanedMobile.startsWith("0")) {
+    cleanedMobile = "61" + cleanedMobile.substring(1);
+  } else {
+    // If the number doesn't start with '0' or '61', just prepend '61'
+    cleanedMobile = "61" + cleanedMobile;
+  }
+
+  return cleanedMobile;
+};
+
 // Function to send SMS
 const sendSms = async (event, recipient, sender, date, link, property_addr) => {
   const smsTemplate = getSmsTemplate(
@@ -17,8 +39,8 @@ const sendSms = async (event, recipient, sender, date, link, property_addr) => {
     username: process.env.SMS_USERNAME,
     password: process.env.SMS_PASSWORD,
     text: smsTemplate,
-    recipient: recipient.mobile,
-    sender: sender.mobile,
+    recipient: normalizeMobileNumber(recipient.mobile),
+    sender: normalizeMobileNumber(sender.mobile),
   };
 
   try {

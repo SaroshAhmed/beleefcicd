@@ -34,7 +34,6 @@ const postListSchema = new Schema(
     },
     vendors: {
       type: [Schema.Types.Mixed],
-      required: true,
     },
     isDeleted: {
       type: Boolean,

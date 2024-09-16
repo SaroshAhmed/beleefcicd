@@ -83,7 +83,7 @@ const userPropertySchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     propertyId: { type: String, default: null },
-    listingId: { type: String, required: true },
+    listingId: { type: String},
     address: { type: String, required: true },
     listingType: { type: String, enum: ["Sale", "Sold"], required: true },
     price: { type: Number, default: null },

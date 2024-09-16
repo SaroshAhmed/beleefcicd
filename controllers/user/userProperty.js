@@ -41,7 +41,8 @@ async function generatePromptAndAnalyze(property) {
     waterViews:
       "[enum: No, Water views, Deep waterfront with jetty, Tidal waterfront with jetty, Waterfront reserve]",
     finishes: "[enum: High-end finishes, Updated, Original]",
-    streetTraffic: "It should be one of the list [enum: Low traffic, Moderate traffic, High traffic]",
+    streetTraffic:
+      "It should be one of the list [enum: Low traffic, Moderate traffic, High traffic]",
     pool: "[enum: Yes, No]",
     tennisCourt: "[enum: Yes, No]",
     topography:
@@ -134,8 +135,45 @@ const runtimeFetchProperty = async (address) => {
       const propertyDetails = pResponse.data;
 
       const listingId = propertyDetails?.photos[0]?.advertId;
-      if(!listingId){
-        // return the AI map
+      if (!listingId) {
+        return {
+          listingId,
+          address: propertyDetails.address.replace(/,? NSW.*$/, ""),
+          listingType: "Sale",
+          price: null,
+          postcode: propertyDetails.postcode,
+          suburb: propertyDetails.suburb,
+          latitude: propertyDetails.addressCoordinate.lat,
+          longitude: propertyDetails.addressCoordinate.lon,
+          propertyType: propertyDetails.propertyType,
+          bedrooms: null,
+          bathrooms: null,
+          carspaces: null,
+          landArea:
+            propertyDetails.propertyType !== "ApartmentUnitFlat"
+              ? propertyDetails.areaSize
+              : null,
+          buildingArea:
+            propertyDetails.propertyType === "ApartmentUnitFlat"
+              ? propertyDetails.areaSize
+              : null,
+          features: propertyDetails.features,
+          dateListed: null,
+          daysListed: null,
+          propertyId: null,
+          media: [],
+          headline: null,
+          description: null,
+          saleProcess: null,
+          channel: "residential",
+          isNewDevelopment: null,
+          listingStatus: null,
+          saleMode: null,
+          history: null,
+          urlSlug: propertyDetails.urlSlug,
+          canonicalUrl: propertyDetails.canonicalUrl,
+          fetchMode: "manual",
+        };
       }
       const lResponse = await axios.get(
         `https://api.domain.com.au/v1/listings/${listingId}`,
@@ -297,6 +335,38 @@ exports.createProperty = async (req, res) => {
       //   .status(404)
       //   .json({ success: false, message: "no property found" });
       property = await runtimeFetchProperty(address);
+    }
+
+    if (!property.listingId) {
+      // Insert directly into UserProperty without creating Property
+      const boxStatus = [
+        { name: "bookAppraisal", status: "unlock" },
+        { name: "priceProcess", status: "unlock" },
+        { name: "postList", status: "lock" },
+        { name: "authoriseSchedule", status: "unlock" },
+        { name: "prepareMarketing", status: "unlock" },
+        { name: "goLive", status: "unlock" },
+        { name: "onMarket", status: "unlock" },
+      ];
+
+      const processChain = [
+        { label: "1", name: "Views", selected: null },
+        { label: "2", name: "Enquiry", selected: null },
+        { label: "3", name: "Inspection", selected: null },
+        { label: "4", name: "Offers", selected: null },
+        { label: "5", name: "Close Feedback", selected: null },
+        { label: "6", name: "Vendor Acceptance", selected: null },
+        { label: "7", name: "Solid", selected: null },
+      ];
+
+      const userProperty = await UserProperty.create({
+        userId: id,
+        ...property, // Use the dummy data returned
+        boxStatus,
+        processChain,
+      });
+
+      return res.status(200).json({ success: true, data: userProperty });
     }
 
     // Convert the property document to a plain object
