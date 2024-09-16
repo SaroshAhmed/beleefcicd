@@ -10,7 +10,12 @@ databaseConnect();
 // Fetch all properties where propertyId exists and history null
 async function fetchPropertiesWithPropertyId() {
   try {
-    return await Property.find({ propertyId: { $ne: null }, history: null });
+    // in future put error porperties if in here
+    return await Property.find({
+      propertyId: { $ne: null },
+      history: null,
+      urlSlug: null,
+    });
   } catch (error) {
     console.error(
       "Error fetching properties without propertyId:",

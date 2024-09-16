@@ -137,30 +137,29 @@ const runtimeFetchProperty = async (address) => {
       const listingId = propertyDetails?.photos[0]?.advertId;
       if (!listingId) {
         return {
-          listingId,
-          address: propertyDetails.address.replace(/,? NSW.*$/, ""),
+          address: propertyDetails?.address.replace(/,? NSW.*$/, ""),
           listingType: "Sale",
           price: null,
-          postcode: propertyDetails.postcode,
-          suburb: propertyDetails.suburb.toUpperCase(),
-          latitude: propertyDetails.addressCoordinate.lat,
-          longitude: propertyDetails.addressCoordinate.lon,
-          propertyType: propertyDetails.propertyType,
-          bedrooms: null,
-          bathrooms: null,
-          carspaces: null,
+          postcode: propertyDetails?.postcode,
+          suburb: propertyDetails?.suburb.toUpperCase(),
+          latitude: propertyDetails?.addressCoordinate.lat,
+          longitude: propertyDetails?.addressCoordinate.lon,
+          propertyType: propertyDetails?.propertyType,
+          bedrooms: propertyDetails?.bedrooms || null,
+          bathrooms: propertyDetails?.bathrooms || null,
+          carspaces: propertyDetails?.carspaces || null,
           landArea:
-            propertyDetails.propertyType !== "ApartmentUnitFlat"
-              ? propertyDetails.areaSize
+            propertyDetails?.propertyType !== "ApartmentUnitFlat"
+              ? propertyDetails?.areaSize
               : null,
           buildingArea:
-            propertyDetails.propertyType === "ApartmentUnitFlat"
-              ? propertyDetails.areaSize
+            propertyDetails?.propertyType === "ApartmentUnitFlat"
+              ? propertyDetails?.areaSize
               : null,
-          features: propertyDetails.features,
+          features: propertyDetails?.features,
           dateListed: null,
           daysListed: null,
-          propertyId: null,
+          propertyId,
           media: [],
           headline: null,
           description: null,

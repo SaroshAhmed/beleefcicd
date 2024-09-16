@@ -13,7 +13,9 @@ async function fetchProperties() {
     return await Property.find({
       // suburb: { $in: ["PEAKHURST", "CONNELLS POINT"] },
       // postcode:"2210",
+      // propertyId: "XI-8886-ST",
       isCleaned: false,
+      media: { $ne: null },
     });
     // return await Property.find({ propertyId:"IL-2019-FD" });
   } catch (error) {
@@ -60,18 +62,16 @@ async function generatePromptAndAnalyze(property) {
         ? "Run aiPropertyType to determine the property type. It must be one of these: [ApartmentUnitFlat, Duplex, House, Terrace, Townhouse, VacantLand, Villa]"
         : "",
 
-    battleAxe: `See if the top view of the property is visible. Check the following to determine if the property is a battleaxe: 
-       1. The property is typically located behind another property, with a narrow driveway or access path leading from the street to the main property.
-       2. Look for a long, thin access road leading to the property, often called the 'handle' of the battleaxe.
-       3. If the property has shared driveway access or is hidden from the street view, it's more likely to be a battleaxe.
-       4. Check if the property is landlocked or behind another lot, with limited street frontage.
-       5. Empty land properties should not be considered battleaxe unless they clearly have the narrow access path described above.
-       6. Satellite images or property layouts can help identify a battleaxe configuration (e.g., a flag-shaped or T-shaped plot).
-       7. Confirm by cross-referencing the property’s lot layout, driveway access, and descriptions.
-       
-       Important Note: A battleaxe property typically has a narrow accessway to the street and sits behind another property. It may share access with neighboring properties. Empty lands without this configuration are not considered battleaxe.
-       
-       [enum: No, Yes]`,
+    battleAxe: `Check only the top view or floor plan of the property to determine if it meets any of the following conditions for being a battleaxe property:
+        1. The property is located behind another property and has a narrow driveway or access path leading from the street to the main property.
+        2. The property is long and thin, or has a narrow strip of land (handle) connecting it to the road, which may indicate a battleaxe.
+        3. If the property has limited or no direct street frontage but is accessible through a shared or private driveway, it may be a battleaxe.
+        4. Look for a flag-shaped or T-shaped layout in satellite images or floor plans, indicating a typical battleaxe configuration.
+        5. Empty land with a narrow access path should be considered a battleaxe, but large empty properties without this access should not.
+     
+        If any of the above points are true based on the images or floor plan, mark the property as 'Yes' for battleaxe. Otherwise, mark it as 'No'.
+        
+        [enum: Yes, No]`,
 
     buildType: "[enum: 1 storey, 2 storey, 3 storey, 4+ storey]",
 
@@ -134,6 +134,7 @@ async function generatePromptAndAnalyze(property) {
     // const battleAxeResult = JSON.parse(battleAxe);
 
     const result = await analyzeImagesAIUrls(imageUrls, prompt);
+    
     Object.keys(result).forEach((key) => {
       if (result[key] === "null") {
         result[key] = null;
