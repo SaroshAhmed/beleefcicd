@@ -13,12 +13,35 @@ const bookingReminder = require("./cronJobs/bookingReminder");
 const app = express();
 require("./config/passport");
 
+// app.use(
+//   cors({
+//     origin: REACT_APP_FRONTEND_URL,
+//     credentials: true,
+//   })
+// );
+const allowedOrigins = [
+  'http://localhost:8080',
+  'https://beleef.com.au',
+  'https://www.beleef.com.au',
+];
+
 app.use(
   cors({
-    origin: REACT_APP_FRONTEND_URL,
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   })
 );
+
+
 
 app.use(express.json({limit: '50mb'}));
 
