@@ -305,8 +305,8 @@ const mapAerialImgAnalyze = async (imageBuffer) => {
           type: "text",
           text: `Answer in JSON format:
         {
-          "waterViews": "[enum: No, Water views, Deep waterfront with jetty, Tidal waterfront with jetty, Waterfront reserve]",
-          "propertyType": "It must be one of these: [ApartmentUnitFlat, Duplex, House, Terrace, Townhouse, VacantLand, Villa]"
+          "waterViews": Should choose from the list only "[enum: No, Water views, Deep waterfront with jetty, Tidal waterfront with jetty, Waterfront reserve]",
+          "propertyType": Should choose from the list only "enum: [ApartmentUnitFlat, Duplex, House, Terrace, Townhouse, VacantLand, Villa]"
         }`,
         },
         {
