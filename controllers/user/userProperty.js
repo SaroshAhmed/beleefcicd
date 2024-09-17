@@ -625,6 +625,7 @@ exports.updateProperty = async (req, res) => {
       "recommendedSaleProcess",
       "highEndProperties",
       "lowEndProperties",
+      "vendorDetails"
     ];
 
     // Build the update query by including only allowed fields
