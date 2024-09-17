@@ -71,8 +71,10 @@ exports.image = async (req, res) => {
         .json({ success: false, message: "Invalid prompt data" });
     }
 
+    const firstImage = listFiles && listFiles.length > 0 ? listFiles[0] : null;
     const response = await imageCompletion(
-      listFiles && listFiles.length ? listFiles : null,
+      // listFiles && listFiles.length ? listFiles : null,
+      firstImage,
       prompt.description,
       userMessage,
       (jsonFormat = true)
