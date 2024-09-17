@@ -2,8 +2,12 @@ const mongoose = require("mongoose");
 const UserProperty = require("../../models/UserProperty");
 const Property = require("../../models/Property");
 const { DOMAIN_API_KEY } = require("../../config");
-const { analyzeImagesAIUrls, guessBattleAxe } = require("../../utils/openai");
+const {
+  analyzeImagesAIUrls,
+  mapAerialImgAnalyze,
+} = require("../../utils/openai");
 const axios = require("axios");
+const { getMapStaticImage } = require("../../utils/maps");
 
 // Helper Function to Calculate Days Listed
 function calculateDaysListed(dateListed, soldDate) {
@@ -104,8 +108,16 @@ async function generatePromptAndAnalyze(property) {
   }
 }
 
-const runtimeFetchProperty = async (address) => {
+const runtimeFetchProperty = async (
+  address,
+  suburb,
+  postcode,
+  latitude,
+  longitude
+) => {
   try {
+    address += " NSW";
+
     const response = await axios.get(
       `https://api.domain.com.au/v1/properties/_suggest?terms=${encodeURIComponent(
         address
@@ -120,8 +132,13 @@ const runtimeFetchProperty = async (address) => {
     );
 
     // Check if the response has data and extract the id from the first result
-    if (response.data && response.data.length > 0) {
+    if (
+      response.data &&
+      response.data.length > 0 &&
+      response.data[0]?.address.toLowerCase().includes(suburb.toLowerCase())
+    ) {
       const propertyId = response.data[0].id;
+ 
       const pResponse = await axios.get(
         `https://api.domain.com.au/v1/properties/${propertyId}`,
         {
@@ -136,10 +153,17 @@ const runtimeFetchProperty = async (address) => {
 
       const listingId = propertyDetails?.photos[0]?.advertId;
       if (!listingId) {
-        return {
+        const imageBuffer = await getMapStaticImage(
+          propertyDetails?.addressCoordinate.lat,
+          propertyDetails?.addressCoordinate.lon
+        );
+        const aiResponse = await mapAerialImgAnalyze(imageBuffer);
+
+        const property = await Property.create({
           address: propertyDetails?.address.replace(/,? NSW.*$/, ""),
           listingType: "Sale",
           price: null,
+          waterViews: aiResponse.waterViews,
           postcode: propertyDetails?.postcode,
           suburb: propertyDetails?.suburb.toUpperCase(),
           latitude: propertyDetails?.addressCoordinate.lat,
@@ -157,22 +181,13 @@ const runtimeFetchProperty = async (address) => {
               ? propertyDetails?.areaSize
               : null,
           features: propertyDetails?.features,
-          dateListed: null,
-          daysListed: null,
           propertyId,
-          media: [],
-          headline: null,
-          description: null,
-          saleProcess: null,
           channel: "residential",
-          isNewDevelopment: null,
-          listingStatus: null,
-          saleMode: null,
-          history: null,
           urlSlug: propertyDetails.urlSlug,
           canonicalUrl: propertyDetails.canonicalUrl,
           fetchMode: "manual",
-        };
+        });
+        return property;
       }
       const lResponse = await axios.get(
         `https://api.domain.com.au/v1/listings/${listingId}`,
@@ -196,10 +211,7 @@ const runtimeFetchProperty = async (address) => {
 
       const data = {
         listingId,
-        address: listingDetails.addressParts.displayAddress.replace(
-          /,? NSW.*$/,
-          ""
-        ),
+        address: propertyDetails?.address.replace(/,? NSW.*$/, ""),
         listingType: listingDetails.saleMode == "sold" ? "Sold" : "Sale",
         price: listingDetails.saleDetails?.soldDetails?.soldPrice || null,
         postcode: listingDetails.addressParts.postcode,
@@ -276,7 +288,25 @@ const runtimeFetchProperty = async (address) => {
       });
       return property;
     } else {
-      throw new Error("No property found for the given address.");
+      console.log(address, suburb, postcode, latitude, longitude);
+      const imageBuffer = await getMapStaticImage(latitude, longitude);
+      const aiResponse = await mapAerialImgAnalyze(imageBuffer);
+      console.log(aiResponse);
+
+      const property = await Property.create({
+        address: address.replace(/,? NSW.*$/, ""),
+        listingType: "Sale",
+        price: null,
+        waterViews: aiResponse.waterViews,
+        postcode: postcode,
+        suburb: suburb.toUpperCase(),
+        latitude,
+        longitude,
+        propertyType: aiResponse.propertyType,
+        channel: "residential",
+        fetchMode: "manual",
+      });
+      return property;
     }
   } catch (error) {
     console.error(
@@ -289,12 +319,31 @@ const runtimeFetchProperty = async (address) => {
 
 exports.createProperty = async (req, res) => {
   const { id } = req.user;
-  const { address } = req.body;
+
+  const { address, suburb, postcode, latitude, longitude } = req.body;
 
   // Utility function to extract the initial part of the address (street number and name)
+  // const extractStreetAddress = (fullAddress) => {
+
+  //   let addressWords = fullAddress
+  //     .replace(/[,]/g, "") // Remove commas
+  //     .split(" ") // Split by spaces
+  //     .filter(
+  //       (w) =>
+  //         w &&
+  //         !["nsw", "act", "vic", "qld", "tas", "sa", "wa", "nt"].includes(
+  //           w.toLowerCase()
+  //         ) // Ignore state abbreviations
+  //     );
+
+  //   // Extract up to the third word (street number and name)
+  //   return addressWords.slice(0, 4).join(" ");
+  // };
+
   const extractStreetAddress = (fullAddress) => {
-    let addressWords = fullAddress
-      .replace(/[,]/g, "") // Remove commas
+    return fullAddress
+      .replace(/[,]/g, "") // Remove commas from input address
+      .toLowerCase() // Convert to lowercase
       .split(" ") // Split by spaces
       .filter(
         (w) =>
@@ -302,41 +351,67 @@ exports.createProperty = async (req, res) => {
           !["nsw", "act", "vic", "qld", "tas", "sa", "wa", "nt"].includes(
             w.toLowerCase()
           ) // Ignore state abbreviations
-      );
-
-    // Extract up to the third word (street number and name)
-    return addressWords.slice(0, 3).join(" ");
+      )
+      .slice(0, 4) // Extract up to the fifth word (adjust as needed)
+      .join(" ");
   };
 
-  // Preprocess the input address (strip to street number and name)
-  let inputStreetAddress = extractStreetAddress(address);
+  const escapeRegex = (string) => {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // Escape regex special characters
+  };
 
-  // Construct the regex pattern for street number and name
-  let regex = new RegExp(`^${inputStreetAddress}.*`, "i");
+  let inputStreetAddress = extractStreetAddress(address);
+  // console.log("Processed Input Address:", inputStreetAddress);
+
+  // Split the input address into words
+  let addressWords = inputStreetAddress.split(" ");
+
+  // Construct a regex pattern that allows for optional commas and spaces
+  let regexPattern = addressWords
+    .map((word) => escapeRegex(word))
+    .join("[,\\s]*");
+  // console.log("Regex Pattern:", regexPattern);
+
+  let regex = new RegExp(`^${regexPattern}.*`, "i");
+
   try {
     // Check if a UserProperty with the same userId and address already exists
     const userPropertyExists = await UserProperty.findOne({
       userId: id,
       address: { $regex: regex },
+      ...(suburb && { suburb: { $regex: new RegExp(`^${suburb}$`, "i") } }),
     });
 
     if (userPropertyExists) {
+      console.log("in user property exists");
       return res.status(200).json({ success: true, data: userPropertyExists });
     }
 
     // Find the property by address
     let property = await Property.findOne({
       address: { $regex: regex },
+      ...(suburb && { suburb: { $regex: new RegExp(`^${suburb}$`, "i") } }),
     });
 
     if (!property) {
-      // return res
-      //   .status(404)
-      //   .json({ success: false, message: "no property found" });
-      property = await runtimeFetchProperty(address);
+      console.log("property not found");
+      property = await runtimeFetchProperty(
+        address,
+        suburb,
+        postcode,
+        latitude,
+        longitude
+      );
     }
 
     if (!property.listingId) {
+      console.log("listing Id not found");
+      // Convert the property document to a plain object
+      const propertyData = property.toObject();
+
+      // Remove the _id field from the propertyData
+      const { _id, ...restPropertyData } = propertyData;
+
       // Insert directly into UserProperty without creating Property
       const boxStatus = [
         { name: "bookAppraisal", status: "unlock" },
@@ -360,7 +435,7 @@ exports.createProperty = async (req, res) => {
 
       const userProperty = await UserProperty.create({
         userId: id,
-        ...property, // Use the dummy data returned
+        ...restPropertyData,
         boxStatus,
         processChain,
       });
@@ -496,7 +571,7 @@ exports.getPropertyByAddress = async (req, res) => {
 exports.updateProperty = async (req, res) => {
   const { id } = req.user; // User ID from authenticated user
   const { address, boxStatusUpdates, ...updates } = req.body; // Destructure boxStatusUpdates and other updates
-  console.log(address)
+  console.log(address);
   console.log(boxStatusUpdates);
 
   try {
@@ -547,6 +622,9 @@ exports.updateProperty = async (req, res) => {
       "duplexProperties",
       "engagedPurchaser",
       "boxStatus",
+      "recommendedSaleProcess",
+      "highEndProperties",
+      "lowEndProperties",
     ];
 
     // Build the update query by including only allowed fields

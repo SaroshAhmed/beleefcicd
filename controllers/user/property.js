@@ -763,6 +763,7 @@ exports.getBeleefSaleProcess = async (req, res) => {
       {
         $match: {
           suburb: { $regex: new RegExp(`^${suburb}$`, "i") }, // Case-insensitive matching for suburb
+          beleefSaleProcess: { $ne: null },
         },
       },
       {

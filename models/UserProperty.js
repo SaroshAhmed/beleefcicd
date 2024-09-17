@@ -238,6 +238,15 @@ const userPropertySchema = new Schema(
       type: [Schema.Types.Mixed],
       default: null,
     },
+    recommendedSaleProcess: { type: String, default: null },
+    highEndProperties: {
+      type: [Schema.Types.Mixed],
+      default: null,
+    },
+    lowEndProperties: {
+      type: [Schema.Types.Mixed],
+      default: null,
+    },
 
     isCleaned: { type: Boolean, default: false },
     boxStatus: { type: [boxSchema], default: null },

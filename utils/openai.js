@@ -295,9 +295,47 @@ const guessBattleAxe = async (imageBuffer) => {
   }
 };
 
+const mapAerialImgAnalyze = async (imageBuffer) => {
+  try {
+
+    let messages = {
+      role: "user",
+      content: [
+        {
+          type: "text",
+          text: `Answer in JSON format:
+        {
+          "waterViews": "[enum: No, Water views, Deep waterfront with jetty, Tidal waterfront with jetty, Waterfront reserve]",
+          "propertyType": "It must be one of these: [ApartmentUnitFlat, Duplex, House, Terrace, Townhouse, VacantLand, Villa]"
+        }`,
+        },
+        {
+          type: "image_url",
+          image_url: { url: imageBuffer.toString("base64") },
+        },
+      ],
+    };
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [messages],
+      response_format: { type: "json_object" },
+      n: 1,
+      temperature: 0,
+    });
+
+    const analysis = JSON.parse(response.choices[0].message.content);
+    return analysis;
+  } catch (error) {
+    console.error("Error analyzing image with OpenAI:", error.message);
+    throw error;
+  }
+};
+
 module.exports = {
   analyzeImagesAIUrls,
   guessBattleAxe,
   chatCompletion,
   imageCompletion,
+  mapAerialImgAnalyze
 };

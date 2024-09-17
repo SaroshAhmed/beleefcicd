@@ -58,8 +58,9 @@ const mediaSchema = new Schema({
 const propertySchema = new Schema(
   {
     propertyId: { type: String, default: null },
-    listingId: { type: String, unique: true, required: true },
-    address: { type: String, required: true },
+    // listingId: { type: String, unique: true, required: true },
+    listingId: { type: String, default: null},
+    address: { type: String,unique:true, required: true },
     listingType: { type: String, enum: ["Sale", "Sold"], required: true },
     price: { type: Number, default: null },
     postcode: { type: String, required: true },
@@ -223,7 +224,7 @@ propertySchema.pre('save', function (next) {
   next();
 });
 
-
+propertySchema.index({ address: 1 }, { unique: true });
 const Property = mongoose.model("Property", propertySchema);
 
 module.exports = Property;

@@ -35,6 +35,7 @@ const postListSchema = new Schema(
     vendors: {
       type: [Schema.Types.Mixed],
     },
+    recommendedSaleProcess: { type: String, default: null },
     isDeleted: {
       type: Boolean,
       default: false,
