@@ -260,7 +260,7 @@ const userPropertySchema = new Schema(
   { timestamps: true }
 );
 
-userPropertySchema.pre('save', function (next) {
+userPropertySchema.pre('validate', function (next) {
   // Convert suburb to uppercase
   if (this.suburb) {
     this.suburb = this.suburb.toUpperCase();
