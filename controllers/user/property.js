@@ -610,8 +610,6 @@ exports.calculateScoreMatch = async (req, res) => {
     
     After finding the logical price, you have to give logical reasoning in one paragraph for that property.`;
 
-    console.log(userInput)
-
     const logical = await chatCompletion(
       systemPrompt,
       userInput,

@@ -496,6 +496,8 @@ exports.getPropertyByAddress = async (req, res) => {
 exports.updateProperty = async (req, res) => {
   const { id } = req.user; // User ID from authenticated user
   const { address, boxStatusUpdates, ...updates } = req.body; // Destructure boxStatusUpdates and other updates
+  console.log(address)
+  console.log(boxStatusUpdates);
 
   try {
     // Find the property by userId and address
@@ -544,7 +546,7 @@ exports.updateProperty = async (req, res) => {
       "currentAreaProcess",
       "duplexProperties",
       "engagedPurchaser",
-      "boxStatus"
+      "boxStatus",
     ];
 
     // Build the update query by including only allowed fields
@@ -581,6 +583,9 @@ exports.updateProperty = async (req, res) => {
         new: true, // Return the updated document
       }
     );
+
+    console.log(updatedProperty.address);
+    console.log(updatedProperty.boxStatus);
 
     if (!updatedProperty) {
       return res.status(404).json({
