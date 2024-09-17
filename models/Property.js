@@ -218,11 +218,19 @@ const propertySchema = new Schema(
 );
 
 propertySchema.pre('save', function (next) {
+  // Convert suburb to uppercase
   if (this.suburb) {
-    this.suburb = this.suburb.toUpperCase(); // Convert suburb to uppercase
+    this.suburb = this.suburb.toUpperCase();
   }
+  
+  // Convert 'Semi-Detached' to 'Duplex' in propertyType
+  if (this.propertyType === 'Semi-Detached') {
+    this.propertyType = 'Duplex';
+  }
+
   next();
 });
+
 
 propertySchema.index({ address: 1 }, { unique: true });
 const Property = mongoose.model("Property", propertySchema);
