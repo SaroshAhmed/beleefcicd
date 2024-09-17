@@ -544,6 +544,7 @@ exports.updateProperty = async (req, res) => {
       "currentAreaProcess",
       "duplexProperties",
       "engagedPurchaser",
+      "boxStatus"
     ];
 
     // Build the update query by including only allowed fields

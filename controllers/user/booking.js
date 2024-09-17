@@ -79,7 +79,8 @@ exports.createBooking = async (req, res) => {
     firstName,
     lastName,
     email: req.user.email,
-    mobile: req.user.mobile, // change it later to req.user.mobile since on complete profiel will come
+    mobile: req.user.mobile,
+    image:req.user.picture,
   };
 
   const name = "Book Appraisal";
