@@ -21,6 +21,7 @@ const bookingReminder = () => {
           $gte: currentTimeInUTC.toDate(),
           $lte: oneHourLaterInUTC.toDate(),
         },
+        isReminded: { $ne: true }, 
       });
 
       // 2. Send reminders for upcoming bookings
@@ -67,6 +68,9 @@ const bookingReminder = () => {
           } catch (error) {
             console.error(`Error sending SMS to agent: ${error.message}`);
           }
+
+          booking.isReminded = true;
+          await booking.save();
         });
       }
 

@@ -45,6 +45,7 @@ const bookingSchema = new mongoose.Schema({
     type: Schema.Types.Mixed,
     required: true,
   },
+  isReminded: { type: Boolean, default: false },
 }, { timestamps: true });
 
 const Booking = mongoose.model('Booking', bookingSchema);
