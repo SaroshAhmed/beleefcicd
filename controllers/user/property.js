@@ -351,35 +351,14 @@ exports.calculateScoreMatch = async (req, res) => {
             score += 3;
           }
 
-          // Scoring logic for water views
-          if (
-            property.waterViews === "No" &&
-            targetProperty.waterViews === "No"
-          ) {
-            score += 4; // Both have "No" water views
-          } else if (property.waterViews === targetProperty.waterViews) {
-            score += 10; // Identical water views (not "No")
-            keyMatches.push("Water views");
-          } else if (
-            property.waterViews !== null &&
-            targetProperty.waterViews !== null &&
-            property.waterViews !== "No" &&
-            targetProperty.waterViews !== "No"
-          ) {
-            score += 5; // Different water views, but neither is "No"
-            keyMatches.push("Water views");
-          }
-          
-
           if (property.grannyFlat === targetProperty.grannyFlat) {
-           
             if (
               property.grannyFlat === "Yes" &&
               targetProperty.grannyFlat === "Yes"
             ) {
               score += 10;
               keyMatches.push("Granny flat");
-            }else{
+            } else {
               score += 7;
             }
           }
@@ -450,7 +429,46 @@ exports.calculateScoreMatch = async (req, res) => {
               score = 0; // No match
             }
           }
-          
+
+          // Scoring logic for water views
+          if (
+            property.waterViews === "No" &&
+            targetProperty.waterViews === "No"
+          ) {
+            score += 4; // Both have "No" water views
+          } else if (
+            (property.waterViews === "Waterviews" &&
+              targetProperty.waterViews === "Waterfront reserve") ||
+            (property.waterViews === "Waterfront reserve" &&
+              targetProperty.waterViews === "Waterviews")
+          ) {
+            score += 10; // Waterviews and Waterfront reserve are considered a match
+            keyMatches.push("Water aspect");
+          } else if (
+            property.waterViews === targetProperty.waterViews &&
+            (property.waterViews === "Waterviews" ||
+              property.waterViews === "Waterfront reserve")
+          ) {
+            score += 10; // Identical "Waterviews" or "Waterfront reserve"
+            keyMatches.push("Water aspect");
+          } else if (
+            (property.waterViews === "Deep waterfront with jetty" &&
+              targetProperty.waterViews === "Tidal waterfront with jetty") ||
+            (property.waterViews === "Tidal waterfront with jetty" &&
+              targetProperty.waterViews === "Deep waterfront with jetty")
+          ) {
+            score += 10; // Deep waterfront with jetty and Tidal waterfront with jetty are considered a match
+            keyMatches.push("Water aspect");
+          } else if (
+            property.waterViews === targetProperty.waterViews &&
+            (property.waterViews === "Deep waterfront with jetty" ||
+              property.waterViews === "Tidal waterfront with jetty")
+          ) {
+            score += 10; // Deep waterfront with jetty and Tidal waterfront with jetty are considered a match
+            keyMatches.push("Water aspect");
+          } else {
+            score = 0; // Water views don't match any conditions
+          }
 
           const finalScore = score;
           return finalScore > 70
