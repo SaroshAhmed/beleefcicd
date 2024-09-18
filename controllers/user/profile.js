@@ -258,8 +258,6 @@ exports.getSignatureUrl = async (req, res) => {
       ? urlObj.pathname.substring(1)
       : urlObj.pathname;
 
-    console.log("Extracted Key:", key); // Debugging statement
-
     const params = {
       Bucket: process.env.S3_BUCKET_NAME,
       Key: key,
