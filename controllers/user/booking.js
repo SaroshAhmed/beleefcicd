@@ -80,7 +80,7 @@ exports.createBooking = async (req, res) => {
     lastName,
     email: req.user.email,
     mobile: req.user.mobile,
-    image:req.user.picture,
+    image: req.user.picture,
   };
 
   const name = "Book Appraisal";
@@ -446,8 +446,12 @@ exports.getBookingByPrelistId = async (req, res) => {
   try {
     const { prelistId } = req.params;
 
-    // Find the booking with the matching prelistLink
-    const booking = await Booking.findOne({ prelistId });
+    // **Atomic increment using $inc**
+    const booking = await Booking.findOneAndUpdate(
+      { prelistId },
+      { $inc: { prelistViewCount: 1 } },
+      { new: true }
+    );
 
     if (!booking) {
       return res

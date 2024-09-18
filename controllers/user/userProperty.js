@@ -438,6 +438,22 @@ exports.createProperty = async (req, res) => {
         ...restPropertyData,
         boxStatus,
         processChain,
+        marketingPrice: "$5000-8000",
+        marketingItems: [
+          "Photography",
+          "Floorplan",
+          "Video",
+          "Copywriting",
+          "Styling",
+          "Brochures",
+          "Signboard",
+          "Mailcards",
+          "Social media",
+          "Realestate.com.au",
+          "Domain.com.au",
+          "Ausrealty.com.au",
+          "Auctioneer",
+        ],
       });
 
       return res.status(200).json({ success: true, data: userProperty });
@@ -475,6 +491,22 @@ exports.createProperty = async (req, res) => {
       ...restPropertyData,
       boxStatus,
       processChain,
+      marketingPrice: "$5000-8000",
+      marketingItems: [
+        "Photography",
+        "Floorplan",
+        "Video",
+        "Copywriting",
+        "Styling",
+        "Brochures",
+        "Signboard",
+        "Mailcards",
+        "Social media",
+        "Realestate.com.au",
+        "Domain.com.au",
+        "Ausrealty.com.au",
+        "Auctioneer",
+      ],
     });
     console.log(userProperty)
 
@@ -571,9 +603,36 @@ exports.getPropertyByAddress = async (req, res) => {
 
 exports.updateProperty = async (req, res) => {
   const { id } = req.user; // User ID from authenticated user
-  const { address, boxStatusUpdates, ...updates } = req.body; // Destructure boxStatusUpdates and other updates
-  console.log(address);
-  console.log(boxStatusUpdates);
+  const { _id, address, boxStatusUpdates,deleteData , ...updates} = req.body; // Destructure boxStatusUpdates 
+
+  // Handle remove logic
+  if (deleteData && deleteData.remove) {
+    const { fieldPath} = deleteData;
+    // Backend logic to handle deletion for marketingItems
+    if (fieldPath.startsWith("marketingItems")) {
+      const arrayIndexMatch = fieldPath.match(/marketingItems\[(\d+)\]/);
+      if (arrayIndexMatch) {
+        const index = parseInt(arrayIndexMatch[1], 10);
+
+        // Use $unset to remove the item from the array at the specific index
+        const unsetQuery = { $unset: { [`marketingItems.${index}`]: 1 } };
+        await UserProperty.findByIdAndUpdate(_id, unsetQuery);
+
+        // Pull any null elements out after the unset
+        const updatedUserProperty = await UserProperty.findByIdAndUpdate(
+          _id,
+          { $pull: { marketingItems: null } }, // Remove null values from the array
+          { new: true }
+        );
+        return res.status(200).json({ success: true, data: updatedUserProperty });
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid field path for removal",
+        });
+      }
+    }
+  }
 
   try {
     // Find the property by userId and address
@@ -626,7 +685,8 @@ exports.updateProperty = async (req, res) => {
       "recommendedSaleProcess",
       "highEndProperties",
       "lowEndProperties",
-      "vendorDetails"
+      "vendorDetails",
+      "marketingPrice"
     ];
 
     // Build the update query by including only allowed fields
@@ -664,8 +724,6 @@ exports.updateProperty = async (req, res) => {
       }
     );
 
-    console.log(updatedProperty.address);
-    console.log(updatedProperty.boxStatus);
 
     if (!updatedProperty) {
       return res.status(404).json({

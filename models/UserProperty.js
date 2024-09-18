@@ -253,6 +253,12 @@ const userPropertySchema = new Schema(
       type: [Schema.Types.Mixed],
       default: null,
     },
+    marketingPrice: {
+      type: String,
+    },
+    marketingItems: {
+      type: [String],
+    },
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date, default: null },
   },

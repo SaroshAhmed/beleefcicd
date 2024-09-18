@@ -81,11 +81,14 @@ const assignABN = (company) => {
     "KK Property Services Pty Ltd (Licensed user of Ausrealty)":
       "ABN 32 626 591 642",
     "I.M Group Pty Ltd (Licenced user of Ausrealty)": "ABN 58 634 408 610",
-    "MRL Property Group Pty Ltd (Licenced user of Ausrealty)": "ABN 66 648 514 498",
-    "Anodos Enterprises Pty Ltd (Licenced user of Ausrealty)": "ABN 19 635 299 526",
+    "MRL Property Group Pty Ltd (Licenced user of Ausrealty)":
+      "ABN 66 648 514 498",
+    "Anodos Enterprises Pty Ltd (Licenced user of Ausrealty)":
+      "ABN 19 635 299 526",
     "I Sayed Investments Pty Ltd (Licenced user of Ausrealty)":
       "ABN 53 647 496 222",
-    "Suti Investments Pty Ltd (Licenced user of Ausrealty)": "ABN 45 620 049 292",
+    "Suti Investments Pty Ltd (Licenced user of Ausrealty)":
+      "ABN 45 620 049 292",
     "Hani Property Services Pty Ltd (Licenced user of Ausrealty)":
       "ABN 93 660 016 517",
   };
@@ -105,41 +108,49 @@ exports.saveProfile = async (req, res) => {
         .json({ success: false, message: "User not found" });
     }
 
-    // Check the image format and set appropriate ContentType
-    const mimeTypeMatch = image.match(/^data:(image\/\w+);base64,/); // Extract mime type from base64 string
-    if (!mimeTypeMatch) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid image format",
-      });
-    }
+     // Check if image is provided
+     if (image) {
+      // Check the image format and set appropriate ContentType
+      const mimeTypeMatch = image.match(/^data:(image\/\w+);base64,/); // Extract mime type from base64 string
+      if (!mimeTypeMatch) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid image format',
+        });
+      }
 
-    const mimeType = mimeTypeMatch[1]; // This will be 'image/png', 'image/jpeg', etc.
-    const imageExtension = mimeType.split("/")[1]; // Extract the extension (e.g., 'png', 'jpeg', 'jpg')
+      const mimeType = mimeTypeMatch[1]; // e.g., 'image/png', 'image/jpeg', etc.
+      const imageExtension = mimeType.split('/')[1]; // Extract the extension (e.g., 'png', 'jpeg', 'jpg')
 
-    // Decode base64 image to buffer
-    const imageBuffer = Buffer.from(image.split(",")[1], "base64"); // Remove 'data:image/png;base64,' part
+      // Decode base64 image to buffer
+      const imageBuffer = Buffer.from(image.split(',')[1], 'base64'); // Remove 'data:image/png;base64,' part
 
-    const imageKey = `pictures/${userId}.${imageExtension}`; // Each user's image saved in subfolder with user ID
+      const imageKey = `pictures/${userId}.${imageExtension}`; // Each user's image saved in subfolder with user ID
 
-    // Upload image to S3
-    await s3
-      .putObject({
+      // Upload image to S3
+      await s3.putObject({
         Bucket: process.env.S3_PUBLIC_BUCKET_NAME, // Your S3 bucket name
         Key: imageKey,
         Body: imageBuffer,
-        ContentEncoding: "base64",
+        ContentEncoding: 'base64',
         ContentType: mimeType, // Use the detected mime type (e.g., 'image/png', 'image/jpeg')
-        // ACL: "public-read", // Optional: Make the image public
-      })
-      .promise();
+        // ACL: 'public-read', // Optional: Make the image public
+      }).promise();
 
-    user.signature = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`;
-    user.company = company;
-    user.title = title;
-    user.abn = assignABN(company);
-    user.mobile = mobile;
-    user.picture = `https://${process.env.S3_PUBLIC_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${imageKey}`;
+      user.picture = `https://${process.env.S3_PUBLIC_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${imageKey}`;
+    }
+
+    if(s3Key){
+      user.signature = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`;
+    }
+
+    user.company = company || user.company;
+    user.title = title || user.title;
+    user.mobile = mobile || user.mobile;
+    if(company){
+      user.abn = assignABN(company);
+    }
+
     user.profileComplete = true;
 
     await user.save();
@@ -196,6 +207,8 @@ exports.saveProfile = async (req, res) => {
 //     res.status(500).json({ success: false, message: error.message });
 //   }
 // };
+
+
 
 exports.uploadImage = async (req, res) => {
   try {
@@ -255,7 +268,7 @@ exports.getSignatureUrl = async (req, res) => {
 
     const url = s3.getSignedUrl("getObject", params);
 
-    res.status(200).json({ success: true, url });
+    res.status(200).json({ success: true, data: url });
   } catch (error) {
     console.error("Error generating signature URL:", error);
     res.status(500).json({ success: false, message: "Server error" });

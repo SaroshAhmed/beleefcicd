@@ -46,6 +46,7 @@ const bookingSchema = new mongoose.Schema({
     required: true,
   },
   isReminded: { type: Boolean, default: false },
+  prelistViewCount: { type: Number, default: 0 },
 }, { timestamps: true });
 
 const Booking = mongoose.model('Booking', bookingSchema);
