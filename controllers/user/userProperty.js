@@ -250,59 +250,59 @@ const runtimeFetchProperty = async (
         fetchMode: "manual",
       };
 
-      // Function to retry AI analysis
-      const retryAIAnalysis = async (data, maxRetries = 3) => {
-        let attempts = 0;
-        let aiResult = null;
-        while (attempts < maxRetries) {
-          try {
-            aiResult = await generatePromptAndAnalyze(data);
-            console.log(aiResult);
-            if (aiResult) break; // If AI is successful, break out of loop
-          } catch (error) {
-            console.error(
-              `Error analyzing propertyId ${data.propertyId} on attempt ${
-                attempts + 1
-              }:`,
-              error.message
-            );
-          }
-          attempts += 1;
-        }
-        if (!aiResult) {
-          throw new Error(
-            "Failed to generate AI analysis after multiple attempts"
-          );
-        }
-        return aiResult;
-      };
+      // // Function to retry AI analysis
+      // const retryAIAnalysis = async (data, maxRetries = 3) => {
+      //   let attempts = 0;
+      //   let aiResult = null;
+      //   while (attempts < maxRetries) {
+      //     try {
+      //       aiResult = await generatePromptAndAnalyze(data);
+      //       console.log(aiResult);
+      //       if (aiResult) break; // If AI is successful, break out of loop
+      //     } catch (error) {
+      //       console.error(
+      //         `Error analyzing propertyId ${data.propertyId} on attempt ${
+      //           attempts + 1
+      //         }:`,
+      //         error.message
+      //       );
+      //     }
+      //     attempts += 1;
+      //   }
+      //   if (!aiResult) {
+      //     throw new Error(
+      //       "Failed to generate AI analysis after multiple attempts"
+      //     );
+      //   }
+      //   return aiResult;
+      // };
 
-      // Get AI result, retry if necessary
-      const ai = await retryAIAnalysis(data);
+      // // Get AI result, retry if necessary
+      // const ai = await retryAIAnalysis(data);
 
       // Merging AI result into data and saving to the database
       const property = await Property.create({
         ...data,
-        ...ai,
-        isCleaned: true,
+        // ...ai,
+        // isCleaned: true,
       });
       return property;
     } else {
-      console.log(address, suburb, postcode, latitude, longitude);
-      const imageBuffer = await getMapStaticImage(latitude, longitude);
-      const aiResponse = await mapAerialImgAnalyze(imageBuffer);
-      console.log(aiResponse);
+      // console.log(address, suburb, postcode, latitude, longitude);
+      // const imageBuffer = await getMapStaticImage(latitude, longitude);
+      // const aiResponse = await mapAerialImgAnalyze(imageBuffer);
+      // console.log(aiResponse);
 
       const property = await Property.create({
         address: address.replace(/,? NSW.*$/, ""),
         listingType: "Sale",
         price: null,
-        waterViews: aiResponse.waterViews,
+        // waterViews: aiResponse.waterViews,
         postcode: postcode,
         suburb: suburb.toUpperCase(),
         latitude,
         longitude,
-        propertyType: aiResponse.propertyType,
+        // propertyType: aiResponse.propertyType,
         channel: "residential",
         fetchMode: "manual",
       });
@@ -476,6 +476,7 @@ exports.createProperty = async (req, res) => {
       boxStatus,
       processChain,
     });
+    console.log(userProperty)
 
     return res.status(200).json({ success: true, data: userProperty });
   } catch (error) {

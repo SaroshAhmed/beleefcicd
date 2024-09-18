@@ -50,9 +50,9 @@ const vendorDetailsSchema = new mongoose.Schema({
 // });
 
 const mediaSchema = new Schema({
-  category: { type: String, required: true },
-  type: { type: String, required: true },
-  url: { type: String, required: true },
+  category: { type: String },
+  type: { type: String },
+  url: { type: String},
 });
 
 const boxSchema = new Schema(
@@ -87,10 +87,10 @@ const userPropertySchema = new Schema(
     address: { type: String, required: true },
     listingType: { type: String, enum: ["Sale", "Sold"], required: true },
     price: { type: Number, default: null },
-    postcode: { type: String, required: true },
-    suburb: { type: String, required: true },
-    latitude: { type: Number, required: true },
-    longitude: { type: Number, required: true },
+    postcode: { type: String},
+    suburb: { type: String},
+    latitude: { type: Number },
+    longitude: { type: Number },
     propertyType: {
       type: String,
       enum: [
@@ -102,7 +102,6 @@ const userPropertySchema = new Schema(
         "VacantLand",
         "Villa",
       ],
-      required: true,
     },
     battleAxe: { type: String, enum: ["Yes", "No"], default: null },
     media: { type: [mediaSchema], default: null },

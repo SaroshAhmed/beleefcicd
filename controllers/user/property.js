@@ -369,14 +369,18 @@ exports.calculateScoreMatch = async (req, res) => {
             score += 5; // Different water views, but neither is "No"
             keyMatches.push("Water views");
           }
+          
 
           if (property.grannyFlat === targetProperty.grannyFlat) {
-            score += 7;
+           
             if (
               property.grannyFlat === "Yes" &&
               targetProperty.grannyFlat === "Yes"
             ) {
+              score += 10;
               keyMatches.push("Granny flat");
+            }else{
+              score += 7;
             }
           }
 
@@ -446,6 +450,7 @@ exports.calculateScoreMatch = async (req, res) => {
               score = 0; // No match
             }
           }
+          
 
           const finalScore = score;
           return finalScore > 70
