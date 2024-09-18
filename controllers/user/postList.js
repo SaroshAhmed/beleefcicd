@@ -23,6 +23,7 @@ exports.createPostList = async (req, res) => {
       processChain,
       engagedPurchaser,
       vendors,
+      recommendedSaleProcess,
     } = req.body;
 
     // Check if a UserProperty with the same userId and address already exists
@@ -50,18 +51,19 @@ exports.createPostList = async (req, res) => {
         .json({ success: false, message: "Missing required fields" });
     }
 
-
-     // If vendors is null or undefined, set it to a default object
-     const defaultVendors = [{
-      firstName: null,
-      lastName: null,
-      email: null,
-      mobile: null,
-    }];
+    // If vendors is null or undefined, set it to a default object
+    const defaultVendors = [
+      {
+        firstName: null,
+        lastName: null,
+        email: null,
+        mobile: null,
+      },
+    ];
 
     // Use default vendors if vendors is null or undefined
     const finalVendors = vendors && vendors.length ? vendors : defaultVendors;
-    
+
     const newPostList = new PostList({
       userId: id,
       address,
@@ -76,7 +78,7 @@ exports.createPostList = async (req, res) => {
       agent,
       processChain,
       engagedPurchaser,
-      vendors:finalVendors,
+      vendors: finalVendors,
       marketingPrice: "$5000-8000",
       marketingItems: [
         "Photography",
@@ -93,6 +95,8 @@ exports.createPostList = async (req, res) => {
         "Ausrealty.com.au",
         "Auctioneer",
       ],
+
+      recommendedSaleProcess,
     });
 
     const savedPostList = await newPostList.save();
