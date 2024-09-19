@@ -276,6 +276,10 @@ userPropertySchema.pre('validate', function (next) {
     this.propertyType = 'Duplex';
   }
 
+  if (this.propertyType === 'Land') {
+    this.propertyType = 'VacantLand';
+  }
+
   next();
 });
 
