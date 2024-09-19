@@ -216,6 +216,7 @@ const userPropertySchema = new Schema(
     marketingItems: {
       type: [String],
     },
+    isCleaned: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date, default: null },
   },

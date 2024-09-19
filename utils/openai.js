@@ -306,7 +306,11 @@ const mapAerialImgAnalyze = async (imageBuffer) => {
           text: `Answer in JSON format:
         {
           "waterViews": Should choose from the list only "[enum: No, Water views, Deep waterfront with jetty, Tidal waterfront with jetty, Waterfront reserve]",
-          "propertyType": Should choose from the list only "enum: [ApartmentUnitFlat, Duplex, House, Terrace, Townhouse, VacantLand, Villa]"
+          "propertyType": Should choose from the list only "enum: [ApartmentUnitFlat, Duplex, House, Terrace, Townhouse, VacantLand, Villa]",
+          "pool": [enum: Yes, No],
+          "tennisCourt": [enum: Yes, No],
+          "streetTraffic": It should be one of the list [enum: Low traffic, Moderate traffic, High traffic],
+          "topography":type array. multiples can be selected but only from this list [High side, Low side, Level block, Irregular block, Unusable land]
         }`,
         },
         {

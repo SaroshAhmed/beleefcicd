@@ -69,7 +69,7 @@ async function generatePromptAndAnalyze(property) {
   };
 
   // Override certain fields if the property type is VacantLand
-  if (propertyType === "VacantLand") {
+  if (propertyType === "VacantLand" || propertyType === "Land") {
     jsonStructure.buildType = null;
     jsonStructure.wallMaterial = null;
     jsonStructure.finishes = null;
@@ -188,23 +188,6 @@ exports.createProperty = async (req, res) => {
       ...(suburb && { suburb: { $regex: new RegExp(`^${suburb}$`, "i") } }),
     });
 
-    if (!property) {
-      console.log("property not found");
-      property = await runtimeFetchProperty(
-        address,
-        suburb,
-        postcode,
-        latitude,
-        longitude
-      );
-    }
-
-    // Convert the property document to a plain object
-    const propertyData = property.toObject();
-
-    // Remove the _id field from the propertyData
-    const { _id, ...restPropertyData } = propertyData;
-
     const boxStatus = [
       { name: "bookAppraisal", status: "unlock" },
       { name: "priceProcess", status: "unlock" },
@@ -224,6 +207,56 @@ exports.createProperty = async (req, res) => {
       { label: "6", name: "Vendor Acceptance", selected: null },
       { label: "7", name: "Solid", selected: null },
     ];
+
+    if (property) {
+      // Convert the property document to a plain object
+      const propertyData = property.toObject();
+
+      // Remove the _id field from the propertyData
+      const { _id, ...restPropertyData } = propertyData;
+
+      // Create a new UserProperty document
+      const userProperty = await UserProperty.create({
+        fkPropertyId: _id,
+        userId: id,
+        ...restPropertyData,
+        boxStatus,
+        processChain,
+        marketingPrice: "$5000-8000",
+        marketingItems: [
+          "Photography",
+          "Floorplan",
+          "Video",
+          "Copywriting",
+          "Styling",
+          "Brochures",
+          "Signboard",
+          "Mailcards",
+          "Social media",
+          "Realestate.com.au",
+          "Domain.com.au",
+          "Ausrealty.com.au",
+          "Auctioneer",
+        ],
+        isCleaned: true,
+      });
+
+      return res.status(200).json({ success: true, data: userProperty });
+    }
+
+    property = await runtimeFetchProperty(
+      address,
+      suburb,
+      postcode,
+      latitude,
+      longitude
+    );
+
+    // Convert the property document to a plain object
+    const propertyData = property.toObject();
+
+    // Remove the _id field from the propertyData
+    const { _id, ...restPropertyData } = propertyData;
 
     // Create a new UserProperty document
     const userProperty = await UserProperty.create({
@@ -248,6 +281,7 @@ exports.createProperty = async (req, res) => {
         "Ausrealty.com.au",
         "Auctioneer",
       ],
+      isCleaned: false,
     });
 
     return res.status(200).json({ success: true, data: userProperty });
