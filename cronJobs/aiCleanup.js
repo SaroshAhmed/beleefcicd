@@ -204,6 +204,7 @@ const startPropertyUpdaterCron = () => {
               const listingId = propertyDetails?.photos?.[0]?.advertId;
 
               if (!listingId) {
+                console.log("no listing id")
                 // No listingId found, proceed with AI analysis and property creation
                 const imageBuffer = await getMapStaticImage(
                   propertyDetails?.addressCoordinate.lat,
@@ -402,7 +403,8 @@ const startPropertyUpdaterCron = () => {
               // If no matching property found in Domain API
               const imageBuffer = await getMapStaticImage(latitude, longitude);
               const aiResponse = await mapAerialImgAnalyze(imageBuffer);
-
+console.log("Maps aerial response")
+console.log(aiResponse)
               const data = {
                 address: address.replace(/,? NSW.*$/, ""),
                 listingType: "Sale",
