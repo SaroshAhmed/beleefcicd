@@ -184,7 +184,9 @@ const startPropertyUpdaterCron = () => {
               response.data.length > 0 &&
               response.data[0]?.address
                 ?.toLowerCase()
-                .includes(suburb.toLowerCase())
+                .includes(suburb.toLowerCase()) &&
+              response.data[0]?.relativeScore === 100 &&
+              address === response.data[0]?.address
             ) {
               const propertyId = response.data[0].id;
 
@@ -204,7 +206,7 @@ const startPropertyUpdaterCron = () => {
               const listingId = propertyDetails?.photos?.[0]?.advertId;
 
               if (!listingId) {
-                console.log("no listing id")
+                console.log("no listing id");
                 // No listingId found, proceed with AI analysis and property creation
                 const imageBuffer = await getMapStaticImage(
                   propertyDetails?.addressCoordinate.lat,
@@ -222,7 +224,7 @@ const startPropertyUpdaterCron = () => {
                   streetTraffic: aiResponse.streetTraffic,
                   topography: aiResponse.topography,
                   postcode: propertyDetails?.postcode,
-                  suburb: propertyDetails?.suburb.toUpperCase(),
+                  suburb: propertyDetails?.suburb?.toUpperCase(),
                   latitude: propertyDetails?.addressCoordinate.lat,
                   longitude: propertyDetails?.addressCoordinate.lon,
                   propertyType: propertyDetails?.propertyType,
@@ -279,7 +281,7 @@ const startPropertyUpdaterCron = () => {
                         ? "Withdrawn"
                         : null,
                     postcode: propertyDetails?.postcode,
-                    suburb: propertyDetails?.suburb.toUpperCase(),
+                    suburb: propertyDetails?.suburb?.toUpperCase(),
                     latitude: propertyDetails?.addressCoordinate.lat,
                     longitude: propertyDetails?.addressCoordinate.lon,
                     propertyType: propertyDetails?.propertyType,
@@ -343,7 +345,7 @@ const startPropertyUpdaterCron = () => {
                 price:
                   listingDetails.saleDetails?.soldDetails?.soldPrice || null,
                 postcode: listingDetails.addressParts.postcode,
-                suburb: listingDetails.addressParts.suburb.toUpperCase(),
+                suburb: listingDetails.addressParts.suburb?.toUpperCase(),
                 latitude: listingDetails.geoLocation.latitude,
                 longitude: listingDetails.geoLocation.longitude,
                 propertyType: propertyDetails.propertyType,
@@ -403,8 +405,8 @@ const startPropertyUpdaterCron = () => {
               // If no matching property found in Domain API
               const imageBuffer = await getMapStaticImage(latitude, longitude);
               const aiResponse = await mapAerialImgAnalyze(imageBuffer);
-console.log("Maps aerial response")
-console.log(aiResponse)
+              console.log("Maps aerial response");
+              console.log(aiResponse);
               const data = {
                 address: address.replace(/,? NSW.*$/, ""),
                 listingType: "Sale",
@@ -415,7 +417,7 @@ console.log(aiResponse)
                 streetTraffic: aiResponse.streetTraffic,
                 topography: aiResponse.topography,
                 postcode: postcode,
-                suburb: suburb.toUpperCase(),
+                suburb: suburb?.toUpperCase(),
                 latitude,
                 longitude,
                 propertyType: aiResponse.propertyType,
