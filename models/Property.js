@@ -8,47 +8,6 @@ const vendorDetailsSchema = new mongoose.Schema({
   mobile: { type: String, default: null },
 });
 
-// const historySchema = new Schema({
-//   sales: [
-//     {
-//       first: {
-//         advertisedDate: { type: Date, default: null },
-//         agency: { type: String, default: null },
-//         agencyId: { type: Number, default: null },
-//         type: { type: String, default: null },
-//       },
-//       last: {
-//         advertisedDate: { type: Date, default: null },
-//         agency: { type: String, default: null },
-//         agencyId: { type: Number, default: null },
-//         type: { type: String, default: null },
-//       },
-//       date: { type: Date, default: null },
-//       daysOnMarket: { type: Number, default: null },
-//       documentedAsSold: { type: Boolean, default: null },
-//       price: { type: Number, default: null },
-//       reportedAsSold: { type: Boolean, default: null },
-//       type: { type: String, default: null },
-//     },
-//   ],
-//   rentals: [
-//     {
-//       first: {
-//         advertisedDate: { type: Date, default: null },
-//         agency: { type: String, default: null },
-//         agencyId: { type: Number, default: null },
-//         type: { type: String, default: null },
-//       },
-//       last: {
-//         advertisedDate: { type: Date, default: null },
-//         agency: { type: String, default: null },
-//         agencyId: { type: Number, default: null },
-//         type: { type: String, default: null },
-//       },
-//     },
-//   ],
-// });
-
 const mediaSchema = new Schema({
   category: { type: String },
   type: { type: String},
@@ -69,15 +28,15 @@ const propertySchema = new Schema(
     longitude: { type: Number},
     propertyType: {
       type: String,
-      enum: [
-        "ApartmentUnitFlat",
-        "Duplex",
-        "House",
-        "Terrace",
-        "Townhouse",
-        "VacantLand",
-        "Villa",
-      ],
+      // enum: [
+      //   "ApartmentUnitFlat",
+      //   "Duplex",
+      //   "House",
+      //   "Terrace",
+      //   "Townhouse",
+      //   "VacantLand",
+      //   "Villa",
+      // ],
     },
     aiPropertyType: {
       type: String,
@@ -225,6 +184,10 @@ propertySchema.pre('validate', function (next) {
   // Convert 'Semi-Detached' to 'Duplex' in propertyType
   if (this.propertyType === 'Semi-Detached') {
     this.propertyType = 'Duplex';
+  }
+
+  if (this.propertyType === 'Apartment') {
+    this.propertyType = 'ApartmentUnitFlat';
   }
 
   if (this.propertyType === 'Land') {

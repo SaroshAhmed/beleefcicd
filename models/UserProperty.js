@@ -8,47 +8,6 @@ const vendorDetailsSchema = new mongoose.Schema({
   mobile: { type: String, default: null },
 });
 
-// const historySchema = new Schema({
-//   sales: [
-//     {
-//       first: {
-//         advertisedDate: { type: Date, default: null },
-//         agency: { type: String, default: null },
-//         agencyId: { type: Number, default: null },
-//         type: { type: String, default: null },
-//       },
-//       last: {
-//         advertisedDate: { type: Date, default: null },
-//         agency: { type: String, default: null },
-//         agencyId: { type: Number, default: null },
-//         type: { type: String, default: null },
-//       },
-//       date: { type: Date, default: null },
-//       daysOnMarket: { type: Number, default: null },
-//       documentedAsSold: { type: Boolean, default: null },
-//       price: { type: Number, default: null },
-//       reportedAsSold: { type: Boolean, default: null },
-//       type: { type: String, default: null },
-//     },
-//   ],
-//   rentals: [
-//     {
-//       first: {
-//         advertisedDate: { type: Date, default: null },
-//         agency: { type: String, default: null },
-//         agencyId: { type: Number, default: null },
-//         type: { type: String, default: null },
-//       },
-//       last: {
-//         advertisedDate: { type: Date, default: null },
-//         agency: { type: String, default: null },
-//         agencyId: { type: Number, default: null },
-//         type: { type: String, default: null },
-//       },
-//     },
-//   ],
-// });
-
 const mediaSchema = new Schema({
   category: { type: String },
   type: { type: String },
@@ -82,6 +41,7 @@ const boxSchema = new Schema(
 const userPropertySchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    fkPropertyId: { type: Schema.Types.ObjectId, ref: "Property", required: true },
     propertyId: { type: String, default: null },
     listingId: { type: String },
     address: { type: String, required: true },
@@ -93,15 +53,15 @@ const userPropertySchema = new Schema(
     longitude: { type: Number },
     propertyType: {
       type: String,
-      enum: [
-        "ApartmentUnitFlat",
-        "Duplex",
-        "House",
-        "Terrace",
-        "Townhouse",
-        "VacantLand",
-        "Villa",
-      ],
+      // enum: [
+      //   "ApartmentUnitFlat",
+      //   "Duplex",
+      //   "House",
+      //   "Terrace",
+      //   "Townhouse",
+      //   "VacantLand",
+      //   "Villa",
+      // ],
     },
     battleAxe: { type: String, enum: ["Yes", "No"], default: null },
     media: { type: [mediaSchema], default: null },
@@ -216,7 +176,6 @@ const userPropertySchema = new Schema(
     logicalPrice: { type: String, default: null },
     logicalReasoning: { type: String, default: null },
     engagedPurchaser: { type: String, default: null },
-
     recommendedSales: {
       type: [Schema.Types.Mixed],
       default: null,
@@ -246,8 +205,6 @@ const userPropertySchema = new Schema(
       type: [Schema.Types.Mixed],
       default: null,
     },
-
-    isCleaned: { type: Boolean, default: false },
     boxStatus: { type: [boxSchema], default: null },
     processChain: {
       type: [Schema.Types.Mixed],
@@ -274,6 +231,10 @@ userPropertySchema.pre('validate', function (next) {
   // Convert 'Semi-Detached' to 'Duplex' in propertyType
   if (this.propertyType === 'Semi-Detached') {
     this.propertyType = 'Duplex';
+  }
+
+  if (this.propertyType === 'Apartment') {
+    this.propertyType = 'ApartmentUnitFlat';
   }
 
   if (this.propertyType === 'Land') {

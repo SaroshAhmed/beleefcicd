@@ -120,12 +120,10 @@ const runtimeFetchProperty = async (
       address: address.replace(/,? NSW.*$/, ""),
       listingType: "Sale",
       price: null,
-      // waterViews: aiResponse.waterViews,
       postcode: postcode,
       suburb: suburb.toUpperCase(),
       latitude,
       longitude,
-      // propertyType: aiResponse.propertyType,
       channel: "residential",
       fetchMode: "manual",
       isCleaned: false,
@@ -142,7 +140,6 @@ const runtimeFetchProperty = async (
 
 exports.createProperty = async (req, res) => {
   const { id } = req.user;
-
   const { address, suburb, postcode, latitude, longitude } = req.body;
 
   const extractStreetAddress = (fullAddress) => {
@@ -162,21 +159,14 @@ exports.createProperty = async (req, res) => {
   };
 
   const escapeRegex = (string) => {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // Escape regex special characters
+    return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   };
 
   let inputStreetAddress = extractStreetAddress(address);
-  // console.log("Processed Input Address:", inputStreetAddress);
-
-  // Split the input address into words
   let addressWords = inputStreetAddress.split(" ");
-
-  // Construct a regex pattern that allows for optional commas and spaces
   let regexPattern = addressWords
     .map((word) => escapeRegex(word))
     .join("[,\\s]*");
-  // console.log("Regex Pattern:", regexPattern);
-
   let regex = new RegExp(`^${regexPattern}.*`, "i");
 
   try {
@@ -209,61 +199,6 @@ exports.createProperty = async (req, res) => {
       );
     }
 
-    if (!property.listingId) {
-      console.log("listing Id not found");
-      // Convert the property document to a plain object
-      const propertyData = property.toObject();
-
-      // Remove the _id field from the propertyData
-      const { _id, ...restPropertyData } = propertyData;
-
-      // Insert directly into UserProperty without creating Property
-      const boxStatus = [
-        { name: "bookAppraisal", status: "unlock" },
-        { name: "priceProcess", status: "unlock" },
-        { name: "postList", status: "lock" },
-        { name: "authoriseSchedule", status: "unlock" },
-        { name: "prepareMarketing", status: "unlock" },
-        { name: "goLive", status: "unlock" },
-        { name: "onMarket", status: "unlock" },
-      ];
-
-      const processChain = [
-        { label: "1", name: "Views", selected: null },
-        { label: "2", name: "Enquiry", selected: null },
-        { label: "3", name: "Inspection", selected: null },
-        { label: "4", name: "Offers", selected: null },
-        { label: "5", name: "Close Feedback", selected: null },
-        { label: "6", name: "Vendor Acceptance", selected: null },
-        { label: "7", name: "Solid", selected: null },
-      ];
-
-      const userProperty = await UserProperty.create({
-        userId: id,
-        ...restPropertyData,
-        boxStatus,
-        processChain,
-        marketingPrice: "$5000-8000",
-        marketingItems: [
-          "Photography",
-          "Floorplan",
-          "Video",
-          "Copywriting",
-          "Styling",
-          "Brochures",
-          "Signboard",
-          "Mailcards",
-          "Social media",
-          "Realestate.com.au",
-          "Domain.com.au",
-          "Ausrealty.com.au",
-          "Auctioneer",
-        ],
-      });
-
-      return res.status(200).json({ success: true, data: userProperty });
-    }
-
     // Convert the property document to a plain object
     const propertyData = property.toObject();
 
@@ -292,6 +227,7 @@ exports.createProperty = async (req, res) => {
 
     // Create a new UserProperty document
     const userProperty = await UserProperty.create({
+      fkPropertyId: _id,
       userId: id,
       ...restPropertyData,
       boxStatus,
@@ -313,7 +249,6 @@ exports.createProperty = async (req, res) => {
         "Auctioneer",
       ],
     });
-    console.log(userProperty);
 
     return res.status(200).json({ success: true, data: userProperty });
   } catch (error) {
