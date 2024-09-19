@@ -76,7 +76,7 @@ async function generatePromptAndAnalyze(property) {
 
   const imageUrls = media
     .filter((item) => item.type === "photo")
-    .slice(0, 4)
+    .slice(0, 2)
     .map((item) => item.url);
 
   const floorplan = media.find((item) => item.type === "floorplan");
@@ -134,7 +134,7 @@ let isJobRunning = false;
 // Cron Job Setup
 const startPropertyUpdaterCron = () => {
   cron.schedule(
-    "*/15 * * * * *", // Runs every 15 seconds
+    "*/10 * * * * *", // Runs every 10 seconds
     async () => {
       if (isJobRunning) {
         console.log("Previous job is still running. Skipping this run.");
