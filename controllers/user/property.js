@@ -248,7 +248,7 @@ exports.calculateScoreMatch = async (req, res) => {
           }
 
           const finalScore = score;
-          return finalScore > 70
+          return finalScore > 60
             ? { property: targetProperty, score: finalScore, keyMatches }
             : null;
         });
@@ -471,7 +471,7 @@ exports.calculateScoreMatch = async (req, res) => {
           }
 
           const finalScore = score;
-          return finalScore > 70
+          return finalScore > 60
             ? { property: targetProperty, score: finalScore, keyMatches }
             : null;
         });
