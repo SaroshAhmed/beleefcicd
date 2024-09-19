@@ -95,6 +95,7 @@ async function updateSuburbStats() {
         { unitStats: { $exists: true, $size: 0 } },
       ],
     });
+    console.log(suburbs.length)
 
     for (const suburb of suburbs) {
       const { suburb: suburbName, postcode } = suburb;

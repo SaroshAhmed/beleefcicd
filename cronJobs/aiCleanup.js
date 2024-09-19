@@ -186,7 +186,15 @@ const startPropertyUpdaterCron = () => {
                 ?.toLowerCase()
                 .includes(suburb.toLowerCase()) &&
               response.data[0]?.relativeScore === 100 &&
-              address === response.data[0]?.address
+              address
+              ?.toLowerCase()
+              .split(' ')
+              .slice(0, 3)
+              .join(' ') === response.data[0]?.address
+              ?.toLowerCase()
+              .split(' ')
+              .slice(0, 3)
+              .join(' ')
             ) {
               const propertyId = response.data[0].id;
 
