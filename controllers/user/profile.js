@@ -135,7 +135,9 @@ exports.saveProfile = async (req, res) => {
         ContentEncoding: 'base64',
         ContentType: mimeType, // Use the detected mime type (e.g., 'image/png', 'image/jpeg')
         // ACL: 'public-read', // Optional: Make the image public
-        CacheControl: 'no-cache', // Ensure the image is not cached
+        // CacheControl: 'no-cache', // Ensure the image is not cached
+        CacheControl: 'no-cache, no-store, must-revalidate',
+        Expires: 0,
       }).promise();
 
       user.picture = `https://${process.env.S3_PUBLIC_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${imageKey}`;
