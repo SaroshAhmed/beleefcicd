@@ -3,7 +3,7 @@ const axios = require("axios");
 const { GOOGLE_MAPS_API_KEY } = require("../config");
 
 async function getMapStaticImage(lat, lon) {
-  const mapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lon}&zoom=20&size=800x600&maptype=satellite&markers=color:red%7Clabel:C%7C${lat},${lon}&key=${GOOGLE_MAPS_API_KEY}`;
+  const mapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lon}&zoom=19&size=600x600&maptype=satellite&markers=color:red%7Clabel:C%7C${lat},${lon}&key=${GOOGLE_MAPS_API_KEY}`;
 
   try {
     const response = await axios.get(mapUrl, { responseType: "arraybuffer" });
