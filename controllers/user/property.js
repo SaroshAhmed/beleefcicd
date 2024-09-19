@@ -467,7 +467,7 @@ exports.calculateScoreMatch = async (req, res) => {
             score += 10; // Deep waterfront with jetty and Tidal waterfront with jetty are considered a match
             keyMatches.push("Water aspect");
           } else {
-            score = 0; // Water views don't match any conditions
+            score += 7; // Water views don't match any conditions
           }
 
           const finalScore = score;
