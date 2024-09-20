@@ -134,7 +134,7 @@ let isJobRunning = false;
 // Cron Job Setup
 const startPropertyUpdaterCron = () => {
   cron.schedule(
-    "*/10 * * * * *", // Runs every 10 seconds
+    "*/5 * * * * *", // Runs every 5 seconds
     async () => {
       if (isJobRunning) {
         console.log("Previous job is still running. Skipping this run.");
@@ -164,6 +164,25 @@ const startPropertyUpdaterCron = () => {
           const fullAddress = `${address} NSW`;
 
           try {
+            if (!latitude || !longitude) {
+              const data = {
+                address: address.replace(/,? NSW.*$/, ""),
+                listingType: "Sale",
+                price: null,
+                postcode: postcode || null,
+                suburb: suburb?.toUpperCase(),
+                channel: "residential",
+                fetchMode: "manual",
+                isCleaned: true, // Mark as cleaned
+              };
+              await Property.updateOne({ _id }, { $set: data });
+              await updateUserPropertyDocuments(_id, data);
+              console.log(
+                `Property ${_id} updated successfully (No Domain API match).`
+              );
+              continue;
+            }
+
             const response = await axios.get(
               `https://api.domain.com.au/v1/properties/_suggest?terms=${encodeURIComponent(
                 fullAddress
@@ -186,15 +205,12 @@ const startPropertyUpdaterCron = () => {
                 ?.toLowerCase()
                 .includes(suburb.toLowerCase()) &&
               response.data[0]?.relativeScore === 100 &&
-              address
-              ?.toLowerCase()
-              .split(' ')
-              .slice(0, 3)
-              .join(' ') === response.data[0]?.address
-              ?.toLowerCase()
-              .split(' ')
-              .slice(0, 3)
-              .join(' ')
+              address?.toLowerCase().split(" ").slice(0, 3).join(" ") ===
+                response.data[0]?.address
+                  ?.toLowerCase()
+                  .split(" ")
+                  .slice(0, 3)
+                  .join(" ")
             ) {
               const propertyId = response.data[0].id;
 
@@ -354,8 +370,8 @@ const startPropertyUpdaterCron = () => {
                   listingDetails.saleDetails?.soldDetails?.soldPrice || null,
                 postcode: listingDetails.addressParts.postcode,
                 suburb: listingDetails.addressParts.suburb?.toUpperCase(),
-                latitude: listingDetails.geoLocation.latitude,
-                longitude: listingDetails.geoLocation.longitude,
+                latitude: listingDetails?.geoLocation?.latitude,
+                longitude: listingDetails?.geoLocation?.longitude,
                 propertyType: propertyDetails.propertyType,
                 bedrooms: listingDetails.bedrooms,
                 bathrooms: listingDetails.bathrooms,
@@ -369,12 +385,12 @@ const startPropertyUpdaterCron = () => {
                     ? propertyDetails.areaSize
                     : null,
                 features: propertyDetails.features,
-                dateListed: listingDetails.dateListed,
+                dateListed: listingDetails?.dateListed,
                 daysListed,
                 propertyId,
-                media: listingDetails.media, // Ensure media is properly formatted
-                headline: listingDetails.headline,
-                description: listingDetails.description,
+                media: listingDetails?.media, // Ensure media is properly formatted
+                headline: listingDetails?.headline,
+                description: listingDetails?.description,
                 saleProcess:
                   listingDetails.saleDetails?.soldDetails?.soldAction ||
                   listingDetails.saleDetails?.saleMethod,
@@ -426,8 +442,8 @@ const startPropertyUpdaterCron = () => {
                 topography: aiResponse.topography,
                 postcode: postcode,
                 suburb: suburb?.toUpperCase(),
-                latitude,
-                longitude,
+                latitude:latitude || null,
+                longitude:longitude || null,
                 propertyType: aiResponse.propertyType,
                 channel: "residential",
                 fetchMode: "manual",
