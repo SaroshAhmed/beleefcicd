@@ -49,7 +49,7 @@ const initializeServiceAccountClient = () => {
   return client;
 };
 
-exports.createBooking = async (req, res) => {
+exports.createBooking = async (req, res) => { 
   if (!req.isAuthenticated()) {
     return res.redirect("/auth/google");
   }
@@ -106,6 +106,14 @@ exports.createBooking = async (req, res) => {
     //   });
     // }
 
+    // Filter vendors to only include those with a valid email
+    const validVendorAttendees = vendors
+      .filter((vendor) => vendor.email) // Remove vendors without an email
+      .map((vendor) => ({
+        email: vendor.email,
+        displayName: `${vendor.firstName} ${vendor.lastName}`,
+      }));
+
     // Create a new event in Google Calendar using the logged-in user's calendar
     const event = {
       summary: address,
@@ -123,10 +131,7 @@ ${agent.firstName} ${agent.lastName}
           email: agent.email, // Agent email
           displayName: `${agent.firstName} ${agent.lastName}`, // Agent name
         },
-        ...vendors.map((vendor) => ({
-          email: vendor.email,
-          displayName: `${vendor.firstName} ${vendor.lastName}`,
-        })),
+        ...validVendorAttendees, // Only vendors with valid emails are added
       ],
       reminders: {
         useDefault: false,
@@ -209,6 +214,7 @@ ${agent.firstName} ${agent.lastName}
   }
 };
 
+
 exports.rescheduleBooking = async (req, res) => {
   if (!req.isAuthenticated()) {
     return res.redirect("/auth/google");
@@ -241,6 +247,13 @@ exports.rescheduleBooking = async (req, res) => {
     const serviceAccountClient = initializeServiceAccountClient();
     const serviceOauth2Client = await serviceAccountClient.getClient(); // Get the authenticated client
 
+    const validVendorAttendees = vendors
+    .filter((vendor) => vendor.email) // Remove vendors without an email
+    .map((vendor) => ({
+      email: vendor.email,
+      displayName: `${vendor.firstName} ${vendor.lastName}`,
+    }));
+
     // Update the existing event in Google Calendar
     const updatedEvent = {
       start: { dateTime: newStartTime, timeZone: "Australia/Sydney" },
@@ -250,10 +263,7 @@ exports.rescheduleBooking = async (req, res) => {
           email: agent.email, // Agent email
           displayName: `${agent.firstName} ${agent.lastName}`, // Agent name
         },
-        ...vendors.map((vendor) => ({
-          email: vendor.email,
-          displayName: `${vendor.firstName} ${vendor.lastName}`,
-        })),
+        ...validVendorAttendees
       ],
       reminders: {
         useDefault: false,
