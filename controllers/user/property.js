@@ -767,7 +767,7 @@ exports.getAreaDynamics = async (req, res) => {
     // Return the stats for the maximum year
     return res.status(200).json({
       success: true,
-      data: { houseStats, unitStats },
+      data: { houseStats, unitStats, description:suburbData.description },
     });
   } catch (error) {
     console.error("Error fetching area dynamics data: ", error.message);

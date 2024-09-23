@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const suburbSchema = new mongoose.Schema(
   {
     suburb: { type: String, unique: true, required: true },
+    description: { type: String },
     postcode: { type: String, required: true },
     state: { type: String, required: false, default: "NSW" },
     houseStats: {

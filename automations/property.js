@@ -13,7 +13,7 @@ async function fetchPropertiesWithPropertyId() {
     // in future put error porperties if in here
     return await Property.find({
       propertyId: { $ne: null },
-      history: null,
+      history: null, // some properties already passed through this api has history null so we cant entirely depend on that check
       urlSlug: null,
     });
   } catch (error) {
