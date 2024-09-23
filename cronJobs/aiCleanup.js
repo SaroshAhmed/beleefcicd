@@ -230,7 +230,6 @@ const startPropertyUpdaterCron = () => {
               const listingId = propertyDetails?.photos?.[0]?.advertId;
 
               if (!listingId) {
-                console.log("no listing id");
                 // No listingId found, proceed with AI analysis and property creation
                 const imageBuffer = await getMapStaticImage(
                   propertyDetails?.addressCoordinate.lat,
