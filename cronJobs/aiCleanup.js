@@ -93,9 +93,9 @@ async function generatePromptAndAnalyze(property) {
     });
 
     // Log the result and update the property in the database
-    console.log(
-      `ListingId: ${listingId} with PropertyId:${propertyId} is cleaned`
-    );
+    // console.log(
+    //   `ListingId: ${listingId} with PropertyId:${propertyId} is cleaned`
+    // );
 
     return result;
   } catch (error) {
@@ -110,7 +110,7 @@ const retryAIAnalysis = async (data, maxRetries = 3) => {
   while (attempts < maxRetries) {
     try {
       aiResult = await generatePromptAndAnalyze(data);
-      console.log(aiResult);
+      // console.log(aiResult);
       if (aiResult) break; // If AI is successful, break out of loop
     } catch (error) {
       console.error(
@@ -137,12 +137,12 @@ const startPropertyUpdaterCron = () => {
     "*/5 * * * * *", // Runs every 5 seconds
     async () => {
       if (isJobRunning) {
-        console.log("Previous job is still running. Skipping this run.");
+        // console.log("Previous job is still running. Skipping this run.");
         return;
       }
 
       isJobRunning = true;
-      console.log("Cron job started at:", new Date().toISOString());
+      // console.log("Cron job started at:", new Date().toISOString());
 
       try {
         // Fetch properties that are not yet cleaned
@@ -152,7 +152,7 @@ const startPropertyUpdaterCron = () => {
         });
 
         if (!properties || properties.length === 0) {
-          console.log("No properties to process.");
+          // console.log("No properties to process.");
           isJobRunning = false;
           return;
         }
@@ -293,7 +293,7 @@ const startPropertyUpdaterCron = () => {
                 );
                 listingDetails = lResponse.data;
               } catch (error) {
-                console.log("listing Id exists but Not Found 404 error");
+
                 if (error.response && error.response.status === 404) {
                   // Handle 404 error by constructing the alternative data object
                   const data = {
@@ -338,9 +338,7 @@ const startPropertyUpdaterCron = () => {
                   // Create the property with the alternative data
                   await Property.updateOne({ _id }, { $set: data });
                   await updateUserPropertyDocuments(_id, data);
-                  console.log(
-                    `Property ${_id} updated successfully (404 handled).`
-                  );
+ 
                   continue; // Move to the next property
                 } else {
                   // For other errors, log and skip this property
@@ -429,8 +427,7 @@ const startPropertyUpdaterCron = () => {
               // If no matching property found in Domain API
               const imageBuffer = await getMapStaticImage(latitude, longitude);
               const aiResponse = await mapAerialImgAnalyze(imageBuffer);
-              console.log("Maps aerial response");
-              console.log(aiResponse);
+             
               const data = {
                 address: address.replace(/,? NSW.*$/, ""),
                 listingType: "Sale",
@@ -451,9 +448,9 @@ const startPropertyUpdaterCron = () => {
               };
               await Property.updateOne({ _id }, { $set: data });
               await updateUserPropertyDocuments(_id, data);
-              console.log(
-                `Property ${_id} updated successfully (No Domain API match).`
-              );
+              // console.log(
+              //   `Property ${_id} updated successfully (No Domain API match).`
+              // );
             }
           } catch (propertyError) {
             console.error(
@@ -467,7 +464,7 @@ const startPropertyUpdaterCron = () => {
         console.error("Error in cron job:", error.message);
       } finally {
         isJobRunning = false;
-        console.log("Cron job ended at:", new Date().toISOString());
+        // console.log("Cron job ended at:", new Date().toISOString());
       }
     },
     {
@@ -484,9 +481,9 @@ async function updateUserPropertyDocuments(id, data) {
     // Update UserProperty documents without affecting other fields
     const result = await UserProperty.updateMany(filter, { $set: data });
 
-    console.log(
-      `UserProperty documents for Property ID ${id} have been updated successfully. Matched: ${result.matchedCount}, Modified: ${result.modifiedCount}`
-    );
+    // console.log(
+    //   `UserProperty documents for Property ID ${id} have been updated successfully. Matched: ${result.matchedCount}, Modified: ${result.modifiedCount}`
+    // );
   } catch (error) {
     console.error(
       `Error updating UserProperty for Property ID ${id}:`,
