@@ -11,7 +11,7 @@ const vendorDetailsSchema = new mongoose.Schema({
 const mediaSchema = new Schema({
   category: { type: String },
   type: { type: String },
-  url: { type: String},
+  url: { type: String },
 });
 
 const boxSchema = new Schema(
@@ -41,14 +41,18 @@ const boxSchema = new Schema(
 const userPropertySchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    fkPropertyId: { type: Schema.Types.ObjectId, ref: "Property", required: true },
+    fkPropertyId: {
+      type: Schema.Types.ObjectId,
+      ref: "Property",
+      required: true,
+    },
     propertyId: { type: String, default: null },
     listingId: { type: String },
     address: { type: String, required: true },
     listingType: { type: String, enum: ["Sale", "Sold"], required: true },
     price: { type: Number, default: null },
-    postcode: { type: String},
-    suburb: { type: String},
+    postcode: { type: String },
+    suburb: { type: String },
     latitude: { type: Number },
     longitude: { type: Number },
     propertyType: {
@@ -224,28 +228,31 @@ const userPropertySchema = new Schema(
   { timestamps: true }
 );
 
-userPropertySchema.pre('validate', function (next) {
+userPropertySchema.pre("validate", function (next) {
   // Convert suburb to uppercase
   if (this.suburb) {
     this.suburb = this.suburb.toUpperCase();
   }
-  
+
+  if (this.developmentPotential === "") {
+    this.developmentPotential = null;
+  }
+
   // Convert 'Semi-Detached' to 'Duplex' in propertyType
-  if (this.propertyType === 'Semi-Detached') {
-    this.propertyType = 'Duplex';
+  if (this.propertyType === "Semi-Detached") {
+    this.propertyType = "Duplex";
   }
 
-  if (this.propertyType === 'Apartment') {
-    this.propertyType = 'ApartmentUnitFlat';
+  if (this.propertyType === "Apartment") {
+    this.propertyType = "ApartmentUnitFlat";
   }
 
-  if (this.propertyType === 'Land') {
-    this.propertyType = 'VacantLand';
+  if (this.propertyType === "Land") {
+    this.propertyType = "VacantLand";
   }
 
   next();
 });
-
 
 const UserProperty = mongoose.model("UserProperty", userPropertySchema);
 

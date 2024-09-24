@@ -840,7 +840,8 @@ Suburb: ${property.suburb}`,
     );
 
     const checkProcess = () => {
-      if (sourceDevelopmentPotential !== null && sourceDevelopmentPotential) {
+      console.log(sourceDevelopmentPotential)
+      if (sourceDevelopmentPotential !== null && sourceDevelopmentPotential!=="") {
         return "Auction - Development Site";
       }
 
@@ -865,6 +866,7 @@ Suburb: ${property.suburb}`,
     };
 
     const recommendedSaleProcess = checkProcess();
+
     const data = {
       logicalPrice: logical.logicalPrice,
       logicalReasoning: logical.logicalReasoning,

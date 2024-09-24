@@ -181,6 +181,10 @@ propertySchema.pre('validate', function (next) {
     this.suburb = this.suburb.toUpperCase();
   }
   
+  if (this.developmentPotential === "") {
+    this.developmentPotential = null;
+  }
+  
   // Convert 'Semi-Detached' to 'Duplex' in propertyType
   if (this.propertyType === 'Semi-Detached') {
     this.propertyType = 'Duplex';
