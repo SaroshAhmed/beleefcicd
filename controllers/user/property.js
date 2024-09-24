@@ -676,6 +676,16 @@ exports.calculateScoreMatch = async (req, res) => {
       (jsonFormat = false)
     );
 
+    const prompt2 = await Prompt.findOne({
+      name: "MICRO_POCKETS",
+    });
+    const microPockets = await chatCompletion(
+      prompt2?.description,
+      `Address: ${property.address}
+Suburb: ${property.suburb}`,
+      (jsonFormat = false)
+    );
+
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
@@ -701,7 +711,7 @@ exports.calculateScoreMatch = async (req, res) => {
 
     const duplexPropertiesQuery = {
       propertyType: "Duplex",
-      suburb: { $regex: new RegExp(`^${property.suburb}$`, "i") },
+      suburb: property.suburb,
       dateListed: { $gte: sixMonthsAgo }, // Last 6 months
       listingId: { $ne: property.listingId }, // Not equal to property.listingId
       listingType: "Sold",
@@ -725,6 +735,7 @@ exports.calculateScoreMatch = async (req, res) => {
         currentAreaProcess,
         duplexProperties,
         engagedPurchaser,
+        microPockets,
       },
     });
   } catch (error) {
@@ -767,7 +778,7 @@ exports.getAreaDynamics = async (req, res) => {
     // Return the stats for the maximum year
     return res.status(200).json({
       success: true,
-      data: { houseStats, unitStats, description:suburbData.description },
+      data: { houseStats, unitStats, description: suburbData.description },
     });
   } catch (error) {
     console.error("Error fetching area dynamics data: ", error.message);
@@ -787,6 +798,7 @@ exports.getBeleefSaleProcess = async (req, res) => {
         $match: {
           suburb: { $regex: new RegExp(`^${suburb}$`, "i") }, // Case-insensitive matching for suburb
           beleefSaleProcess: { $ne: null },
+          listingType: "Sold",
         },
       },
       {

@@ -176,6 +176,7 @@ const userPropertySchema = new Schema(
     logicalPrice: { type: String, default: null },
     logicalReasoning: { type: String, default: null },
     engagedPurchaser: { type: String, default: null },
+    microPockets: { type: String, default: null },
     recommendedSales: {
       type: [Schema.Types.Mixed],
       default: null,
