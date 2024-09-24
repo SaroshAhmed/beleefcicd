@@ -1,10 +1,91 @@
 const mongoose = require("mongoose");
 const { ObjectId } = mongoose.Types;
 const UserProperty = require("../../models/UserProperty");
+const PostList = require("../../models/PostList");
 const Property = require("../../models/Property");
 const Suburb = require("../../models/Suburb");
 const Prompt = require("../../models/Prompt");
 const { chatCompletion } = require("../../utils/openai");
+
+async function areaDynamics(suburb) {
+  try {
+    // Find the suburb document
+    const suburbData = await Suburb.findOne({
+      suburb: { $regex: new RegExp(suburb, "i") },
+    });
+
+    if (!suburbData) {
+      throw new Error(`No data found for suburb ${suburb}`);
+    }
+
+    // Get the maximum year from both houseStats and unitStats
+    const houseYears = suburbData.houseStats.map((stat) => stat.year);
+    const unitYears = suburbData.unitStats.map((stat) => stat.year);
+
+    const maxHouseYear = houseYears.length > 0 ? Math.max(...houseYears) : null;
+    const maxUnitYear = unitYears.length > 0 ? Math.max(...unitYears) : null;
+
+    // Filter the houseStats and unitStats for the max year
+    const houseStats = suburbData.houseStats.find(
+      (stat) => stat.year === maxHouseYear
+    );
+    const unitStats = suburbData.unitStats.find(
+      (stat) => stat.year === maxUnitYear
+    );
+
+    // Return the stats for the maximum year
+    return {
+      houseStats,
+      unitStats,
+      description: suburbData.description,
+    };
+  } catch (error) {
+    console.error("Error fetching area dynamics data: ", error.message);
+    throw error; // Rethrow the error to be handled by the caller
+  }
+}
+
+function parsePrice(priceStr) {
+  // Remove "$" and any whitespace
+  priceStr = priceStr.replace(/\$/g, "").trim();
+
+  // Split the string at the hyphen '-'
+  const [rangeStr, unit] = priceStr.match(/^([\d.\-]+)([MK])$/i).slice(1);
+
+  if (!rangeStr || !unit) {
+    throw new Error(`Invalid logical price format: ${priceStr}`);
+  }
+
+  // Split the range into min and max values
+  const [minStr, maxStr] = rangeStr.split("-");
+
+  if (!minStr || !maxStr) {
+    throw new Error(`Invalid price range: ${priceStr}`);
+  }
+
+  // Parse the numeric values
+  const minNum = parseFloat(minStr);
+  const maxNum = parseFloat(maxStr);
+
+  if (isNaN(minNum) || isNaN(maxNum)) {
+    throw new Error(
+      `Unable to parse numbers in logical price range: ${priceStr}`
+    );
+  }
+
+  // Apply unit multiplier
+  let multiplier = 1;
+  if (/M/i.test(unit)) {
+    multiplier = 1e6;
+  } else if (/K/i.test(unit)) {
+    multiplier = 1e3;
+  }
+
+  const minPrice = minNum * multiplier;
+  const maxPrice = maxNum * multiplier;
+
+  return { minPrice, maxPrice };
+}
 
 exports.createProperty = async (req, res) => {
   const { id } = req.user;
@@ -128,6 +209,7 @@ exports.calculateScoreMatch = async (req, res) => {
     //     .json({ success: false, message: "Property not found" });
     // }
     const { property } = req.body;
+    const { id } = req.user;
 
     if (!property) {
       return res
@@ -725,6 +807,94 @@ Suburb: ${property.suburb}`,
       price: -1,
     });
 
+    const areaDynamicsRes = await areaDynamics(sourceSuburb);
+
+    const logicalPrice = logical.logicalPrice;
+
+    const { minPrice, maxPrice } = parsePrice(logicalPrice);
+
+    // Ensure minPrice and maxPrice are valid
+    if (minPrice === null || maxPrice === null) {
+      throw new Error("Unable to parse logical price");
+    }
+
+    const lowEndProperties = recommendedSold
+      .filter(
+        (propertyObj) =>
+          propertyObj.property.price <= minPrice &&
+          propertyObj.property.price !== null
+      )
+      .sort((a, b) => a.property.price - b.property.price) // Sort by price (ascending)
+      .slice(0, 3); // Limit to first 3
+
+    // Get first 3 properties in the high-end range sorted by price (descending)
+    const highEndProperties = recommendedSold
+      .filter((propertyObj) => propertyObj.property.price >= maxPrice)
+      .sort((a, b) => b.property.price - a.property.price) // Sort by price (descending)
+      .slice(0, 3); // Limit to first 3
+
+    const propertiesInRange = recommendedSold.filter(
+      (propertyObj) =>
+        propertyObj.property.price >= minPrice &&
+        propertyObj.property.price <= maxPrice
+    );
+
+    const checkProcess = () => {
+      if (sourceDevelopmentPotential !== null && sourceDevelopmentPotential) {
+        return "Auction - Development Site";
+      }
+
+      if (recommendedSold.length < 3) {
+        return "Private Treaty Offers Closing";
+      }
+
+      if (propertiesInRange?.length >= 3) {
+        if (
+          (sourcePropertyType === "ApartmentUnitFlat" &&
+            areaDynamicsRes.unitStats?.annualSalesVolume >= 90) ||
+          (sourcePropertyType !== "ApartmentUnitFlat" &&
+            areaDynamicsRes.houseStats?.annualSalesVolume >= 170)
+        ) {
+          return "Private Treaty Offers Closing: Live Guide With Live Closing Date";
+        } else {
+          return "Private Treaty Offers Closing";
+        }
+      } else {
+        return "Private Treaty Using Sales: No Guide Only Sales & Backend Closing Date";
+      }
+    };
+
+    const recommendedSaleProcess = checkProcess();
+    const data = {
+      logicalPrice: logical.logicalPrice,
+      logicalReasoning: logical.logicalReasoning,
+      recommendedSales,
+      recommendedSold,
+      recentAreaSoldProcess,
+      currentAreaProcess,
+      duplexProperties,
+      engagedPurchaser,
+      recommendedSaleProcess,
+      highEndProperties,
+      lowEndProperties,
+      microPockets,
+    };
+
+    await UserProperty.updateOne(
+      { userId: id, address: { $regex: new RegExp(property.address, "i") } },
+      { $set: data }
+    );
+
+    await PostList.updateOne(
+      { userId: id, address: { $regex: new RegExp(property.address, "i") } },
+      {
+        $set: {
+          recommendedSaleProcess: data.recommendedSaleProcess,
+          logicalPrice: logical.logicalPrice,
+        },
+      }
+    );
+
     return res.status(200).json({
       success: true,
       data: {
@@ -734,6 +904,9 @@ Suburb: ${property.suburb}`,
         recentAreaSoldProcess,
         currentAreaProcess,
         duplexProperties,
+        recommendedSaleProcess,
+        highEndProperties,
+        lowEndProperties,
         engagedPurchaser,
         microPockets,
       },
@@ -746,42 +919,28 @@ Suburb: ${property.suburb}`,
 
 exports.getAreaDynamics = async (req, res) => {
   try {
-    const { suburb } = req.params; // Suburb comes from the request params
+    const { suburb } = req.params;
 
-    // Find the suburb document
-    const suburbData = await Suburb.findOne({
-      suburb: { $regex: new RegExp(suburb, "i") },
-    });
+    // Call the reusable function
+    const data = await areaDynamics(suburb);
 
-    if (!suburbData) {
-      return res.status(404).json({
-        success: false,
-        message: `No data found for suburb ${suburb}`,
-      });
-    }
-
-    // Get the maximum year from both houseStats and unitStats
-    const houseYears = suburbData.houseStats.map((stat) => stat.year);
-    const unitYears = suburbData.unitStats.map((stat) => stat.year);
-
-    const maxHouseYear = houseYears.length > 0 ? Math.max(...houseYears) : null;
-    const maxUnitYear = unitYears.length > 0 ? Math.max(...unitYears) : null;
-
-    // Filter the houseStats and unitStats for the max year
-    const houseStats = suburbData.houseStats.find(
-      (stat) => stat.year === maxHouseYear
-    );
-    const unitStats = suburbData.unitStats.find(
-      (stat) => stat.year === maxUnitYear
-    );
-
-    // Return the stats for the maximum year
+    // Send the response
     return res.status(200).json({
       success: true,
-      data: { houseStats, unitStats, description: suburbData.description },
+      data,
     });
   } catch (error) {
     console.error("Error fetching area dynamics data: ", error.message);
+
+    // Check if it's a 404 error
+    if (error.message.includes("No data found")) {
+      return res.status(404).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    // For other errors, send a 500 response
     return res.status(500).json({
       success: false,
       message: error.message,
