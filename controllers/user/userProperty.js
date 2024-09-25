@@ -396,6 +396,7 @@ exports.updateProperty = async (req, res) => {
       "lowEndProperties",
       "vendorDetails",
       "marketingPrice",
+      "microPockets"
     ];
 
     // Build the update query by including only allowed fields
