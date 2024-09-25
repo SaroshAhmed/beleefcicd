@@ -15,9 +15,14 @@ async function areaDynamics(suburb) {
     });
 
     if (!suburbData) {
-      throw new Error(`No data found for suburb ${suburb}`);
+      // Return default values instead of throwing an error
+      return {
+        houseStats: null,
+        unitStats: null,
+        description: null,
+      };
     }
-
+    
     // Get the maximum year from both houseStats and unitStats
     const houseYears = suburbData.houseStats.map((stat) => stat.year);
     const unitYears = suburbData.unitStats.map((stat) => stat.year);
