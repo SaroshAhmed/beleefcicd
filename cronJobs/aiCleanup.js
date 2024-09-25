@@ -133,8 +133,7 @@ let isJobRunning = false;
 
 // Cron Job Setup
 const startPropertyUpdaterCron = () => {
-  cron.schedule(
-    "*/5 * * * * *", // Runs every 5 seconds
+  cron.schedule('0 */12 * * *', // Runs every 12 hours
     async () => {
       if (isJobRunning) {
         // console.log("Previous job is still running. Skipping this run.");
