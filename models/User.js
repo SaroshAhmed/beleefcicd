@@ -20,6 +20,15 @@ const userSchema = new mongoose.Schema(
         type: String, // Stripe Payment Method ID
       },
     ],
+    gst: {
+      type: String,
+    },
+    licenseNumber: {
+      type: String,
+    },
+    companyAddress: {
+      type: String,
+    },
     accessToken: String,
     refreshToken: String,
   },

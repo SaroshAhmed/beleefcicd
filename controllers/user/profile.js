@@ -76,9 +76,9 @@ exports.generatePresignedUrl = async (req, res) => {
 
 const assignABN = (company) => {
   const companyABNMap = {
-    "Ausrealty (Riverwood) Pty Ltd (Licensed user of Ausrealty)":
+    "Ausrealty (Riverwood) Pty Ltd (Licenced user of Ausrealty)":
       "ABN 97 610 838 643",
-    "KK Property Services Pty Ltd (Licensed user of Ausrealty)":
+    "KK Property Services Pty Ltd (Licenced user of Ausrealty)":
       "ABN 32 626 591 642",
     "I.M Group Pty Ltd (Licenced user of Ausrealty)": "ABN 58 634 408 610",
     "MRL Property Group Pty Ltd (Licenced user of Ausrealty)":
