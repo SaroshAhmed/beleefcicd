@@ -3,6 +3,17 @@ const puppeteer = require("puppeteer");
 exports.generatePdf = async (req, res) => {
   try {
     const {
+      firstName,
+      lastName,
+      email,
+      mobile,
+      company,
+      companyAddress,
+      licenseNumber,
+      gst,
+      abn,
+    } = req.user;
+    const {
       vendors,
       solicitor,
       status,
@@ -59,10 +70,28 @@ exports.generatePdf = async (req, res) => {
                 : ""
             }
           </div>
-          <br>
         `
       )
       .join("")}
+<br>
+          <div>
+            <h3>LICENSEE</h3>
+            <div><strong>BUSINESS NAME:</strong> ${company} <strong>ABN:</strong> ${abn} <strong>Registered for GST:</strong> ${gst}</div>
+            <div><strong>NAME:</strong> ${name}</div>
+            <div><strong>ADDRESS:</strong> ${companyAddress}</div>
+            <div><strong>PHONE:</strong> ${mobile}</div>
+            <div><strong>EMAIL:</strong> ${email}</div>
+            <div><strong>LICENCE NUMBER:</strong> ${licenseNumber}</div>
+          </div>
+<br>
+          <div>
+          <h3>VENDORS SOLICITOR/CONVEYANCER</h3>
+          <div><strong>COMPANY NAME:</strong> ${solicitor?.solicitorName}</div>
+          <div><strong>ADDRESS:</strong> need to show solicitor address</div>
+          <div><strong>PHONE:</strong> ${solicitor?.solicitorMobile}</div>
+          <div><strong>EMAIL:</strong> ${solicitor?.solicitorEmail}</div>
+          </div>
+
 <br>
             <h3>
               PROPERTY
@@ -208,7 +237,9 @@ exports.generatePdf = async (req, res) => {
                 ${saleProcess === "Auction" ? "RESERVE PRICE" : "PRICE"}:
               </strong>
               <span>
-                ${saleProcess === "Auction" ? "To be advised" : "Offers Invited"}
+                ${
+                  saleProcess === "Auction" ? "To be advised" : "Offers Invited"
+                }
               </span>
             </div>
           </section>
