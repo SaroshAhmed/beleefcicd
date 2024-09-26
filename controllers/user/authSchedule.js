@@ -1303,7 +1303,7 @@ exports.generatePdf = async (req, res) => {
 
     // Add executablePath only if environment is PROD
     if (process.env.ENVIRONMENT === "PROD") {
-      launchOptions.executablePath = "/var/lib/flatpak/app/org.chromium.Chromium/x86_64/stable/7214ca07c627cb395e9b95a3826f1cba9dd172425560cfe33ba5619d43aebala/files/bin/chromium";
+      launchOptions.executablePath = "/usr/bin/google-chrome-stable";
 
       // launchOptions.executablePath = "/usr/bin/chromium-browser"; // Path to the installed Chromium on Ubuntu
     }
