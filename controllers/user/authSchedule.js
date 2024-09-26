@@ -1302,7 +1302,7 @@ exports.generatePdf = async (req, res) => {
     };
 
     // Add executablePath only if environment is PROD
-    if (process.env.ENVIRONMENT === "PROD") {
+    if (process.env.ENVIRONMENT === "oo") {
       launchOptions.executablePath = "/usr/bin/chromium-browser"; // Path to the installed Chromium on Ubuntu
     }
 
