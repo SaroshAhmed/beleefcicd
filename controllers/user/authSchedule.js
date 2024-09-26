@@ -2,7 +2,64 @@ const puppeteer = require("puppeteer");
 
 exports.generatePdf = async (req, res) => {
   try {
-    const htmlContent = ` <section>
+    const {
+      vendors,
+      solicitor,
+      status,
+      terms,
+      saleProcess,
+      startPrice,
+      endPrice,
+      commissionFee,
+      commissionRange,
+      marketing,
+      propertyAddress,
+      recommendedSold,
+      recommendedSales,
+    } = req.body.content;
+    const htmlContent = `
+   <header>
+    <h1>
+      ${
+        saleProcess === "Auction"
+          ? `SALES INSPECTION REPORT AND
+           EXCLUSIVE AUCTION AGENCY
+           AGREEMENT AND CONTINUING AGENCY`
+          : `SALES INSPECTION REPORT AND
+           EXCLUSIVE SELLING AGENCY
+           AGREEMENT AND CONTINUING AGENCY`
+      }
+    </h1>
+  </header>
+
+    <section>
+    <div>
+			<h2>PART 1 | SALES INSPECTION REPORT</h2>
+			<h4>SCHEDULE 2, PART 1, CLAUSE 2 OF THE PROPERTY AND STOCK AGENTS REGULATION</h4>
+		</div>
+
+    ${vendors
+      .map(
+        (vendor) => `
+          <div class="mb-2">
+            <h3>VENDOR</h3>
+            <div><strong>NAME:</strong> ${vendor.firstName} ${vendor.lastName}</div>
+            <div><strong>ADDRESS:</strong> ${vendor.address}</div>
+            <div><strong>PHONE:</strong> ${vendor.mobile}</div>
+            <div><strong>EMAIL:</strong> ${vendor.email}</div>
+            ${vendor.isCompany
+              ? `
+                <div><strong>COMPANY:</strong> ${vendor.company}</div>
+                <div><strong>ABN:</strong> ${vendor.abn}</div>
+                <div><strong>GST:</strong> ${vendor.gst}</div>
+                `
+              : ''
+            }
+          </div>
+        `
+      )
+      .join("")}
+<br>
             <h3>
               PROPERTY{" "}
               <small>
