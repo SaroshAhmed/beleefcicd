@@ -3,8 +3,7 @@ const puppeteer = require("puppeteer");
 exports.generatePdf = async (req, res) => {
   try {
     const {
-      firstName,
-      lastName,
+      name,
       email,
       mobile,
       company,
