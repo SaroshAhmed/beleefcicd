@@ -1302,8 +1302,10 @@ exports.generatePdf = async (req, res) => {
     };
 
     // Add executablePath only if environment is PROD
-    if (process.env.ENVIRONMENT === "oo") {
-      launchOptions.executablePath = "/usr/bin/chromium-browser"; // Path to the installed Chromium on Ubuntu
+    if (process.env.ENVIRONMENT === "PROD") {
+      launchOptions.executablePath = "flatpak run org.chromium.Chromium";
+
+      // launchOptions.executablePath = "/usr/bin/chromium-browser"; // Path to the installed Chromium on Ubuntu
     }
 
     const browser = await puppeteer.launch(launchOptions);
