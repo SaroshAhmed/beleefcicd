@@ -22,11 +22,11 @@ exports.generatePdf = async (req, res) => {
     <h1>
       ${
         saleProcess === "Auction"
-          ? `SALES INSPECTION REPORT AND
-           EXCLUSIVE AUCTION AGENCY
+          ? `SALES INSPECTION REPORT AND <br>
+           EXCLUSIVE AUCTION AGENCY <br>
            AGREEMENT AND CONTINUING AGENCY`
-          : `SALES INSPECTION REPORT AND
-           EXCLUSIVE SELLING AGENCY
+          : `SALES INSPECTION REPORT AND <br>
+           EXCLUSIVE SELLING AGENCY <br>
            AGREEMENT AND CONTINUING AGENCY`
       }
     </h1>
@@ -34,48 +34,51 @@ exports.generatePdf = async (req, res) => {
 
     <section>
     <div>
-			<h2>PART 1 | SALES INSPECTION REPORT</h2>
-			<h4>SCHEDULE 2, PART 1, CLAUSE 2 OF THE PROPERTY AND STOCK AGENTS REGULATION</h4>
+			<h2 style="margin-bottom:1px;">PART 1 | SALES INSPECTION REPORT</h2>
+			<small>SCHEDULE 2, PART 1, CLAUSE 2 OF THE PROPERTY AND STOCK AGENTS REGULATION</small>
 		</div>
-
+<br>
     ${vendors
       .map(
         (vendor) => `
-          <div class="mb-2">
+          <div>
             <h3>VENDOR</h3>
-            <div><strong>NAME:</strong> ${vendor.firstName} ${vendor.lastName}</div>
+            <div><strong>NAME:</strong> ${vendor.firstName} ${
+          vendor.lastName
+        }</div>
             <div><strong>ADDRESS:</strong> ${vendor.address}</div>
             <div><strong>PHONE:</strong> ${vendor.mobile}</div>
             <div><strong>EMAIL:</strong> ${vendor.email}</div>
-            ${vendor.isCompany
-              ? `
+            ${
+              vendor.isCompany
+                ? `
                 <div><strong>COMPANY:</strong> ${vendor.company}</div>
                 <div><strong>ABN:</strong> ${vendor.abn}</div>
                 <div><strong>GST:</strong> ${vendor.gst}</div>
                 `
-              : ''
+                : ""
             }
           </div>
+          <br>
         `
       )
       .join("")}
 <br>
-	<pagebreak />
             <h3>
-              PROPERTY{" "}
+              PROPERTY
               <small>
                 [This form is for the sale of Residential Property only and not
                 for Rural Land]
               </small>
             </h3>
-            <strong>ADDRESS:</strong> {propertyAddress}
+            <strong>ADDRESS:</strong> ${propertyAddress}
             <div>
               <strong>Occupation status of Property: </strong>
-              <span>{status}</span>
+              <span>${status}</span>
             </div>
             <div>
               <strong>
-                Other terms and conditions of sale known to the Agent:{" "}
+                Other terms and conditions of sale known to the Agent:
               </strong>
               <span>To be advised, as per contract, not known yet.</span>
             </div>
@@ -91,29 +94,29 @@ exports.generatePdf = async (req, res) => {
               <strong>
                 Details of any Covenants, Easements, Defects, Local Government
                 Notices or Orders affecting the property that are known to the
-                Agent:{" "}
+                Agent:
               </strong>
               <span>To be advised, as per contract, not known yet.</span>
             </div>
             <div>
               <strong>
-                Agents Recommendation as to Most Suitable Method of Sale:{" "}
+                Agents Recommendation as to Most Suitable Method of Sale:
               </strong>
-              <span>{saleProcess}</span>
+              <span>${saleProcess}</span>
             </div>
             <div>
               <strong>
                 Agents estimate of the Selling Price (or Price Range) for the
-                Property:{" "}
+                Property:
               </strong>
               <span>
-                {startPrice} - {endPrice}
+                ${startPrice} - ${endPrice}
               </span>
             </div>
             <div>
               <strong>
                 Any special Instructions about Marketing and Showing of the
-                Property:{" "}
+                Property:
               </strong>
               <span>At Agent's discretion and accompanied by an agent.</span>
             </div>
@@ -136,8 +139,10 @@ exports.generatePdf = async (req, res) => {
           </section>
 
           <h2>
-            PARTICULARS FOR EXCLUSIVE{" "}
-            {saleProcess === "Auction" ? "AUCTION" : "SELLING"} AGENCY AGREEMENT
+            PARTICULARS FOR EXCLUSIVE
+            ${
+              saleProcess === "Auction" ? "AUCTION" : "SELLING"
+            } AGENCY AGREEMENT
             AND CONTINUING AGENCY AGREEMENT
           </h2>
           <section>
@@ -149,8 +154,8 @@ exports.generatePdf = async (req, res) => {
               <strong>EXCLUSIVE AGENCY PERIOD: </strong>
               <span>
                 The vendor grants the Licensee exclusive selling rights over the
-                Property for the period from{" "}
-                <strong>{terms} days of agreement</strong>
+                Property for the period from
+                <strong>${terms} days of agreement</strong>
               </span>
             </div>
 
@@ -176,37 +181,34 @@ exports.generatePdf = async (req, res) => {
 
             <div>
               <strong>Method of sale: </strong>
-              <span>{saleProcess}</span>
+              <span>${saleProcess}</span>
             </div>
 
-            {saleProcess === "Auction" && (
-              <div>
+            ${
+              saleProcess === "Auction" &&
+              `<div>
                 <strong>Auction date: </strong>
                 <span>To be confirmed</span>
-              </div>
-            )}
+              </div>`
+            }
           </section>
           <section>
             <h3>
-              {saleProcess === "Auction" ? (
-                <>
-                  C. RESERVE PRICE
-                  <small> (FOR AUCTION SALES) [CLAUSE 3]</small>
-                </>
-              ) : (
-                <>
-                  C. PRICE AT WHICH THE PROPERTY IS TO BE OFFERED
-                  <small> (FOR PRIVATE TREAT SALES) [CLAUSE 3]</small>
-                </>
-              )}
+              ${
+                saleProcess === "Auction"
+                  ? `C. RESERVE PRICE
+                  <small> (FOR AUCTION SALES) [CLAUSE 3]</small>`
+                  : `C. PRICE AT WHICH THE PROPERTY IS TO BE OFFERED
+                  <small> (FOR PRIVATE TREAT SALES) [CLAUSE 3]</small>`
+              }
             </h3>
 
             <div>
               <strong>
-                {saleProcess === "Auction" ? "RESERVE PRICE" : "PRICE"}:
+                ${saleProcess === "Auction" ? "RESERVE PRICE" : "PRICE"}:
               </strong>
               <span>
-                {saleProcess === "Auction" ? "To be advised" : "Offers Invited"}
+                ${saleProcess === "Auction" ? "To be advised" : "Offers Invited"}
               </span>
             </div>
           </section>
@@ -219,25 +221,25 @@ exports.generatePdf = async (req, res) => {
               <p>
                 <strong>
                   The Licensee’s GST inclusive commission shall be calculated on
-                  the GST inclusive selling price in the following way:{" "}
+                  the GST inclusive selling price in the following way:
                 </strong>
-                <strong>Commission payable {commissionFee}%</strong>
+                <strong>Commission payable ${commissionFee}%</strong>
               </p>
               <p>
                 [e.g. % of sale price/fixed amount/% of sale price plus fixed
-                amount/other]{" "}
+                amount/other]
               </p>
 
               <p>
                 Should the sale price be more or less than the estimated selling
                 price, the commission payable shall be calculated on the sale
-                price alone, at the percentage (if any) indicated above.{" "}
+                price alone, at the percentage (if any) indicated above.
               </p>
 
               <p>
-                If the Property is sold for the Licensees ESTIMATE of:{" "}
+                If the Property is sold for the Licensees ESTIMATE of:
                 <strong>
-                  {startPrice + (endPrice ? " - " + endPrice : "")}
+                  ${startPrice + (endPrice ? " - " + endPrice : "")}
                 </strong>
               </p>
 
@@ -254,7 +256,7 @@ exports.generatePdf = async (req, res) => {
                   This is an exclusive agency agreement. This means you may have
                   to pay the agent commission even if another agent (or you)
                   sells the property or introduces a buyer who later buys the
-                  property.{" "}
+                  property.
                 </span>
               </p>
               <p>
@@ -263,7 +265,7 @@ exports.generatePdf = async (req, res) => {
                   Have you signed an agency agreement for the sale of this
                   Property with another agent? If you have, you may have to pay
                   2 commissions (if this agreement or the other agreement you
-                  have signed is a sole or exclusive agency agreement).{" "}
+                  have signed is a sole or exclusive agency agreement).
                 </span>
               </p>
             </div>
@@ -282,16 +284,16 @@ exports.generatePdf = async (req, res) => {
                 connection with services to be provided under the Agency
                 Agreement, and for which the Licensee is entitled under the
                 Agency Agreement to be reimbursed (including any advertising and
-                promotion costs) are as follows:{" "}
+                promotion costs) are as follows:
               </p>
               <p>
                 Description of expense or charge, and services it is connected
-                with:{" "}
+                with:
               </p>
             </div>
             <div class="col-12">
               <table>
-                <thead class="border-bottom" style={{ textAlign: "left" }}>
+                <thead class="border-bottom" style={{ text-align: "left" }}>
                   <tr>
                     <th class="py-1 pr-2">
                       Description of expense of charge, and services it is
@@ -350,7 +352,7 @@ exports.generatePdf = async (req, res) => {
           </section>
           <section>
             <h3>
-              H. DISCLOSURE OF REBATES, DISCOUNTS, COMMISSIONS OR OTHER BENEFITS{" "}
+              H. DISCLOSURE OF REBATES, DISCOUNTS, COMMISSIONS OR OTHER BENEFITS
               <small>[CLAUSE 20]</small>
             </h3>
 
@@ -394,14 +396,14 @@ exports.generatePdf = async (req, res) => {
             <div>
               <p>
                 This disclosure is to be read in conjunction with clause 9 of
-                the Agreement.{" "}
+                the Agreement.
               </p>
               <p>
                 In accordance with the requirements pursuant to section 52(1)(b)
                 of the Property and Stock Agents Act 2002 and Regulation 54 of
                 the Property and Stock Agents Regulation 2014, please disclose
                 whether the following material facts are applicable to the
-                property the subject of this agreement.{" "}
+                property the subject of this agreement.
               </p>
               <p>Don't Know.</p>
               <p>
@@ -428,7 +430,7 @@ exports.generatePdf = async (req, res) => {
                 <strong>Comparative Market Analysis</strong>
               </p>
               <p>
-                {" "}
+                
                 The Agent and the Vendor/s acknowledge and confirm that before
                 signing this agreement the Agent and the Vendor/s have read and
                 understood and agree to the terms and conditions in Part 3 of
@@ -451,7 +453,7 @@ exports.generatePdf = async (req, res) => {
           <pagebreak />
 
           <h2>
-            PART 3 | TERMS AND CONDITIONS OF EXCLUSIVE{" "}
+            PART 3 | TERMS AND CONDITIONS OF EXCLUSIVE
             {saleProcess === "Auction" ? "AUCTION" : "SELLING"} AGENCY AGREEMENT
             AND CONTINUING AGENCY AGREEMENT
           </h2>
@@ -468,7 +470,7 @@ exports.generatePdf = async (req, res) => {
                     "the ETA" means the Electronic Transactions Act 2000 (NSW).
                   </li>
                   <li>
-                    "Agreement" means this Sales Inspection Report and Exclusive{" "}
+                    "Agreement" means this Sales Inspection Report and Exclusive
                     {saleProcess === "Auction" ? "Auction" : "Selling"} Agency
                     Agreement and Continuing Agency Agreement, including the
                     terms and conditions set out in this Part 3.
@@ -958,33 +960,33 @@ exports.generatePdf = async (req, res) => {
                     <ol type="i">
                       <li> authorised sales advertising and signage; or</li>
                       <li>
-                        {" "}
+                        
                         the Vendor's failure to comply with this Agreement; or
                       </li>
                       <li>
-                        {" "}
+                        
                         the Vendor's failure to give the Agent prompt and
                         appropriate authority or instruction, or sufficient
                         funds to carry out an instruction or authority; or
                       </li>
                       <li>
-                        {" "}
+                        
                         the Agent acting on behalf of the Vendor under this
                         Agreement; or
                       </li>
                       <li>
-                        {" "}
+                        
                         the Agent incurring legal costs of employing the
                         services of a credit collection agency to recover unpaid
                         debts; or
                       </li>
                       <li>
-                        {" "}
+                        
                         any claim for compensation in respect of damage or loss
                         to the Vendor's goods; or
                       </li>
                       <li>
-                        {" "}
+                        
                         a warning label or safety instructions having been
                         removed, damaged or defaced where a product or fitting
                         has been supplied to the Property with such a label or
@@ -1214,7 +1216,7 @@ exports.generatePdf = async (req, res) => {
   font-family: Arial, Helvetica, sans-serif;
   font-size: 11px;
   font-weight: 700 !important;
-  margin: 1rem 0rem;
+  margin: 0.5rem 0rem;
 }
 
 .terms-condition h3 {
