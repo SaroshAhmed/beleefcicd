@@ -60,6 +60,7 @@ exports.generatePdf = async (req, res) => {
       )
       .join("")}
 <br>
+	<pagebreak />
             <h3>
               PROPERTY{" "}
               <small>
