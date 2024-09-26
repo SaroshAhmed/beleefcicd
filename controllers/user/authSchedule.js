@@ -1299,6 +1299,7 @@ exports.generatePdf = async (req, res) => {
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
       ignoreHTTPSErrors: true,
       dumpio: false,
+      timeout: 90000
     };
 
     // Add executablePath only if environment is PROD
