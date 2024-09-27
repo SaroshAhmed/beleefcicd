@@ -9,6 +9,7 @@ const authScheduleSchema = new Schema(
       ref: "UserProperty",
       required: true,
     },
+    address: { type: String },
     vendors: {
       type: [Schema.Types.Mixed],
     },
@@ -32,6 +33,7 @@ const authScheduleSchema = new Schema(
     recommendedSold: {
       type: [Schema.Types.Mixed],
     },
+    agreementId: { type: String },
   },
   {
     timestamps: true,
