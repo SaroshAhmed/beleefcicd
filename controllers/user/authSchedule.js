@@ -1252,6 +1252,8 @@ exports.generatePdf = async (req, res) => {
             </ol>
           </div>
         </div>
+          <br>
+  <h2>Recommended Sold</h2>
   ${
     recommendedSold.length > 0
       ? `
@@ -1281,7 +1283,62 @@ exports.generatePdf = async (req, res) => {
       </div>
     `
       : ""
-  }`;
+  }
+  <br>
+  <h2>Recommended Sales</h2>
+  ${
+    recommendedSales.length > 0
+      ? `
+      <div class="w-full overflow-x-auto">
+        <table class="w-full border-collapse">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="py-2 px-3 text-start">Address</th>
+              <th class="py-2 px-3 text-start">Price</th>
+              <th class="py-2 px-3 text-start">Score Match</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${recommendedSales
+              .map(
+                ({ property, score }) => `
+                <tr class="border-b">
+                  <td class="py-2 px-3">${property.address}</td>
+                  <td class="py-2 px-3">${property.price}</td>
+                  <td class="py-2 px-3">${score}%</td>
+                </tr>
+              `
+              )
+              .join("")}
+          </tbody>
+        </table>
+      </div>
+    `
+      : ""
+  }
+  <br>
+  <h2>Marketing</h2>
+   <table className="w-full border">
+            <tbody>
+              ${marketing?.marketingItems
+                ?.map(
+                  (item, index) => `
+                <tr key={index}>
+                  <td className="border px-4 py-2">${item.name}</td>
+                  <td className="border px-4 py-2"></td>
+                </tr>`
+                )
+                .join("")}
+
+              <tr>
+                <td className="border px-4 py-2 font-bold">TOTAL</td>
+                <td className=" px-4 py-2 flex items-center">
+                  ${marketing.marketingPrice}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+  `;
 
     const styledhtmlContent = `
 <!DOCTYPE html>
