@@ -1,4 +1,8 @@
 const puppeteer = require("puppeteer");
+const { PDFDocument } = require("pdf-lib");
+const fs = require("fs");
+const path = require("path");
+const axios = require("axios");
 
 exports.generatePdf = async (req, res) => {
   try {
@@ -26,7 +30,9 @@ exports.generatePdf = async (req, res) => {
       propertyAddress,
       recommendedSold,
       recommendedSales,
+      agentSign
     } = req.body.content;
+    console.log(solicitor);
     const htmlContent = `
    <header>
     <h1>
@@ -85,13 +91,15 @@ exports.generatePdf = async (req, res) => {
 <br>
           <div>
           <h3>VENDORS SOLICITOR/CONVEYANCER</h3>
-          <div><strong>COMPANY NAME:</strong> ${solicitor?.solicitorName}</div>
-          <div><strong>ADDRESS:</strong> need to show solicitor address</div>
-          <div><strong>PHONE:</strong> ${solicitor?.solicitorMobile}</div>
-          <div><strong>EMAIL:</strong> ${solicitor?.solicitorEmail}</div>
+          <div><strong>COMPANY NAME:</strong> ${solicitor?.name}</div>
+          <div><strong>ADDRESS:</strong> ${solicitor?.address}</div>
+          <div><strong>PHONE:</strong> ${solicitor?.mobile}</div>
+          <div><strong>EMAIL:</strong> ${solicitor?.email}</div>
           </div>
 
 <br>
+<div class="page-break"></div>
+
             <h3>
               PROPERTY
               <small>
@@ -154,9 +162,9 @@ exports.generatePdf = async (req, res) => {
             <div>
               <p>Agents Signature</p>
               <img
-                src={agentSign}
+                src=${agentSign}
                 alt="agent sign"
-                className="w-auto h-8"
+                class="w-auto h-8"
               ></img>
             </div>
             <div>
@@ -167,7 +175,7 @@ exports.generatePdf = async (req, res) => {
           </section>
 
           <h2>
-            PARTICULARS FOR EXCLUSIVE
+            PART 2 | PARTICULARS FOR EXCLUSIVE
             ${
               saleProcess === "Auction" ? "AUCTION" : "SELLING"
             } AGENCY AGREEMENT
@@ -487,7 +495,7 @@ exports.generatePdf = async (req, res) => {
             {saleProcess === "Auction" ? "AUCTION" : "SELLING"} AGENCY AGREEMENT
             AND CONTINUING AGENCY AGREEMENT
           </h2>
-          <div className="terms">
+          <div class="terms">
             <ol type="1">
               <li>
                 DEFINITIONS
@@ -1216,13 +1224,47 @@ exports.generatePdf = async (req, res) => {
               </li>
             </ol>
           </div>
-        </div>`;
+        </div>
+  ${
+    recommendedSold.length > 0
+      ? `
+      <div class="w-full overflow-x-auto">
+        <table class="w-full border-collapse">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="py-2 px-3 text-start">Address</th>
+              <th class="py-2 px-3 text-start">Price</th>
+              <th class="py-2 px-3 text-start">Score Match</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${recommendedSold
+              .map(
+                ({ property, score }) => `
+                <tr class="border-b">
+                  <td class="py-2 px-3">${property.address}</td>
+                  <td class="py-2 px-3">${property.price}</td>
+                  <td class="py-2 px-3">${score}%</td>
+                </tr>
+              `
+              )
+              .join('')}
+          </tbody>
+        </table>
+      </div>
+    `
+      : ''
+  }`;
 
     const styledhtmlContent = `
 <!DOCTYPE html>
 <html>
 <head>
+    <script src="https://cdn.tailwindcss.com"></script>
 <style>
+.page-break {
+  page-break-before: always;
+}
 
 .terms-condition {
   font-family: Arial, Helvetica, sans-serif;
@@ -1295,12 +1337,7 @@ exports.generatePdf = async (req, res) => {
   font-size: 9px;
 }
 
-.terms-condition td {
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 9px;
-}
-
-.terms-condition tr {
+td, th, tr {
   font-family: Arial, Helvetica, sans-serif;
   font-size: 9px;
 }
@@ -1324,17 +1361,10 @@ exports.generatePdf = async (req, res) => {
   padding-left: 0rem;
   margin-left: 0rem;
   counter-reset: item;
-  /* -moz-column-count: 2;
-  -moz-column-gap: 20px;
-  -webkit-column-count: 2;
-  -webkit-column-gap: 20px;
-  column-count: 2;
-  column-gap: 20px; */
 }
 
 .terms > ol > li {
   font-family: Arial, Helvetica, sans-serif;
-  /* color: #666666; */
   display: block;
 }
 
@@ -1375,9 +1405,8 @@ exports.generatePdf = async (req, res) => {
 </head>
 <body>
 <div class="terms-condition">
-    ${htmlContent}
+  ${htmlContent}
 </div>
-
 </body>
 </html>
 `;
@@ -1403,8 +1432,18 @@ exports.generatePdf = async (req, res) => {
 
     const page = await browser.newPage();
     await page.setContent(styledhtmlContent, { waitUntil: "networkidle0" });
+
+    // Define footer with page number
+    const footerTemplate = `
+    <div style="width: 100%; font-size: 8px; font-family: Arial, Helvetica, sans-serif; text-align: center; color: #333; padding: 5px 10px;">
+      <div style="width: 100%; padding-top: 5px; font-weight: 700;">
+        <span style="text-align:center; font-size: 10px; letter-spacing: 2px;margin-left:16px;">AUSREALTY</span>
+        <span style="float: right; font-size: 10px;margin-right:16px;">Page <span class="pageNumber"></span></span>
+      </div>
+    </div>`;
+
     //   const pdfBuffer = await page.pdf({ format: 'A4' });
-    const pdfBuffer = await page.pdf({
+    const generatedPdfBuffer = await page.pdf({
       path: "output.pdf",
       format: "A4",
       margin: {
@@ -1413,13 +1452,44 @@ exports.generatePdf = async (req, res) => {
         bottom: "20mm",
         left: "10mm",
       },
+      displayHeaderFooter: true,
+      footerTemplate: footerTemplate,
+      headerTemplate: `<div style="display: none;"></div>`,
+      printBackground: true,
     });
 
     await browser.close();
 
-    // Send PDF as a response
-    res.contentType("application/pdf");
-    res.send(pdfBuffer);
+    
+     // Step 1: Fetch external PDF
+     const externalPdfUrl =
+     "https://beleef-public-uploads.s3.ap-southeast-2.amazonaws.com/files/FTR32_Agency_agreement.pdf";
+   const externalPdfResponse = await axios.get(externalPdfUrl, {
+     responseType: "arraybuffer",
+   });
+   const externalPdfBytes = externalPdfResponse.data;
+
+   // Step 2: Load both PDFs
+   const pdfDoc = await PDFDocument.load(generatedPdfBuffer);
+   const externalPdfDoc = await PDFDocument.load(externalPdfBytes);
+
+   // Step 3: Copy pages from external PDF to generated PDF
+   const externalPages = await pdfDoc.copyPages(
+     externalPdfDoc,
+     externalPdfDoc.getPageIndices()
+   );
+   externalPages.forEach((page) => pdfDoc.addPage(page));
+
+   // Step 4: Final merged PDF
+   const mergedPdfBytes = await pdfDoc.save();
+
+   // Set the response headers and send the merged PDF as a response
+   res.setHeader("Content-Type", "application/pdf");
+   res.setHeader(
+     "Content-Disposition",
+     "inline; filename=merged-agency-agreement.pdf"
+   );
+   res.send(Buffer.from(mergedPdfBytes));
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: error.message });
