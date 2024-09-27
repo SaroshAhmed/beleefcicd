@@ -30,7 +30,7 @@ exports.generatePdf = async (req, res) => {
       propertyAddress,
       recommendedSold,
       recommendedSales,
-      agentSign,
+      agentSignature,
     } = req.body.content;
 
     const htmlContent = `
@@ -162,7 +162,7 @@ exports.generatePdf = async (req, res) => {
             <div>
               <p>Agents Signature</p>
               <img
-                src=${agentSign}
+                src=${agentSignature}
                 alt="agent sign"
                 class="w-auto h-8"
               ></img>
@@ -1295,7 +1295,7 @@ exports.generatePdf = async (req, res) => {
 
 .terms-condition {
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 9px !important;
+  font-size: 10px !important;
   line-height: 1.6;
   /* padding: 60px; */
   padding: 8px;
@@ -1328,7 +1328,7 @@ exports.generatePdf = async (req, res) => {
 
 .terms-condition h4 {
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 9px;
+  font-size: 10px;
   line-height: 1.6;
   font-weight: 700 !important;
   margin: 0.2rem 0rem;
@@ -1342,18 +1342,18 @@ exports.generatePdf = async (req, res) => {
 
 .terms-condition p {
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 9px;
+  font-size: 10px;
   margin-bottom: 0.5rem;
 }
 
 .terms-condition span {
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .terms-condition strong {
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .terms-condition ol {
@@ -1361,12 +1361,12 @@ exports.generatePdf = async (req, res) => {
   padding-left: 0.5rem;
   position: relative;
   margin-top: 0.3rem;
-  font-size: 9px;
+  font-size: 10px;
 }
 
 td, th, tr {
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .terms-condition ol[type="a"] {
@@ -1380,7 +1380,7 @@ td, th, tr {
 .terms-condition ol li {
   font-family: Arial, Helvetica, sans-serif;
   margin-bottom: 0.3rem;
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .terms > ol {
