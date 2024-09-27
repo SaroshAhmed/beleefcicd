@@ -329,9 +329,9 @@ exports.generatePdf = async (req, res) => {
                 with:
               </p>
             </div>
-            <div class="col-12">
+            <div>
               <table>
-                <thead class="border-bottom" style={{ text-align: "left" }}>
+                <thead class="border-bottom text-start">
                   <tr>
                     <th class="py-1 pr-2">
                       Description of expense of charge, and services it is
@@ -350,14 +350,12 @@ exports.generatePdf = async (req, res) => {
                   <tr>
                     <td class="py-1 pr-2">Total marketing expenses</td>
                     <td
-                      class="py-1 px-2 text-left"
-                      style={{ textAlign: "left" }}
+                      class="py-1 px-2 text-start"
                     >
                       As per shopping cart
                     </td>
                     <td
                       class="py-1 pl-2 text-center"
-                      style={{ textAlign: "center" }}
                     >
                       Upon Invoice
                     </td>
@@ -486,6 +484,31 @@ exports.generatePdf = async (req, res) => {
               <p>Yes</p>
               <p>Date Provided: signing date comes here [Clause 13].</p>
             </div>
+          </section>
+
+          <section>
+               <table class="w-full border-collapse">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="py-2 px-3 text-start">Address</th>
+              <th class="py-2 px-3 text-start">Price</th>
+              <th class="py-2 px-3 text-start">Score Match</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${vendors
+              .map(
+                (vendor) => `
+                <tr class="border-b">
+                  <td class="py-2 px-3">${vendor.firstName} ${vendor.lastName}</td>
+                  <td class="py-2 px-3">${vendor.signature}</td>
+                  <td class="py-2 px-3"></td>
+                </tr>
+              `
+              )
+              .join('')}
+          </tbody>
+        </table>
           </section>
 
           <pagebreak />
