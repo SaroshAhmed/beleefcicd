@@ -30,9 +30,9 @@ exports.generatePdf = async (req, res) => {
       propertyAddress,
       recommendedSold,
       recommendedSales,
-      agentSign
+      agentSign,
     } = req.body.content;
-    console.log(solicitor);
+
     const htmlContent = `
    <header>
     <h1>
@@ -501,12 +501,16 @@ exports.generatePdf = async (req, res) => {
                 (vendor) => `
                 <tr class="border-b">
                   <td class="py-2 px-3">${vendor.firstName} ${vendor.lastName}</td>
-                  <td class="py-2 px-3">${vendor.signature}</td>
+                  <td class="py-2 px-3"> <img
+                src=${vendor.signature}
+                alt="agent sign"
+                class="w-auto h-8"
+              ></img></td>
                   <td class="py-2 px-3"></td>
                 </tr>
               `
               )
-              .join('')}
+              .join("")}
           </tbody>
         </table>
           </section>
@@ -1271,12 +1275,12 @@ exports.generatePdf = async (req, res) => {
                 </tr>
               `
               )
-              .join('')}
+              .join("")}
           </tbody>
         </table>
       </div>
     `
-      : ''
+      : ""
   }`;
 
     const styledhtmlContent = `
@@ -1483,36 +1487,35 @@ td, th, tr {
 
     await browser.close();
 
-    
-     // Step 1: Fetch external PDF
-     const externalPdfUrl =
-     "https://beleef-public-uploads.s3.ap-southeast-2.amazonaws.com/files/FTR32_Agency_agreement.pdf";
-   const externalPdfResponse = await axios.get(externalPdfUrl, {
-     responseType: "arraybuffer",
-   });
-   const externalPdfBytes = externalPdfResponse.data;
+    // Step 1: Fetch external PDF
+    const externalPdfUrl =
+      "https://beleef-public-uploads.s3.ap-southeast-2.amazonaws.com/files/FTR32_Agency_agreement.pdf";
+    const externalPdfResponse = await axios.get(externalPdfUrl, {
+      responseType: "arraybuffer",
+    });
+    const externalPdfBytes = externalPdfResponse.data;
 
-   // Step 2: Load both PDFs
-   const pdfDoc = await PDFDocument.load(generatedPdfBuffer);
-   const externalPdfDoc = await PDFDocument.load(externalPdfBytes);
+    // Step 2: Load both PDFs
+    const pdfDoc = await PDFDocument.load(generatedPdfBuffer);
+    const externalPdfDoc = await PDFDocument.load(externalPdfBytes);
 
-   // Step 3: Copy pages from external PDF to generated PDF
-   const externalPages = await pdfDoc.copyPages(
-     externalPdfDoc,
-     externalPdfDoc.getPageIndices()
-   );
-   externalPages.forEach((page) => pdfDoc.addPage(page));
+    // Step 3: Copy pages from external PDF to generated PDF
+    const externalPages = await pdfDoc.copyPages(
+      externalPdfDoc,
+      externalPdfDoc.getPageIndices()
+    );
+    externalPages.forEach((page) => pdfDoc.addPage(page));
 
-   // Step 4: Final merged PDF
-   const mergedPdfBytes = await pdfDoc.save();
+    // Step 4: Final merged PDF
+    const mergedPdfBytes = await pdfDoc.save();
 
-   // Set the response headers and send the merged PDF as a response
-   res.setHeader("Content-Type", "application/pdf");
-   res.setHeader(
-     "Content-Disposition",
-     "inline; filename=merged-agency-agreement.pdf"
-   );
-   res.send(Buffer.from(mergedPdfBytes));
+    // Set the response headers and send the merged PDF as a response
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      "inline; filename=merged-agency-agreement.pdf"
+    );
+    res.send(Buffer.from(mergedPdfBytes));
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: error.message });
