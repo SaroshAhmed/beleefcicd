@@ -1253,7 +1253,7 @@ exports.generatePdf = async (req, res) => {
           </div>
         </div>
           <br>
-  <h2>Recommended Sold</h2>
+  <h3 class="text-center">RECOMMENDED SOLD</h3>
   ${
     recommendedSold.length > 0
       ? `
@@ -1285,7 +1285,7 @@ exports.generatePdf = async (req, res) => {
       : ""
   }
   <br>
-  <h2>Recommended Sales</h2>
+  <h3 class="text-center">RECOMMENDED SALES</h3>
   ${
     recommendedSales.length > 0
       ? `
@@ -1317,22 +1317,22 @@ exports.generatePdf = async (req, res) => {
       : ""
   }
   <br>
-  <h2>Marketing</h2>
-   <table className="w-full border">
+  <h3 class="text-center">MARKETING</h3>
+   <table class="w-full border">
             <tbody>
               ${marketing?.marketingItems
                 ?.map(
-                  (item, index) => `
-                <tr key={index}>
-                  <td className="border px-4 py-2">${item.name}</td>
-                  <td className="border px-4 py-2"></td>
+                  (item) => `
+                <tr key={index} class="border-b">
+                  <td class="px-4 py-2">${item.name}</td>
+                  <td class="px-4 py-2"></td>
                 </tr>`
                 )
                 .join("")}
 
               <tr>
-                <td className="border px-4 py-2 font-bold">TOTAL</td>
-                <td className=" px-4 py-2 flex items-center">
+                <td class="border px-4 py-2 font-bold">TOTAL</td>
+                <td class=" px-4 py-2 flex items-center">
                   ${marketing.marketingPrice}
                 </td>
               </tr>
