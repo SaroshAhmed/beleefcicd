@@ -3394,7 +3394,7 @@ exports.getSignatureUrl = async (req, res) => {
     const params = {
       Bucket: process.env.S3_BUCKET_NAME,
       Key: key,
-      Expires: 300, // URL expires in 5 minutes
+      Expires: 3600, // URL expires in 1 hour
     };
 
     const url = s3.getSignedUrl("getObject", params);
