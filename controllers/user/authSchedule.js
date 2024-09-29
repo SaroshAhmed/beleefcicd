@@ -6,7 +6,7 @@ const AWS = require("aws-sdk");
 const sendEmail = require("../../utils/emailService");
 const formatCurrency = require("../../utils/helperFunctions");
 const { REACT_APP_FRONTEND_URL } = require("../../config");
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -3318,7 +3318,7 @@ exports.createAuthSchedule = async (req, res) => {
     }
 
     const post = {
-      msg: `Hi ${name}, vendor has completed the document for the property ${propertyAddress}`,
+      msg: `Here is your signed copy of the sales agreement for the property ${propertyAddress}`,
       link: `${REACT_APP_FRONTEND_URL}/agreement/${propertyId}`,
       title: "View Agreement",
     };
@@ -3327,7 +3327,7 @@ exports.createAuthSchedule = async (req, res) => {
     for (const vendor of filteredVendors) {
       await sendEmail(
         vendor.email, // Use vendor's email
-        `Sales Agreement Completed: ${propertyAddress}`, // Subject
+        `Ausrealty eSign: Sales agreement copy of ${propertyAddress}`, // Subject
         post, // Message content
         name, // Sender's name
         email // Sender's email
@@ -3336,7 +3336,7 @@ exports.createAuthSchedule = async (req, res) => {
 
     await sendEmail(
       email, // Use vendor's email
-      `Sales Agreement Completed: ${propertyAddress}`, // Subject
+      `Ausrealty eSign: Sales agreement copy of ${propertyAddress}`, // Subject
       post, // Message content
       name, // Sender's name
       email // Sender's email
@@ -3376,7 +3376,6 @@ exports.getSignatureUrl = async (req, res) => {
     const objectId = new mongoose.Types.ObjectId(id);
 
     const authSchedule = await AuthSchedule.findOne({ propertyId: objectId });
-
 
     if (!authSchedule || !authSchedule.agreementId) {
       return res
