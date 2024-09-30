@@ -1261,7 +1261,7 @@ exports.generatePdf = async (req, res) => {
 <br>
 
 <div>
-    <h3 class="text-center">RECOMMENDED SOLD</h3>
+    <h3 class="text-center">SOLD MATCHES</h3>
     ${
       recommendedSold.length > 0
         ? `
@@ -1297,7 +1297,7 @@ exports.generatePdf = async (req, res) => {
 <br>
 
 <div>
-    <h3 class="text-center">RECOMMENDED SALES</h3>
+    <h3 class="text-center">SALE MATCHES</h3>
     ${
       recommendedSales.length > 0
         ? `
@@ -2838,7 +2838,7 @@ const generateAgreement = async (agent, content, propertyId) => {
   <br>
   
   <div>
-      <h3 class="text-center">RECOMMENDED SOLD</h3>
+      <h3 class="text-center">SOLD MATCHES</h3>
       ${
         recommendedSold.length > 0
           ? `
@@ -2876,7 +2876,7 @@ const generateAgreement = async (agent, content, propertyId) => {
   <br>
   
   <div>
-      <h3 class="text-center">RECOMMENDED SALES</h3>
+      <h3 class="text-center">SALE MATCHES</h3>
       ${
         recommendedSales.length > 0
           ? `
@@ -3359,7 +3359,7 @@ const generateCertificate = async (agent, content, propertyId) => {
     </style>
     </head>
     <body>
-    <div class="terms-condition">
+    <div>
       ${htmlContent}
     </div>
     </body>
@@ -3387,7 +3387,6 @@ const generateCertificate = async (agent, content, propertyId) => {
 
     const page = await browser.newPage();
     await page.setContent(styledhtmlContent, { waitUntil: "networkidle0" });
-
 
     const generatedPdfBuffer = await page.pdf({
       path: "agreement.pdf",
@@ -3569,12 +3568,10 @@ exports.createAuthSchedule = async (req, res) => {
     };
 
     const agentPost = {
-        msg: `Here is your signed copy of the sales agreement for the property ${propertyAddress}`,
-        agreementLink: `${REACT_APP_FRONTEND_URL}/agreement/${propertyId}`,
-        agreementTitle: "View Agreement",
-        certificateLink: `${REACT_APP_FRONTEND_URL}/certificate/${propertyId}`,
-        certificateTitle: "View Certificate",
-      };
+      msg: `Here is your signed copy of the sales agreement for the property ${propertyAddress}`,
+      agreementLink: `${REACT_APP_FRONTEND_URL}/agreement/${propertyId}`,
+      agreementTitle: "View Agreement",
+    };
 
     await sendEmail(
       filteredVendors.map((vendor) => vendor.email).join(","), // Use vendor's email
@@ -3584,14 +3581,20 @@ exports.createAuthSchedule = async (req, res) => {
       email // Sender's email
     );
 
-    await sendEmail(
-      email, // Use agent's email
-      `Ausrealty eSign: Sales agreement copy of ${propertyAddress}`, // Subject
-      agentPost, // Message content
-      name, // Sender's name
-      email, // Sender's email
-      ["welcome@ausrealty.com.au","concierge@ausrealty.com.au"]
-    );
+    // try {
+      await sendEmail(
+        email, // Use agent's email
+        `Ausrealty eSign: Sales agreement copy of ${propertyAddress}`, // Subject
+        agentPost, // Message content
+        name, // Sender's name
+        email, // Sender's email
+        ["welcome@ausrealty.com.au", "concierge@ausrealty.com.au"]
+      );
+    // } catch (error) {
+    //   res
+    //     .status(500)
+    //     .json({ message: "Failed to send email", error: error.message });
+    // }
 
     // Create the AuthSchedule with the updated filtered vendors array
     const authSchedule = await AuthSchedule.create({

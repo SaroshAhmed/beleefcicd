@@ -62,30 +62,66 @@ const sendEmail = (to, subject, post, agent, agentEmail, cc = []) => {
                                       </tr>
                                     </tbody>
                                   </table>
-                                    <table role="presentation" border="0" width="100%" cellspacing="0" cellpadding="0">
-                                      <tbody>
-                                        <tr>
-                                          <td style="padding-top: 30px;" align="center">
-                                            <a style="font-size: 15px; color: #ffffff; background-color: #000000; font-family: Helvetica, Arial, Sans Serif; font-weight: bold; text-align: center; text-decoration: none; border-radius: 2px; display: inline-block;" href="${
-                                              post.agreementLink
-                                            }" target="_blank" rel="noopener">
-                                              <span style="padding: 0px 24px; line-height: 44px;">${
-                                                post.agreementTitle
-                                              }</span>
-                                            </a>
-                                          </td>
-                                          ${
-                                            post.certificateLink
-                                              ? `<td style="margin-top:16px;  padding-top: 30px;" align="center">
-                                            <a style="font-size: 15px; color: #ffffff; background-color: #000000; font-family: Helvetica, Arial, Sans Serif; font-weight: bold; text-align: center; text-decoration: none; border-radius: 2px; display: inline-block;" href="${post.certificateLink}" target="_blank" rel="noopener">
-                                              <span style="padding: 0px 24px; line-height: 44px;">${post.certificateTitle}</span>
-                                            </a>
-                                          </td>`
-                                              : ""
-                                          }
-                                        </tr>                                  
-                                      </tbody>
-                                    </table>
+                                   <table role="presentation" border="0" width="100%" cellspacing="0" cellpadding="0">
+  <tbody>
+    <tr>
+      <td style="padding-top: 30px;" align="center">
+        <a
+          style="
+            font-size: 15px;
+            color: #ffffff;
+            background-color: #000000;
+            font-family: Helvetica, Arial, Sans Serif;
+            font-weight: bold;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 2px;
+            display: inline-block;
+          "
+          href="${post.agreementLink}"
+          target="_blank"
+          rel="noopener"
+        >
+          <span style="padding: 0px 24px; line-height: 44px;">
+            ${post.agreementTitle}
+          </span>
+        </a>
+      </td>
+    </tr>
+
+    ${
+      post.certificateLink
+        ? `
+    <tr>
+      <td style="margin-top:16px; padding-top: 30px;" align="center">
+        <a
+          style="
+            font-size: 15px;
+            color: #ffffff;
+            background-color: #000000;
+            font-family: Helvetica, Arial, Sans Serif;
+            font-weight: bold;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 2px;
+            display: inline-block;
+          "
+          href="${post.certificateLink}"
+          target="_blank"
+          rel="noopener"
+        >
+          <span style="padding: 0px 24px; line-height: 44px;">
+            ${post.certificateTitle}
+          </span>
+        </a>
+      </td>
+    </tr>
+    `
+        : ""
+    }
+  </tbody>
+</table>
+
                                 </td>
                               </tr>
                             </tbody>
