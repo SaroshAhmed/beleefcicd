@@ -125,7 +125,7 @@ exports.createProperty = async (req, res) => {
       { name: "bookAppraisal", status: "unlock" },
       { name: "priceProcess", status: "unlock" },
       { name: "postList", status: "lock" },
-      { name: "authoriseSchedule", status: "unlock" },
+      { name: "authoriseSchedule", status: "lock" },
       { name: "prepareMarketing", status: "unlock" },
       { name: "goLive", status: "unlock" },
       { name: "onMarket", status: "unlock" },

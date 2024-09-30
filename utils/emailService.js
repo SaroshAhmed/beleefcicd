@@ -1,5 +1,5 @@
 const nodemailer = require("nodemailer");
-const { MYSIGN_MAIL_USER,MYSIGN_MAIL_PASS } = require("../config");
+const { MYSIGN_MAIL_USER, MYSIGN_MAIL_PASS } = require("../config");
 
 const transporter = nodemailer.createTransport({
   service: "Gmail",
@@ -20,10 +20,11 @@ const transporter = nodemailer.createTransport({
 //   return transporter.sendMail(mailOptions);
 // };
 
-const sendEmail = (to, subject, post, agent, agentEmail) => {
+const sendEmail = (to, subject, post, agent, agentEmail, cc = []) => {
   const mailOptions = {
     from: `Ausrealty <${process.env.MYSIGN_MAIL_USER}>`,
     to,
+    cc,
     subject,
     html: `
       <html>
@@ -65,10 +66,23 @@ const sendEmail = (to, subject, post, agent, agentEmail) => {
                                       <tbody>
                                         <tr>
                                           <td style="padding-top: 30px;" align="center">
-                                            <a style="font-size: 15px; color: #ffffff; background-color: #000000; font-family: Helvetica, Arial, Sans Serif; font-weight: bold; text-align: center; text-decoration: none; border-radius: 2px; display: inline-block;" href="${post.link}" target="_blank" rel="noopener">
-                                              <span style="padding: 0px 24px; line-height: 44px;">${post.title}</span>
+                                            <a style="font-size: 15px; color: #ffffff; background-color: #000000; font-family: Helvetica, Arial, Sans Serif; font-weight: bold; text-align: center; text-decoration: none; border-radius: 2px; display: inline-block;" href="${
+                                              post.agreementLink
+                                            }" target="_blank" rel="noopener">
+                                              <span style="padding: 0px 24px; line-height: 44px;">${
+                                                post.agreementTitle
+                                              }</span>
                                             </a>
                                           </td>
+                                          ${
+                                            post.certificateLink
+                                              ? `<td style="margin-top:16px;  padding-top: 30px;" align="center">
+                                            <a style="font-size: 15px; color: #ffffff; background-color: #000000; font-family: Helvetica, Arial, Sans Serif; font-weight: bold; text-align: center; text-decoration: none; border-radius: 2px; display: inline-block;" href="${post.certificateLink}" target="_blank" rel="noopener">
+                                              <span style="padding: 0px 24px; line-height: 44px;">${post.certificateTitle}</span>
+                                            </a>
+                                          </td>`
+                                              : ""
+                                          }
                                         </tr>                                  
                                       </tbody>
                                     </table>

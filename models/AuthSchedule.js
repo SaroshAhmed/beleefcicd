@@ -34,6 +34,7 @@ const authScheduleSchema = new Schema(
       type: [Schema.Types.Mixed],
     },
     agreementId: { type: String },
+    certificateId: { type: String },
   },
   {
     timestamps: true,

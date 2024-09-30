@@ -15,6 +15,11 @@ AWS.config.update({
 });
 const s3 = new AWS.S3();
 
+const formatDate = (dateString, options = {}) => {
+  const date = new Date(dateString);
+  return date.toLocaleString("en-AU", options);
+};
+
 exports.generatePdf = async (req, res) => {
   try {
     const {
@@ -1590,7 +1595,7 @@ td, th, tr {
   }
 };
 
-const generatePdfa = async (agent, content, propertyId) => {
+const generateAgreement = async (agent, content, propertyId) => {
   try {
     const {
       name,
@@ -3185,7 +3190,250 @@ const generatePdfa = async (agent, content, propertyId) => {
     // res.send(Buffer.from(mergedPdfBytes));
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: error.message });
+    throw error;
+  }
+};
+
+const generateCertificate = async (agent, content, propertyId) => {
+  try {
+    const {
+      name,
+      email,
+      mobile,
+      company,
+      companyAddress,
+      licenseNumber,
+      gst,
+      abn,
+    } = agent;
+    const {
+      vendors,
+      solicitor,
+      status,
+      terms,
+      saleProcess,
+      startPrice,
+      endPrice,
+      commissionFee,
+      commissionRange,
+      marketing,
+      propertyAddress,
+      recommendedSold,
+      recommendedSales,
+      agentSignature,
+    } = content;
+
+    const htmlContent = `
+    <h1>A U S R E A L T Y</h1>
+    <p class="note">
+      Electronic Record and Signature generated on: ${formatDate(new Date(), {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      })} <br>
+      Parties agreed to: ${name}
+    </p>
+    <table>
+      <tr>
+        <td colspan="2" class="heading">Certificate of Completion</td>
+      </tr>
+      <tr>
+        <td class="title">Document ID:#${propertyId}</td>
+        <td class="right">Status: Completed</td>
+      </tr>
+      <tr>
+        <td class="title">Agent</td>
+        <td class="right">
+          ${name} | ${email}
+        </td>
+      </tr>
+      <tr>
+        <td class="heading">Signer</td>
+        <td class="right heading">Signature</td>
+      </tr>
+      ${vendors
+        .map(
+          (vendor) => `
+        <tr>
+          <td class="signer">
+            <strong>${vendor.firstName} ${vendor.lastName}</strong><br>
+            ${
+              vendor.sentDate
+                ? `<br> Sent on: ${formatDate(vendor.sentDate, {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: true,
+                  })}(AEDT)`
+                : ""
+            }
+            <br> Signed on: ${formatDate(vendor.signedDate, {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            })}(AEDT)
+            <br> Viewed on: ${formatDate(vendor.viewedDate, {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            })}(AEDT)
+          </td>
+          <td class="right">
+            <img src="${vendor.signature}" width="100">
+          </td>
+        </tr>
+      `
+        )
+        .join("")}
+      <tr>
+        <td class="heading" colspan="2">Proof of Identity</td>
+      </tr>
+           ${vendors
+             .map((vendor) => {
+               return `
+              <tr>
+                <td>
+                  <p>
+                    I ${vendor.firstName} ${vendor.lastName} confirm I am ${vendor.firstName} ${vendor.lastName} as identified by documents provided and/or sighted by Ausrealty. This signature is my own and I also confirm I agree to this electronic signing format.
+                  </p>
+                </td>
+              </tr>
+            `;
+             })
+             .join("")}
+    </table>
+
+    <table class="legal">
+      <tr>
+        <td class="heading">SIGNATURE DISCLOSURE</td>
+      </tr>
+      ${vendors
+        .map((vendor) => {
+          return `
+              <tr>
+                <td>
+                  <p>
+                    I confirm I am ${vendor.firstName} ${vendor.lastName} as identified by documents provided to Ausrealty. This signature is my own and I also confirm I agree to this electronic signing format.
+                  </p>
+                </td>
+              </tr>
+            `;
+        })
+        .join("")}
+    </table>`;
+
+    const styledhtmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+           body{
+            font-family: Arial, sans-serif!important;
+            margin:0;
+            padding:0;
+            font-size:10px
+         }
+         table{width:100%; border-spacing: 0;
+    border-collapse: separate;}
+         td {padding:2px}
+         h1 {font-size:14pt;font-weight:700;text-align:right;margin-top:-30px}
+         .right{text-align:right}
+         .heading{background-color:#ccc;padding:4px}
+         .note{font-size:8px!important}
+         .signer{padding-bottom:10px}
+         h2 {font-size:12px}
+         .legal p{font-size:10px}
+         
+    </style>
+    </head>
+    <body>
+    <div class="terms-condition">
+      ${htmlContent}
+    </div>
+    </body>
+    </html>
+    `;
+
+    // this script for production
+    const launchOptions = {
+      headless: true, // Run in headless mode
+      ignoreDefaultArgs: ["--disable-extensions"],
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      ignoreHTTPSErrors: true,
+      dumpio: false,
+      timeout: 120000,
+    };
+
+    // Add executablePath only if environment is PROD
+    if (process.env.ENVIRONMENT === "PROD") {
+      launchOptions.executablePath = "/usr/bin/google-chrome-stable";
+
+      // launchOptions.executablePath = "/usr/bin/chromium-browser"; // Path to the installed Chromium on Ubuntu
+    }
+
+    const browser = await puppeteer.launch(launchOptions);
+
+    const page = await browser.newPage();
+    await page.setContent(styledhtmlContent, { waitUntil: "networkidle0" });
+
+    // Define footer with page number
+    const footerTemplate = `
+        <div style="width: 100%; font-size: 8px; font-family: Arial, Helvetica, sans-serif; text-align: center; color: #333; padding: 5px 10px;">
+          <div style="width: 100%; padding-top: 5px; font-weight: 700;">
+            <span style="text-align:center; font-size: 10px; letter-spacing: 2px;margin-left:16px;">AUSREALTY</span>
+            <span style="float: right; font-size: 10px;margin-right:16px;">Page <span class="pageNumber"></span></span>
+          </div>
+        </div>`;
+
+    const generatedPdfBuffer = await page.pdf({
+      path: "agreement.pdf",
+      format: "A4",
+      margin: {
+        top: "20mm",
+        right: "10mm",
+        bottom: "20mm",
+        left: "10mm",
+      },
+      displayHeaderFooter: true,
+      footerTemplate: footerTemplate,
+      headerTemplate: `<div style="display: none;"></div>`,
+      printBackground: true,
+    });
+
+    await browser.close();
+
+    // Generate a unique key for the S3 object
+    const s3Key = `agreements/${propertyId}-certificate.pdf`;
+
+    // Generate a presigned URL for uploading
+    const presignedUrl = await s3.getSignedUrlPromise("putObject", {
+      Bucket: process.env.S3_BUCKET_NAME,
+      Key: s3Key,
+      ContentType: "application/pdf",
+      Expires: 600, // URL expires in 600 seconds (10 minutes)
+    });
+
+    // Upload the PDF to S3 using the presigned URL
+    await axios.put(presignedUrl, generatedPdfBuffer, {
+      headers: { "Content-Type": "application/pdf" },
+    });
+
+    return s3Key;
+  } catch (error) {
+    console.log(error);
+    throw error;
   }
 };
 
@@ -3268,7 +3516,13 @@ exports.createAuthSchedule = async (req, res) => {
   } = req.body.formattedData;
 
   try {
-    const agreementId = await generatePdfa(
+    const agreementId = await generateAgreement(
+      req.user,
+      req.body.formattedData,
+      propertyId
+    );
+
+    const certificateId = await generateCertificate(
       req.user,
       req.body.formattedData,
       propertyId
@@ -3317,29 +3571,37 @@ exports.createAuthSchedule = async (req, res) => {
       vendor.licence = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${licenceResult.key}`;
     }
 
-    const post = {
+    const vendorPost = {
       msg: `Here is your signed copy of the sales agreement for the property ${propertyAddress}`,
-      link: `${REACT_APP_FRONTEND_URL}/agreement/${propertyId}`,
-      title: "View Agreement",
+      agreementLink: `${REACT_APP_FRONTEND_URL}/agreement/${propertyId}`,
+      agreementTitle: "View Agreement",
+      certificateLink: `${REACT_APP_FRONTEND_URL}/certificate/${propertyId}`,
+      certificateTitle: "View Certificate",
     };
 
-    // Loop through each filtered vendor and send them an email
-    for (const vendor of filteredVendors) {
-      await sendEmail(
-        vendor.email, // Use vendor's email
-        `Ausrealty eSign: Sales agreement copy of ${propertyAddress}`, // Subject
-        post, // Message content
-        name, // Sender's name
-        email // Sender's email
-      );
-    }
+    const agentPost = {
+        msg: `Here is your signed copy of the sales agreement for the property ${propertyAddress}`,
+        agreementLink: `${REACT_APP_FRONTEND_URL}/agreement/${propertyId}`,
+        agreementTitle: "View Agreement",
+        certificateLink: `${REACT_APP_FRONTEND_URL}/certificate/${propertyId}`,
+        certificateTitle: "View Certificate",
+      };
 
     await sendEmail(
-      email, // Use vendor's email
+      filteredVendors.map((vendor) => vendor.email).join(","), // Use vendor's email
       `Ausrealty eSign: Sales agreement copy of ${propertyAddress}`, // Subject
-      post, // Message content
+      vendorPost, // Message content
       name, // Sender's name
       email // Sender's email
+    );
+
+    await sendEmail(
+      email, // Use agent's email
+      `Ausrealty eSign: Sales agreement copy of ${propertyAddress}`, // Subject
+      agentPost, // Message content
+      name, // Sender's name
+      email, // Sender's email
+      ["welcome@ausrealty.com.au","concierge@ausrealty.com.au"]
     );
 
     // Create the AuthSchedule with the updated filtered vendors array
@@ -3360,6 +3622,7 @@ exports.createAuthSchedule = async (req, res) => {
       recommendedSales,
       recommendedSold,
       agreementId: `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${agreementId}`,
+      certificateId: `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${certificateId}`,
     });
 
     return res.status(200).json({ success: true, data: authSchedule });
