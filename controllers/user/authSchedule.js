@@ -3290,7 +3290,7 @@ const generateCertificate = async (agent, content, propertyId) => {
             })}(AEDT)
           </td>
           <td class="right">
-            <img src="${vendor.signature}" width="100">
+            <img src="${vendor.signature}" class="w-auto h-8">
           </td>
         </tr>
       `
@@ -3388,14 +3388,6 @@ const generateCertificate = async (agent, content, propertyId) => {
     const page = await browser.newPage();
     await page.setContent(styledhtmlContent, { waitUntil: "networkidle0" });
 
-    // Define footer with page number
-    const footerTemplate = `
-        <div style="width: 100%; font-size: 8px; font-family: Arial, Helvetica, sans-serif; text-align: center; color: #333; padding: 5px 10px;">
-          <div style="width: 100%; padding-top: 5px; font-weight: 700;">
-            <span style="text-align:center; font-size: 10px; letter-spacing: 2px;margin-left:16px;">AUSREALTY</span>
-            <span style="float: right; font-size: 10px;margin-right:16px;">Page <span class="pageNumber"></span></span>
-          </div>
-        </div>`;
 
     const generatedPdfBuffer = await page.pdf({
       path: "agreement.pdf",
@@ -3406,9 +3398,6 @@ const generateCertificate = async (agent, content, propertyId) => {
         bottom: "20mm",
         left: "10mm",
       },
-      displayHeaderFooter: true,
-      footerTemplate: footerTemplate,
-      headerTemplate: `<div style="display: none;"></div>`,
       printBackground: true,
     });
 
