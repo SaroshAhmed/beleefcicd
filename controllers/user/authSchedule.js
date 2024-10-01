@@ -3721,3 +3721,26 @@ exports.getSignatureUrl = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+// Get AuthSchedule by PropertyId
+exports.getAuthScheduleByPropertyId = async (req, res) => {
+  try {
+    const { propertyId } = req.params;
+    const objectId = new mongoose.Types.ObjectId(propertyId);
+
+    const authSchedule = await AuthSchedule.findOne({
+      propertyId: objectId,
+    });
+
+    if (!authSchedule) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Auth Schedule not found" });
+    }
+
+    return res.status(200).json({ success: true, data: authSchedule });
+  } catch (error) {
+    console.error("Error fetching AuthSchedule: ", error.message);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
