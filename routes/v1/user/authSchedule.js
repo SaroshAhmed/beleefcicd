@@ -6,6 +6,7 @@ const {
   createAuthSchedule,
   getSignatureUrl,
   getAuthScheduleByPropertyId,
+  updateVendorInAuthSchedule
 } = require("../../../controllers/user/authSchedule");
 const { isAuthenticated } = require("../../../middleware/auth");
 
