@@ -1363,7 +1363,10 @@ exports.generatePdf = async (req, res) => {
     <script src="https://cdn.tailwindcss.com"></script>
 <style>
 .page-break {
-  page-break-before: always;
+  page-break-before: always; /* For print context */
+  page-break-after: always;  /* Ensure page break after */
+  break-before: page;        /* Modern browser support */
+  break-after: page;         /* Modern browser support */
 }
 
 .terms-condition {
