@@ -44,6 +44,7 @@ exports.generatePdf = async (req, res) => {
       commissionRange,
       marketing,
       propertyAddress,
+      address,
       recommendedSold,
       recommendedSales,
       agentSignature,
@@ -122,7 +123,7 @@ exports.generatePdf = async (req, res) => {
             for Rural Land]
         </small>
     </h3>
-    <strong>ADDRESS:</strong> ${propertyAddress}
+    <strong>ADDRESS:</strong> ${propertyAddress || address}
     <div>
         <strong>Occupation status of Property: </strong>
         <span>${status}</span>
@@ -1364,9 +1365,7 @@ exports.generatePdf = async (req, res) => {
 <style>
 .page-break {
   page-break-before: always; /* For print context */
-  page-break-after: always;  /* Ensure page break after */
   break-before: page;        /* Modern browser support */
-  break-after: page;         /* Modern browser support */
 }
 
 .terms-condition {
@@ -2946,9 +2945,10 @@ const generateAgreement = async (agent, content, propertyId) => {
   <head>
       <script src="https://cdn.tailwindcss.com"></script>
   <style>
-  .page-break {
-    page-break-before: always;
-  }
+ .page-break {
+  page-break-before: always; /* For print context */
+  break-before: page;        /* Modern browser support */
+}
   
   .terms-condition {
     font-family: Arial, Helvetica, sans-serif;
