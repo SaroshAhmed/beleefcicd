@@ -1259,7 +1259,7 @@ exports.generatePdf = async (req, res) => {
 </div>
 
 <br>
-
+<div class="page-break"></div>
 <div>
     <h3 class="text-center">SOLD MATCHES</h3>
     ${
@@ -1331,7 +1331,7 @@ exports.generatePdf = async (req, res) => {
 </div>
 
 <br>
-
+<div class="page-break"></div>
 <div>
     <h3 class="text-center">MARKETING</h3>
     <table class="w-full border">
@@ -1624,7 +1624,7 @@ const generateAgreement = async (agent, content, propertyId) => {
       agentSignature,
     } = content;
 
-    const htmlContent = `
+    const agreementContent = `
   <header>
       <h1>
           ${
@@ -2836,7 +2836,7 @@ const generateAgreement = async (agent, content, propertyId) => {
   </div>
   
   <br>
-  
+  <div class="page-break"></div>
   <div>
       <h3 class="text-center">SOLD MATCHES</h3>
       ${
@@ -2912,7 +2912,7 @@ const generateAgreement = async (agent, content, propertyId) => {
   </div>
   
   <br>
-  
+  <div class="page-break"></div>
   <div>
       <h3 class="text-center">MARKETING</h3>
       <table class="w-full border">
@@ -2937,7 +2937,7 @@ const generateAgreement = async (agent, content, propertyId) => {
       </table>
   </div>`;
 
-    const styledhtmlContent = `
+    const styledAgreementContent = `
   <!DOCTYPE html>
   <html>
   <head>
@@ -3081,12 +3081,11 @@ const generateAgreement = async (agent, content, propertyId) => {
     color: #9f9f9f;
     font-weight: normal;
   }
-  
   </style>
   </head>
   <body>
   <div class="terms-condition">
-    ${htmlContent}
+    ${agreementContent}
   </div>
   </body>
   </html>
@@ -3112,7 +3111,9 @@ const generateAgreement = async (agent, content, propertyId) => {
     const browser = await puppeteer.launch(launchOptions);
 
     const page = await browser.newPage();
-    await page.setContent(styledhtmlContent, { waitUntil: "networkidle0" });
+    await page.setContent(styledAgreementContent, {
+      waitUntil: "networkidle0",
+    });
 
     // Define footer with page number
     const footerTemplate = `
@@ -3149,9 +3150,16 @@ const generateAgreement = async (agent, content, propertyId) => {
     });
     const externalPdfBytes = externalPdfResponse.data;
 
+    const certificatePdfBytes = await generateCertificate(
+      agent,
+      content,
+      propertyId
+    );
+
     // Step 2: Load both PDFs
     const pdfDoc = await PDFDocument.load(generatedPdfBuffer);
     const externalPdfDoc = await PDFDocument.load(externalPdfBytes);
+    const certificatePdfDoc = await PDFDocument.load(certificatePdfBytes);
 
     // Step 3: Copy pages from external PDF to generated PDF
     const externalPages = await pdfDoc.copyPages(
@@ -3159,6 +3167,12 @@ const generateAgreement = async (agent, content, propertyId) => {
       externalPdfDoc.getPageIndices()
     );
     externalPages.forEach((page) => pdfDoc.addPage(page));
+
+    const certificatePages = await pdfDoc.copyPages(
+      certificatePdfDoc,
+      certificatePdfDoc.getPageIndices()
+    );
+    certificatePages.forEach((page) => pdfDoc.addPage(page));
 
     // Step 4: Final merged PDF
     const mergedPdfBytes = await pdfDoc.save();
@@ -3289,8 +3303,8 @@ const generateCertificate = async (agent, content, propertyId) => {
               hour12: true,
             })}(AEDT)
           </td>
-          <td class="right">
-            <img src="${vendor.signature}" class="w-auto h-8">
+          <td class="signature">
+            <img src="${vendor.signature}" class="signature-img h-8">
           </td>
         </tr>
       `
@@ -3355,7 +3369,16 @@ const generateCertificate = async (agent, content, propertyId) => {
          .signer{padding-bottom:10px}
          h2 {font-size:12px}
          .legal p{font-size:10px}
-         
+  .signature {
+    text-align: right;
+    vertical-align: top;
+  }
+  .signature-img {
+    width: auto;
+    height: 32px;
+    display: inline-block;
+  }
+
     </style>
     </head>
     <body>
@@ -3402,23 +3425,7 @@ const generateCertificate = async (agent, content, propertyId) => {
 
     await browser.close();
 
-    // Generate a unique key for the S3 object
-    const s3Key = `agreements/${propertyId}-certificate.pdf`;
-
-    // Generate a presigned URL for uploading
-    const presignedUrl = await s3.getSignedUrlPromise("putObject", {
-      Bucket: process.env.S3_BUCKET_NAME,
-      Key: s3Key,
-      ContentType: "application/pdf",
-      Expires: 600, // URL expires in 600 seconds (10 minutes)
-    });
-
-    // Upload the PDF to S3 using the presigned URL
-    await axios.put(presignedUrl, generatedPdfBuffer, {
-      headers: { "Content-Type": "application/pdf" },
-    });
-
-    return s3Key;
+    return generatedPdfBuffer;
   } catch (error) {
     console.log(error);
     throw error;
@@ -3510,11 +3517,11 @@ exports.createAuthSchedule = async (req, res) => {
       propertyId
     );
 
-    const certificateId = await generateCertificate(
-      req.user,
-      req.body.formattedData,
-      propertyId
-    );
+    // const certificateId = await generateCertificate(
+    //   req.user,
+    //   req.body.formattedData,
+    //   propertyId
+    // );
 
     // Check if a UserProperty with the same userId and propertyId already exists
     const authScheduleExists = await AuthSchedule.findOne({
@@ -3559,15 +3566,15 @@ exports.createAuthSchedule = async (req, res) => {
       vendor.licence = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${licenceResult.key}`;
     }
 
-    const vendorPost = {
-      msg: `Here is your signed copy of the sales agreement for the property ${propertyAddress}`,
-      agreementLink: `${REACT_APP_FRONTEND_URL}/agreement/${propertyId}`,
-      agreementTitle: "View Agreement",
-      certificateLink: `${REACT_APP_FRONTEND_URL}/certificate/${propertyId}`,
-      certificateTitle: "View Certificate",
-    };
+    // const vendorPost = {
+    //   msg: `Here is your signed copy of the sales agreement for the property ${propertyAddress}`,
+    //   agreementLink: `${REACT_APP_FRONTEND_URL}/agreement/${propertyId}`,
+    //   agreementTitle: "View Agreement",
+    //   certificateLink: `${REACT_APP_FRONTEND_URL}/certificate/${propertyId}`,
+    //   certificateTitle: "View Certificate",
+    // };
 
-    const agentPost = {
+    const post = {
       msg: `Here is your signed copy of the sales agreement for the property ${propertyAddress}`,
       agreementLink: `${REACT_APP_FRONTEND_URL}/agreement/${propertyId}`,
       agreementTitle: "View Agreement",
@@ -3576,20 +3583,20 @@ exports.createAuthSchedule = async (req, res) => {
     await sendEmail(
       filteredVendors.map((vendor) => vendor.email).join(","), // Use vendor's email
       `Ausrealty eSign: Sales agreement copy of ${propertyAddress}`, // Subject
-      vendorPost, // Message content
+      post, // Message content
       name, // Sender's name
       email // Sender's email
     );
 
     // try {
-      await sendEmail(
-        email, // Use agent's email
-        `Ausrealty eSign: Sales agreement copy of ${propertyAddress}`, // Subject
-        agentPost, // Message content
-        name, // Sender's name
-        email, // Sender's email
-        ["welcome@ausrealty.com.au", "concierge@ausrealty.com.au"]
-      );
+    await sendEmail(
+      email, // Use agent's email
+      `Ausrealty eSign: Sales agreement copy of ${propertyAddress}`, // Subject
+      post, // Message content
+      name, // Sender's name
+      email, // Sender's email
+      ["welcome@ausrealty.com.au", "concierge@ausrealty.com.au"]
+    );
     // } catch (error) {
     //   res
     //     .status(500)
@@ -3614,7 +3621,6 @@ exports.createAuthSchedule = async (req, res) => {
       recommendedSales,
       recommendedSold,
       agreementId: `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${agreementId}`,
-      certificateId: `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${certificateId}`,
     });
 
     return res.status(200).json({ success: true, data: authSchedule });
@@ -3632,28 +3638,81 @@ exports.getSignatureUrl = async (req, res) => {
 
     const authSchedule = await AuthSchedule.findOne({ propertyId: objectId });
 
-    if (!authSchedule || !authSchedule.agreementId) {
+    if (!authSchedule) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Document not found" });
+    }
+
+    // Get agreement URL
+    if (!authSchedule.agreementId) {
       return res
         .status(404)
         .json({ success: false, message: "Agreement not found" });
     }
 
     const agreementUrl = authSchedule.agreementId;
-    const urlObj = new URL(agreementUrl);
-    // Remove the leading '/' from pathname to get the Key
-    const key = urlObj.pathname.startsWith("/")
-      ? urlObj.pathname.substring(1)
-      : urlObj.pathname;
+    const agreementUrlObj = new URL(agreementUrl);
+    const agreementKey = agreementUrlObj.pathname.startsWith("/")
+      ? agreementUrlObj.pathname.substring(1)
+      : agreementUrlObj.pathname;
 
-    const params = {
+    const agreementParams = {
       Bucket: process.env.S3_BUCKET_NAME,
-      Key: key,
+      Key: agreementKey,
       Expires: 3600, // URL expires in 1 hour
     };
 
-    const url = s3.getSignedUrl("getObject", params);
+    const agreementSignedUrl = s3.getSignedUrl("getObject", agreementParams);
 
-    res.status(200).json({ success: true, data: url });
+    // Loop through vendors to get licences
+    const vendors = authSchedule.vendors || [];
+    const vendorsWithLicenceUrls = await Promise.all(
+      vendors.map(async (vendor) => {
+        if (vendor.licence) {
+          const licenceUrlObj = new URL(vendor.licence);
+          const licenceKey = licenceUrlObj.pathname.startsWith("/")
+            ? licenceUrlObj.pathname.substring(1)
+            : licenceUrlObj.pathname;
+
+          const licenceParams = {
+            Bucket: process.env.S3_BUCKET_NAME,
+            Key: licenceKey,
+            Expires: 3600, // URL expires in 1 hour
+          };
+
+          const licenceSignedUrl = s3.getSignedUrl("getObject", licenceParams);
+          vendor.licenceSignedUrl = licenceSignedUrl;
+        }
+
+        // Optional: Get signature signed URL if needed
+        //   if (vendor.signature) {
+        //     const signatureUrlObj = new URL(vendor.signature);
+        //     const signatureKey = signatureUrlObj.pathname.startsWith("/")
+        //       ? signatureUrlObj.pathname.substring(1)
+        //       : signatureUrlObj.pathname;
+
+        //     const signatureParams = {
+        //       Bucket: process.env.S3_BUCKET_NAME,
+        //       Key: signatureKey,
+        //       Expires: 3600, // URL expires in 1 hour
+        //     };
+
+        //     const signatureSignedUrl = s3.getSignedUrl("getObject", signatureParams);
+        //     vendor.signatureSignedUrl = signatureSignedUrl;
+        //   }
+
+        return vendor;
+      })
+    );
+
+    res.status(200).json({
+      success: true,
+      data: {
+        agreementUrl: agreementSignedUrl,
+        vendors: vendorsWithLicenceUrls,
+      },
+    });
   } catch (error) {
     console.error("Error generating signature URL:", error);
     res.status(500).json({ success: false, message: "Server error" });
