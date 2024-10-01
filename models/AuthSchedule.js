@@ -27,6 +27,7 @@ const authScheduleSchema = new Schema(
     status: { type: String },
     terms: { type: String },
     marketing: { type: Schema.Types.Mixed },
+    prepareMarketing: { type: String },
     recommendedSales: {
       type: [Schema.Types.Mixed],
     },
@@ -35,6 +36,7 @@ const authScheduleSchema = new Schema(
     },
     agreementId: { type: String },
     certificateId: { type: String },
+    isLock: { type: Boolean, default: false },
   },
   {
     timestamps: true,

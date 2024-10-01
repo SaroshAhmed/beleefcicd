@@ -3276,35 +3276,10 @@ const generateCertificate = async (agent, content, propertyId) => {
           (vendor) => `
         <tr>
           <td class="signer">
-            <strong>${vendor.firstName} ${vendor.lastName}</strong><br>
-            ${
-              vendor.sentDate
-                ? `<br> Sent on: ${formatDate(vendor.sentDate, {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: true,
-                  })}(AEDT)`
-                : ""
-            }
-            <br> Signed on: ${formatDate(vendor.signedDate, {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: true,
-            })}(AEDT)
-            <br> Viewed on: ${formatDate(vendor.viewedDate, {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: true,
-            })}(AEDT)
+            <strong>${vendor.firstName} ${vendor.lastName}</strong>
+            <br> Sent on: ${vendor.sentDate}
+            <br> Signed on: ${vendor.signedDate}
+            <br> Viewed on: ${vendor.viewedDate}
           </td>
           <td class="signature">
             <img src="${vendor.signature}" class="signature-img h-8">
@@ -3621,9 +3596,11 @@ exports.createAuthSchedule = async (req, res) => {
       status,
       terms,
       marketing,
+      prepareMarketing,
       recommendedSales,
       recommendedSold,
       agreementId: `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${agreementId}`,
+      isLock: true,
     });
 
     return res.status(200).json({ success: true, data: authSchedule });
@@ -3741,6 +3718,53 @@ exports.getAuthScheduleByPropertyId = async (req, res) => {
     return res.status(200).json({ success: true, data: authSchedule });
   } catch (error) {
     console.error("Error fetching AuthSchedule: ", error.message);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.updateVendorInAuthSchedule = async (req, res) => {
+  try {
+    const { propertyId } = req.params;
+    const { vendorId, vendor } = req.body;
+
+    const objectId = new mongoose.Types.ObjectId(propertyId);
+
+    const authSchedule = await AuthSchedule.findOne({ propertyId: objectId });
+
+    if (!authSchedule) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Auth Schedule not found" });
+    }
+
+    // Assuming vendorId is the index in the vendors array
+    const vendorIndex = parseInt(vendorId, 10);
+
+    if (
+      isNaN(vendorIndex) ||
+      vendorIndex < 0 ||
+      vendorIndex >= authSchedule.vendors.length
+    ) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Vendor not found" });
+    }
+
+    // Update the vendor data
+    authSchedule.vendors[vendorIndex] = {
+      ...authSchedule.vendors[vendorIndex]._doc,
+      ...vendor,
+    };
+
+    // Save the updated AuthSchedule
+    await authSchedule.save();
+
+    return res.status(200).json({
+      success: true,
+      data: authSchedule,
+    });
+  } catch (error) {
+    console.error("Error updating Vendor: ", error.message);
     return res.status(500).json({ success: false, message: error.message });
   }
 };
