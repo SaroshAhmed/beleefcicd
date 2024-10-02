@@ -6,7 +6,7 @@ const {
   createAuthSchedule,
   getAllSignatureUrl,
   getAuthScheduleByPropertyId,
-  updateVendorInAuthSchedule,
+  updateAuthSchedule,
   sendToSign,
   getVendorsSignatureUrl
 } = require("../../../controllers/user/authSchedule");
@@ -18,7 +18,7 @@ router.post("/", isAuthenticated, createAuthSchedule);
 
 router.get("/get-signature-url/:id", getAllSignatureUrl);
 router.get("/:propertyId", getAuthScheduleByPropertyId);
-router.put("/:propertyId", updateVendorInAuthSchedule);
+router.put("/:propertyId", updateAuthSchedule);
 
 router.post("/sendToSign", isAuthenticated, sendToSign);
 

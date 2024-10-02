@@ -3688,7 +3688,8 @@ exports.createAuthSchedule = async (req, res) => {
     await sendEmail(
       email, // Use agent's email
       `Ausrealty eSign: Sales agreement copy of ${propertyAddress}`, // Subject
-      text[("welcome@ausrealty.com.au", "concierge@ausrealty.com.au")]
+      text,
+      [("welcome@ausrealty.com.au", "concierge@ausrealty.com.au")]
     );
 
     // Create the AuthSchedule with the updated filtered vendors array
@@ -3812,7 +3813,7 @@ exports.getAllSignatureUrl = async (req, res) => {
 
 exports.getVendorsSignatureUrl = async (req, res) => {
   try {
-    const {id} = req.params;
+    const { id } = req.params;
 
     const objectId = new mongoose.Types.ObjectId(id);
 
@@ -3834,18 +3835,18 @@ exports.getVendorsSignatureUrl = async (req, res) => {
             const signatureKey = signatureUrlObj.pathname.startsWith("/")
               ? signatureUrlObj.pathname.substring(1)
               : signatureUrlObj.pathname;
-    
+
             const signatureParams = {
               Bucket: process.env.S3_BUCKET_NAME,
               Key: signatureKey,
               Expires: 3600, // URL expires in 1 hour
             };
-    
+
             const signatureSignedUrl = s3.getSignedUrl(
               "getObject",
               signatureParams
             );
-    
+
             return {
               ...vendor,
               signatureSignedUrl,
@@ -3889,53 +3890,6 @@ exports.getAuthScheduleByPropertyId = async (req, res) => {
     return res.status(200).json({ success: true, data: authSchedule });
   } catch (error) {
     console.error("Error fetching AuthSchedule: ", error.message);
-    return res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-exports.updateVendorInAuthSchedule = async (req, res) => {
-  try {
-    const { propertyId } = req.params;
-    const { vendorId, vendor } = req.body;
-
-    const objectId = new mongoose.Types.ObjectId(propertyId);
-
-    const authSchedule = await AuthSchedule.findOne({ propertyId: objectId });
-
-    if (!authSchedule) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Auth Schedule not found" });
-    }
-
-    // Assuming vendorId is the index in the vendors array
-    const vendorIndex = parseInt(vendorId, 10);
-
-    if (
-      isNaN(vendorIndex) ||
-      vendorIndex < 0 ||
-      vendorIndex >= authSchedule.vendors.length
-    ) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Vendor not found" });
-    }
-
-    // Update the vendor data
-    authSchedule.vendors[vendorIndex] = {
-      ...authSchedule.vendors[vendorIndex]._doc,
-      ...vendor,
-    };
-
-    // Save the updated AuthSchedule
-    await authSchedule.save();
-
-    return res.status(200).json({
-      success: true,
-      data: authSchedule,
-    });
-  } catch (error) {
-    console.error("Error updating Vendor: ", error.message);
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -4086,6 +4040,166 @@ exports.sendToSign = async (req, res) => {
     return res.status(200).json({ success: true, data: updatedAuthSchedule });
   } catch (error) {
     console.error("Error sending eSign request:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.updateAuthSchedule = async (req, res) => {
+  const propertyId = req.params.propertyId;
+  const objectId = new mongoose.Types.ObjectId(propertyId);
+  const { signature, signedDate, agreeTerms, isSigned } = req.body.vendor;
+  const index = req.body.vendorId;
+
+  try {
+    const authScheduleExists = await AuthSchedule.findOne({
+      propertyId: objectId,
+    }).populate("userId");
+
+    const { name, email } = authScheduleExists.userId;
+
+    const { vendors, address } = authScheduleExists;
+
+    const vendor = vendors[index];
+    if (isSigned) {
+      // Generate URL for vendor signature
+      const signatureResult = await generatePresignedUrl(
+        `vendor-signatures`,
+        `${propertyId}-vendor-${index}`,
+        base64ToBuffer(signature)
+      );
+      vendor.signature = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${signatureResult.key}`;
+    }
+
+    const post = {
+      msg: `Hi ${name}, ${vendor.firstName} ${vendor.lastName} has signed the agreement for the property ${address}`,
+      link: `${REACT_APP_FRONTEND_URL}/chat/${encodeURIComponent(address)}`,
+      title: "View Property",
+    };
+
+    const text = ` <html>
+      <head>
+        <title>eSign</title>
+        <meta http-equiv="Content-Type" content="text/html charset=UTF-8" />
+      </head>
+      <body>
+        <div style="background-color: #eaeaea; padding: 2%; font-family: Helvetica, Arial, Sans Serif;">
+          <table dir="" role="presentation" border="0" width="100%" cellspacing="0" cellpadding="0" align="center">
+            <tbody>
+              <tr>
+                <td></td>
+                <td width="640">
+                  <table style="border-collapse: collapse; background-color: #ffffff; max-width: 640px;">
+                    <tbody>
+                      <tr>
+                        <td style="padding: 25px 24px; height:50px; text-align:center">
+                          <img style="border: none; margin-top:30px" src="https://myapp.ausrealty.com.au/img/ausrealtylogo.png" alt="Ausrealty eSign" width="130" />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 0px 24px 30px 24px;">
+                          <table style="background-color: #fff; color: #000;" role="presentation" border="0" width="100%" cellspacing="0" cellpadding="0" align="center">
+                            <tbody>
+                              <tr>
+                                <td style="padding: 28px 36px 36px 36px; border-radius: 2px; color: #ffffff; font-size: 16px; font-family: Helvetica, Arial, Sans Serif; width: 100%; text-align: center;">
+             
+                                  <table role="presentation" border="0" width="100%" cellspacing="0" cellpadding="0">
+                                    <tbody>
+                                      <tr>
+                                        <td style="padding-top: 24px; font-size: 16px; font-family: Helvetica, Arial, Sans Serif; border: none; text-align: center; color: #000;" align="center">
+                                          ${post.msg}
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                   <table role="presentation" border="0" width="100%" cellspacing="0" cellpadding="0">
+  <tbody>
+    <tr>
+      <td style="padding-top: 30px;" align="center">
+        <a
+          style="
+            font-size: 15px;
+            color: #ffffff;
+            background-color: #000000;
+            font-family: Helvetica, Arial, Sans Serif;
+            font-weight: bold;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 2px;
+            display: inline-block;
+          "
+          href="${post.link}"
+          target="_blank"
+          rel="noopener"
+        >
+          <span style="padding: 0px 24px; line-height: 44px;">
+            ${post.title}
+          </span>
+        </a>
+      </td>
+    </tr>
+
+  </tbody>
+</table>
+
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 0px 24px 24px 24px; color: #000000; font-size: 16px; font-family: Helvetica, Arial, Sans Serif; background-color: white; text-align: center;">
+                          <table role="presentation" cellspacing="0" cellpadding="0" style="text-align: center; width: 100%;">
+                            <tbody>
+                              <tr>
+                                <td style="padding-bottom: 20px; text-align: center;">
+                                  <div style="font-family: Helvetica, Arial, Sans Serif; font-weight: bold; line-height: 18px; font-size: 15px; color: #333333;">${name}</div>
+                                  <div style="font-family: Helvetica, Arial, Sans Serif; line-height: 18px; font-size: 15px; color: #666666;">
+                                    <a href="mailto:${email}" target="_blank" rel="noopener">${email}</a>
+                                  </div>
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 30px 24px 45px 24px; background-color: #fff;">
+                          <p style="margin-bottom: 1em; font-family: Helvetica, Arial, Sans Serif; font-size: 13px; color: #666666; line-height: 18px;"><strong role="heading" aria-level="3">Do Not Share This Email</strong><br /> This email contains a secure link to Ausrealty eSign. Please do not share this email and link with others.</p>
+                          <p style="margin-bottom: 1em; font-family: Helvetica, Arial, Sans Serif; font-size: 13px; color: #666666; line-height: 18px;"><strong role="heading" aria-level="3">Questions about the Document?</strong><br /> If you need to modify the document or have questions about the details in the document, please reach out to the sender by emailing them directly.</p>
+                          <p style="margin-bottom: 1em; font-family: Helvetica, Arial, Sans Serif; font-size: 10px; color: #666666; line-height: 14px;">This message was sent to you by ${name} who is using the Ausrealty eSign Electronic Signature Service. If you would rather not receive email from this sender, you may contact the sender with your request.</p>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </body>
+      </html>`;
+
+    await sendEmail(
+      email, // Use agent's email
+      `Ausrealty eSign: Sales agreement copy of ${address}`, // Subject
+      text,
+      [("welcome@ausrealty.com.au", "concierge@ausrealty.com.au")]
+    );
+
+    vendor.signedDate = signedDate;
+    vendor.agreeTerms = agreeTerms;
+    vendor.isSigned = isSigned;
+    // Save the updated vendors array back to the document
+    authScheduleExists.vendors[index] = vendor;
+
+    // Save the AuthSchedule document
+    await authScheduleExists.save();
+
+    return res.status(200).json({ success: true, data: authScheduleExists });
+  } catch (error) {
+    console.error("Error creating property:", error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };
