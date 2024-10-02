@@ -221,8 +221,7 @@ exports.generatePdf = async (req, res) => {
         <ol type="a">
             <li>the sale of the Property; or </li>
             <li>
-                the termination of this Agreement pursuant to clause 2.2 of
-                Part 3
+                the termination of this Agreement
             </li>
         </ol>
     </div>
@@ -1799,8 +1798,7 @@ const generateAgreement = async (agent, content, propertyId) => {
           <ol type="a">
               <li>the sale of the Property; or </li>
               <li>
-                  the termination of this Agreement pursuant to clause 2.2 of
-                  Part 3
+                  the termination of this Agreement
               </li>
           </ol>
       </div>
@@ -3410,6 +3408,266 @@ const generateCertificate = async (agent, content, propertyId) => {
   }
 };
 
+const generateProof = async (agent, content, propertyId) => {
+  try {
+    const {
+      name,
+    } = agent;
+    const { vendors, propertyAddress,fraudPrevention,agentSignature } = content;
+
+    const proofContent = `<section>
+
+    <h2>PROOF OF ID CHECKLIST</h2>
+    <br>
+
+    <h3>VENDOR</h3>
+    ${vendors
+      .map(
+        (vendor) => `
+        <div><strong>NAME:</strong> ${vendor.firstName} ${vendor.lastName}</div>
+    `
+      )
+      .join("")}
+    <br>
+
+    <strong>PROPERTY ADDRESS:</strong> ${propertyAddress}
+
+    <div>
+        <strong>
+            Declaration:
+        </strong>
+        <span>I have sighted and confirmed the proof of identity documents provided by the vendor (or appointed
+            representative). </span>
+    </div>
+    <br>
+    <div>
+        <p>The documents sighted are: ID, Credit Card, Water Rates and Council Rates. </p>
+    </div>
+
+
+    <div>
+        <p>${name}</p>
+        <img src=${agentSignature} alt="agent sign" class="w-auto h-8"></img>
+        <p>${formatDateToAEDT(null)}</p>
+    </div>
+</section>`;
+
+    const styledAgreementContent = `
+  <!DOCTYPE html>
+  <html>
+  <head>
+      <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+ .page-break {
+  page-break-before: always; /* For print context */
+  break-before: page;        /* Modern browser support */
+}
+  
+  .terms-condition {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10px !important;
+    line-height: 1.6;
+    /* padding: 60px; */
+    padding: 8px;
+  }
+  
+  /* ----------------------------------- *
+  *   Typography
+  * ----------------------------------- */
+  .terms-condition h1 {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12px;
+    font-weight: 700 !important;
+    margin: 1rem 0rem;
+  }
+  
+  .terms-condition h2 {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 11px;
+    font-weight: 700 !important;
+    margin: 0.5rem 0rem;
+  }
+  
+  .terms-condition h3 {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10px;
+    line-height: 1.6;
+    font-weight: 700 !important;
+    margin: 0.3rem 0rem;
+  }
+  
+  .terms-condition h4 {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10px;
+    line-height: 1.6;
+    font-weight: 700 !important;
+    margin: 0.2rem 0rem;
+  }
+  
+  .terms-condition h5 {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 8px;
+    color: #666666;
+  }
+  
+  .terms-condition p {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10px;
+    margin-bottom: 0.5rem;
+  }
+  
+  .terms-condition span {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10px;
+  }
+  
+  .terms-condition strong {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10px;
+  }
+  
+  .terms-condition ol {
+    font-family: Arial, Helvetica, sans-serif;
+    padding-left: 0.5rem;
+    position: relative;
+    margin-top: 0.3rem;
+    font-size: 10px;
+  }
+  
+  td, th, tr {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10px;
+  }
+  
+  .terms-condition ol[type="a"] {
+    list-style-type: lower-alpha;
+  }
+  
+  .terms-condition ol[type="i"] {
+    list-style-type: lower-roman; /* Ensure Roman numerals are used */
+  }
+  
+  .terms-condition ol li {
+    font-family: Arial, Helvetica, sans-serif;
+    margin-bottom: 0.3rem;
+    font-size: 10px;
+  }
+  
+  .terms > ol {
+    font-family: Arial, Helvetica, sans-serif;
+    padding-left: 0rem;
+    margin-left: 0rem;
+    counter-reset: item;
+  }
+  
+  .terms > ol > li {
+    font-family: Arial, Helvetica, sans-serif;
+    display: block;
+  }
+  
+  .terms > ol > li:before {
+    font-family: Arial, Helvetica, sans-serif;
+    content: counters(item, ". ") ". ";
+    counter-increment: item;
+  }
+  
+  .terms > ol > li > ol {
+    font-family: Arial, Helvetica, sans-serif;
+    counter-reset: item;
+    padding-left: 0.5rem;
+    margin-left: 0rem;
+  }
+  
+  .terms > ol > li > ol > li {
+    font-family: Arial, Helvetica, sans-serif;
+    display: block;
+    padding-left: 0.5rem;
+    margin-left: 0rem;
+  }
+  
+  .terms > ol > li > ol > li:before {
+    font-family: Arial, Helvetica, sans-serif;
+    content: counters(item, ". ") ". ";
+    counter-increment: item;
+  }
+  
+  .terms-condition small {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 8px;
+    color: #9f9f9f;
+    font-weight: normal;
+  }
+  </style>
+  </head>
+  <body>
+  <div class="terms-condition">
+    ${proofContent}
+  </div>
+  </body>
+  </html>
+  `;
+
+    // this script for production
+    const launchOptions = {
+      headless: true, // Run in headless mode
+      ignoreDefaultArgs: ["--disable-extensions"],
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      ignoreHTTPSErrors: true,
+      dumpio: false,
+      timeout: 120000,
+    };
+
+    // Add executablePath only if environment is PROD
+    if (process.env.ENVIRONMENT === "PROD") {
+      launchOptions.executablePath = "/usr/bin/google-chrome-stable";
+
+      // launchOptions.executablePath = "/usr/bin/chromium-browser"; // Path to the installed Chromium on Ubuntu
+    }
+
+    const browser = await puppeteer.launch(launchOptions);
+
+    const page = await browser.newPage();
+    await page.setContent(styledAgreementContent, {
+      waitUntil: "networkidle0",
+    });
+
+    const generatedPdfBuffer = await page.pdf({
+      path: "agreement.pdf",
+      format: "A4",
+      margin: {
+        top: "20mm",
+        right: "10mm",
+        bottom: "20mm",
+        left: "10mm",
+      },
+      printBackground: true,
+    });
+
+    await browser.close();
+
+    // Generate a unique key for the S3 object
+    const s3Key = `agreements/${propertyId}-proof.pdf`;
+
+    // Generate a presigned URL for uploading
+    const presignedUrl = await s3.getSignedUrlPromise("putObject", {
+      Bucket: process.env.S3_BUCKET_NAME,
+      Key: s3Key,
+      ContentType: "application/pdf",
+      Expires: 600, // URL expires in 600 seconds (10 minutes)
+    });
+
+    // Upload the PDF to S3 using the presigned URL
+    await axios.put(presignedUrl, generatedPdfBuffer, {
+      headers: { "Content-Type": "application/pdf" },
+    });
+
+    return s3Key;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
 exports.generatePresignedUrl = async (req, res) => {
   try {
     const { folder, id } = req.body;
@@ -3482,6 +3740,7 @@ exports.createAuthSchedule = async (req, res) => {
     endPrice,
     saleProcess,
     status,
+    fraudPrevention,
     terms,
     marketing,
     recommendedSales,
@@ -3497,11 +3756,11 @@ exports.createAuthSchedule = async (req, res) => {
       propertyId
     );
 
-    // const certificateId = await generateCertificate(
-    //   req.user,
-    //   req.body.formattedData,
-    //   propertyId
-    // );
+    const proofId = await generateProof(
+      req.user,
+      req.body.formattedData,
+      propertyId
+    );
 
     // Check if a UserProperty with the same userId and propertyId already exists
     const authScheduleExists = await AuthSchedule.findOne({
@@ -3705,12 +3964,14 @@ exports.createAuthSchedule = async (req, res) => {
       endPrice,
       saleProcess,
       status,
+      fraudPrevention,
       terms,
       marketing,
       prepareMarketing,
       recommendedSales,
       recommendedSold,
       agreementId: `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${agreementId}`,
+      proofId: `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${proofId}`,
       isLock: true,
       termsCondition,
     });
@@ -3756,6 +4017,21 @@ exports.getAllSignatureUrl = async (req, res) => {
     };
 
     const agreementSignedUrl = s3.getSignedUrl("getObject", agreementParams);
+
+    const proofUrl = authSchedule.proofId;
+    const proofUrlObj = new URL(proofUrl);
+    const proofKey = proofUrlObj.pathname.startsWith("/")
+      ? proofUrlObj.pathname.substring(1)
+      : proofUrlObj.pathname;
+
+    const proofParams = {
+      Bucket: process.env.S3_BUCKET_NAME,
+      Key: proofKey,
+      Expires: 3600, // URL expires in 1 hour
+    };
+
+    const proofSignedUrl = s3.getSignedUrl("getObject", proofParams);
+    //
 
     // Loop through vendors to get licences
     const vendors = authSchedule.vendors || [];
@@ -3803,6 +4079,7 @@ exports.getAllSignatureUrl = async (req, res) => {
       data: {
         agreementUrl: agreementSignedUrl,
         vendors: vendorsWithLicenceUrls,
+        proofUrl: proofSignedUrl,
       },
     });
   } catch (error) {
