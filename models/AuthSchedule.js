@@ -36,7 +36,10 @@ const authScheduleSchema = new Schema(
     },
     agreementId: { type: String },
     certificateId: { type: String },
+    termsCondition: { type: String },
     isLock: { type: Boolean, default: false },
+    isCompleted: { type: Boolean, default: false },
+
   },
   {
     timestamps: true,
