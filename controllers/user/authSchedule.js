@@ -4753,6 +4753,8 @@ exports.updateAuthSchedule = async (req, res) => {
 
     const vendor = vendors[index];
     vendor.agreeTerms = agreeTerms;
+    vendor.signedDate = signedDate;
+    vendor.isSigned = isSigned;
 
     if (isSigned) {
       // Generate URL for vendor signature
@@ -4890,8 +4892,10 @@ exports.updateAuthSchedule = async (req, res) => {
     let agreementId = null;
     let proofId = null;
 
+
+
     if (allVendorsAgree) {
-      console.log("agree terms true")
+
       const vendorPost = {
         msg: `Here is your signed copy of the sales agreement for the property ${address}`,
         link: `${REACT_APP_FRONTEND_URL}/agreement/${propertyId}`,
@@ -5124,15 +5128,21 @@ exports.updateAuthSchedule = async (req, res) => {
         agentText,
         ["welcome@ausrealty.com.au", "concierge@ausrealty.com.au"]
       );
+
+      authScheduleExists.isCompleted = allVendorsAgree ? true : false;
+    authScheduleExists.agreementDate = allVendorsAgree
+        ? formatDateToAEDT(null)
+        : null;
+
       // Generate agreement and proof only if all vendors agree
       agreementId = await generateAgreement(
-        req.user,
-        req.body.formattedData,
+        authScheduleExists.userId,
+        authScheduleExists,
         propertyId
       );
       proofId = await generateProof(
-        req.user,
-        req.body.formattedData,
+        authScheduleExists.userId,
+        authScheduleExists,
         propertyId
       );
 
@@ -5145,13 +5155,8 @@ exports.updateAuthSchedule = async (req, res) => {
       (authScheduleExists.proofId = proofId
         ? `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${proofId}`
         : null),
-      (authScheduleExists.isCompleted = allVendorsAgree ? true : false),
-      (authScheduleExists.agreementDate = allVendorsAgree
-        ? formatDateToAEDT(null)
-        : null),
-      (vendor.signedDate = signedDate);
 
-    vendor.isSigned = isSigned;
+
     // Save the updated vendors array back to the document
     authScheduleExists.vendors[index] = vendor;
 
