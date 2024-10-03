@@ -1627,6 +1627,7 @@ const generateAgreement = async (agent, content, propertyId) => {
       recommendedSold,
       recommendedSales,
       agentSignature,
+      agreementDate,
     } = content;
 
     const agreementContent = `
@@ -1762,7 +1763,7 @@ const generateAgreement = async (agent, content, propertyId) => {
       </div>
       <div>
           <p>
-              Date of Report <br /> agreement date comes here
+              Date of Report <br /> ${agreementDate}
           </p>
       </div>
   </section>
@@ -3749,18 +3750,6 @@ exports.createAuthSchedule = async (req, res) => {
   } = req.body.formattedData;
 
   try {
-    const agreementId = await generateAgreement(
-      req.user,
-      req.body.formattedData,
-      propertyId
-    );
-
-    const proofId = await generateProof(
-      req.user,
-      req.body.formattedData,
-      propertyId
-    );
-
     // Check if a UserProperty with the same userId and propertyId already exists
     const authScheduleExists = await AuthSchedule.findOne({
       userId: id,
@@ -4029,6 +4018,29 @@ exports.createAuthSchedule = async (req, res) => {
       ["welcome@ausrealty.com.au", "concierge@ausrealty.com.au"]
     );
 
+    // Check if all vendors agreed to the terms
+    const allVendorsAgree = vendors.every(
+      (vendor) => vendor.agreeTerms === true
+    );
+
+    // Initialize agreementId and proofId with default values (null or empty string)
+    let agreementId = null;
+    let proofId = null;
+
+    if (allVendorsAgree) {
+      // Generate agreement and proof only if all vendors agree
+      agreementId = await generateAgreement(
+        req.user,
+        req.body.formattedData,
+        propertyId
+      );
+      proofId = await generateProof(
+        req.user,
+        req.body.formattedData,
+        propertyId
+      );
+    }
+
     // Create the AuthSchedule with the updated filtered vendors array
     const authSchedule = await AuthSchedule.create({
       userId: id,
@@ -4048,9 +4060,15 @@ exports.createAuthSchedule = async (req, res) => {
       prepareMarketing,
       recommendedSales,
       recommendedSold,
-      agreementId: `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${agreementId}`,
-      proofId: `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${proofId}`,
+      agreementId: agreementId
+        ? `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${agreementId}`
+        : null,
+      proofId: proofId
+        ? `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${proofId}`
+        : null,
       isLock: true,
+      isCompleted: allVendorsAgree ? true : false,
+      agreementDate: allVendorsAgree ? formatDateToAEDT(null) : null,
       termsCondition,
     });
 
@@ -4740,7 +4758,37 @@ exports.updateAuthSchedule = async (req, res) => {
       ["welcome@ausrealty.com.au", "concierge@ausrealty.com.au"]
     );
 
-    vendor.signedDate = signedDate;
+    const allVendorsAgree = vendors.every(
+      (vendor) => vendor.agreeTerms === true
+    );
+    let agreementId = null;
+    let proofId = null;
+
+    if (allVendorsAgree) {
+      // Generate agreement and proof only if all vendors agree
+      agreementId = await generateAgreement(
+        req.user,
+        req.body.formattedData,
+        propertyId
+      );
+      proofId = await generateProof(
+        req.user,
+        req.body.formattedData,
+        propertyId
+      );
+    }
+
+    (authScheduleExists.agreementId = agreementId
+      ? `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${agreementId}`
+      : null),
+      (authScheduleExists.proofId = proofId
+        ? `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${proofId}`
+        : null),
+      (authScheduleExists.isCompleted = allVendorsAgree ? true : false),
+      (authScheduleExists.agreementDate = allVendorsAgree
+        ? formatDateToAEDT(null)
+        : null),
+      (vendor.signedDate = signedDate);
     vendor.agreeTerms = agreeTerms;
     vendor.isSigned = isSigned;
     // Save the updated vendors array back to the document
@@ -4771,7 +4819,6 @@ exports.updateViewedDate = async (req, res) => {
     const { vendors, address } = authScheduleExists;
 
     const vendor = vendors[index];
-
 
     const post = {
       msg: `Hi ${name}, ${vendor.firstName} ${vendor.lastName} has viewed the agreement for the property ${address}`,
@@ -4860,7 +4907,7 @@ exports.updateViewedDate = async (req, res) => {
     );
 
     vendor.viewedDate = viewedDate;
- 
+
     authScheduleExists.vendors[index] = vendor;
 
     // Save the AuthSchedule document
