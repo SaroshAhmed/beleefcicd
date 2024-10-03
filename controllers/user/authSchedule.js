@@ -4019,13 +4019,13 @@ exports.createAuthSchedule = async (req, res) => {
     await sendEmail(
       filteredVendors.map((vendor) => vendor.email).join(","), // Use vendor's email
       `Ausrealty eSign: Sales agreement copy of ${propertyAddress}`, // Subject
-      text
+      vendorText
     );
 
     await sendEmail(
       email, // Use agent's email
       `Sales Agreement completed: ${propertyAddress}`, // Subject
-      text,
+      agentText,
       ["welcome@ausrealty.com.au", "concierge@ausrealty.com.au"]
     );
 
