@@ -3410,10 +3410,9 @@ const generateCertificate = async (agent, content, propertyId) => {
 
 const generateProof = async (agent, content, propertyId) => {
   try {
-    const {
-      name,
-    } = agent;
-    const { vendors, propertyAddress,fraudPrevention,agentSignature } = content;
+    const { name } = agent;
+    const { vendors, propertyAddress, fraudPrevention, agentSignature } =
+      content;
 
     const proofContent = `<section>
 
@@ -3864,37 +3863,6 @@ exports.createAuthSchedule = async (req, res) => {
         </a>
       </td>
     </tr>
-
-    ${
-      post.certificateLink
-        ? `
-    <tr>
-      <td style="margin-top:16px; padding-top: 30px;" align="center">
-        <a
-          style="
-            font-size: 15px;
-            color: #ffffff;
-            background-color: #000000;
-            font-family: Helvetica, Arial, Sans Serif;
-            font-weight: bold;
-            text-align: center;
-            text-decoration: none;
-            border-radius: 2px;
-            display: inline-block;
-          "
-          href="${post.certificateLink}"
-          target="_blank"
-          rel="noopener"
-        >
-          <span style="padding: 0px 24px; line-height: 44px;">
-            ${post.certificateTitle}
-          </span>
-        </a>
-      </td>
-    </tr>
-    `
-        : ""
-    }
   </tbody>
 </table>
 
@@ -4172,10 +4140,207 @@ exports.getAuthScheduleByPropertyId = async (req, res) => {
 };
 
 exports.sendToSign = async (req, res) => {
-  const { id, name, email } = req.user;
-  const { propertyAddress, propertyId, vendor, vendorIndex } = req.body.payload;
-
   try {
+    const { id, name, email } = req.user;
+    if (req.body.formattedData) {
+      const vendorIndex=req.body.vendorIndex
+      const {
+        propertyId,
+        propertyAddress,
+        solicitor,
+        vendors,
+        commissionFee,
+        commissionRange,
+        startPrice,
+        endPrice,
+        saleProcess,
+        status,
+        fraudPrevention,
+        terms,
+        marketing,
+        recommendedSales,
+        recommendedSold,
+        prepareMarketing,
+        termsCondition,
+      } = req.body.formattedData;
+
+      // Check if a UserProperty with the same userId and propertyId already exists
+      const authScheduleExists = await AuthSchedule.findOne({
+        userId: id,
+        propertyId,
+      });
+
+      if (authScheduleExists) {
+        return res
+          .status(200)
+          .json({ success: true, data: authScheduleExists });
+      }
+
+      for (let i = 0; i < vendors.length; i++) {
+        const vendor = vendors[i];
+        if (vendor.isSigned) {
+          // Generate URL for vendor signature
+          const signatureResult = await generatePresignedUrl(
+            `vendor-signatures`,
+            `${propertyId}-vendor-${i}`,
+            base64ToBuffer(vendor.signature)
+          );
+          vendor.signature = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${signatureResult.key}`;
+        }
+
+        // Generate URL for vendor license
+        const licenceResult = await generatePresignedUrl(
+          `vendor-licences`,
+          `${propertyId}-vendor-${i}`,
+          base64ToBuffer(vendor.licence)
+        );
+        vendor.licence = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${licenceResult.key}`;
+      }
+
+       // Prepare post details
+    const post = {
+      msg: `${name} sent you a document to review and sign.`,
+      link: `${REACT_APP_FRONTEND_URL}/esign/${propertyId}/${vendorIndex}`,
+      title: "Review & Sign",
+    };
+
+    // Prepare email content
+    const text = `<html>
+        <head>
+          <title>eSign</title>
+          <meta http-equiv="Content-Type" content="text/html charset=UTF-8" />
+        </head>
+        <body>
+          <div style="background-color: #eaeaea; padding: 2%; font-family: Helvetica, Arial, Sans Serif;">
+            <table dir="" role="presentation" border="0" width="100%" cellspacing="0" cellpadding="0" align="center">
+              <tbody>
+                <tr>
+                  <td></td>
+                  <td width="640">
+                    <table style="border-collapse: collapse; background-color: #ffffff; max-width: 640px;">
+                      <tbody>
+                        <tr>
+                          <td style="padding: 25px 24px; height: 50px; text-align: center;">
+                            <img style="border: none; margin-top: 30px" src="https://myapp.ausrealty.com.au/img/ausrealtylogo.png" alt="Ausrealty eSign" width="130" />
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 0px 24px 30px 24px">
+                            <table style="background-color: #fff; color: #000" role="presentation" border="0" width="100%" cellspacing="0" cellpadding="0" align="center">
+                              <tbody>
+                                <tr>
+                                  <td style="padding: 28px 36px 36px 36px; border-radius: 2px; color: #ffffff; font-size: 16px; font-family: Helvetica, Arial, Sans Serif; width: 100%; text-align: center;">
+                                    <table role="presentation" border="0" width="100%" cellspacing="0" cellpadding="0">
+                                      <tbody>
+                                        <tr>
+                                          <td style="padding-top: 24px; font-size: 16px; font-family: Helvetica, Arial, Sans Serif; border: none; text-align: center; color: #000;" align="center">
+                                            ${post.msg}
+                                          </td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                    <table role="presentation" border="0" width="100%" cellspacing="0" cellpadding="0">
+                                      <tbody>
+                                        <tr>
+                                          <td style="padding-top: 30px" align="center">
+                                            <a style="font-size: 15px; color: #ffffff; background-color: #000000; font-family: Helvetica, Arial, Sans Serif; font-weight: bold; text-align: center; text-decoration: none; border-radius: 2px; display: inline-block;" href="${post.link}" target="_blank" rel="noopener">
+                                              <span style="padding: 0px 24px; line-height: 44px;">
+                                                ${post.title}
+                                              </span>
+                                            </a>
+                                          </td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 0px 24px 24px 24px; color: #000000; font-size: 16px; font-family: Helvetica, Arial, Sans Serif; background-color: white; text-align: center;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" style="text-align: center; width: 100%">
+                              <tbody>
+                                <tr>
+                                  <td style="padding-bottom: 20px; text-align: center">
+                                    <div style="font-family: Helvetica, Arial, Sans Serif; font-weight: bold; line-height: 18px; font-size: 15px; color: #333333;">
+                                      ${name}
+                                    </div>
+                                    <div style="font-family: Helvetica, Arial, Sans Serif; line-height: 18px; font-size: 15px; color: #666666;">
+                                      <a href="mailto:${email}" target="_blank" rel="noopener">${email}</a>
+                                    </div>
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 30px 24px 45px 24px; background-color: #fff;">
+                            <p style="margin-bottom: 1em; font-family: Helvetica, Arial, Sans Serif; font-size: 13px; color: #666666; line-height: 18px;">
+                              <strong role="heading" aria-level="3">Do Not Share This Email</strong><br />
+                              This email contains a secure link to Ausrealty eSign. Please do not share this email and link with others.
+                            </p>
+                            <p style="margin-bottom: 1em; font-family: Helvetica, Arial, Sans Serif; font-size: 13px; color: #666666; line-height: 18px;">
+                              <strong role="heading" aria-level="3">Questions about the Document?</strong><br />
+                              If you need to modify the document or have questions about the details in the document, please reach out to the sender by emailing them directly.
+                            </p>
+                            <p style="margin-bottom: 1em; font-family: Helvetica, Arial, Sans Serif; font-size: 10px; color: #666666; line-height: 14px;">
+                              This message was sent to you by ${name} who is using the Ausrealty eSign Electronic Signature Service. If you would rather not receive email from this sender, you may contact the sender with your request.
+                            </p>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
+                  <td></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </body>
+      </html>`;
+
+   // Send the email to the vendor
+   await sendEmail(
+    vendors[vendorIndex].email, // Recipient email
+    `Ausrealty eSign: ${propertyAddress}`, // Subject
+    text // Email content
+  );
+
+  // Update the vendor's sent date
+  vendors[vendorIndex].sentDate = formatDateToAEDT(null);
+
+      // Create the AuthSchedule with the updated filtered vendors array
+      const authSchedule = await AuthSchedule.create({
+        userId: id,
+        propertyId,
+        address: propertyAddress,
+        solicitor,
+        vendors, // Only vendors who agreed to terms
+        commissionFee,
+        commissionRange,
+        startPrice,
+        endPrice,
+        saleProcess,
+        status,
+        fraudPrevention,
+        terms,
+        marketing,
+        prepareMarketing,
+        recommendedSales,
+        recommendedSold,
+        isLock: true,
+        termsCondition,
+      });
+
+      return res.status(200).json({ success: true, data: authSchedule });
+    }
+
+    const { propertyAddress, propertyId, vendor, vendorIndex } =
+      req.body.payload;
+
     // Check if AuthSchedule exists
     const authScheduleExists = await AuthSchedule.findOne({
       userId: id,
@@ -4190,7 +4355,7 @@ exports.sendToSign = async (req, res) => {
 
     // Prepare post details
     const post = {
-      msg: `Here is your signed copy of the sales agreement for the property ${propertyAddress}`,
+      msg: `${name} sent you a document to review and sign.`,
       link: `${REACT_APP_FRONTEND_URL}/esign/${propertyId}/${vendorIndex}`,
       title: "Review & Sign",
     };
