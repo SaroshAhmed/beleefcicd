@@ -3430,7 +3430,7 @@ const generateProof = async (agent, content, propertyId) => {
     <br>
 
     <strong>PROPERTY ADDRESS:</strong> ${propertyAddress}
-
+    <br>
     <div>
         <strong>
             Declaration:
