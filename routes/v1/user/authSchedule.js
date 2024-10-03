@@ -8,7 +8,8 @@ const {
   getAuthScheduleByPropertyId,
   updateAuthSchedule,
   sendToSign,
-  getVendorsSignatureUrl
+  getVendorsSignatureUrl,
+  updateViewedDate
 } = require("../../../controllers/user/authSchedule");
 const { isAuthenticated } = require("../../../middleware/auth");
 
@@ -19,7 +20,7 @@ router.post("/", isAuthenticated, createAuthSchedule);
 router.get("/get-signature-url/:id", getAllSignatureUrl);
 router.get("/:propertyId", getAuthScheduleByPropertyId);
 router.put("/:propertyId", updateAuthSchedule);
-
+router.put("/viewedDate/:propertyId", updateViewedDate);
 router.post("/sendToSign", isAuthenticated, sendToSign);
 
 router.get("/vendorsSign/:id", getVendorsSignatureUrl);
