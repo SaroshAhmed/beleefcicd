@@ -5272,8 +5272,7 @@ exports.updateViewedDate = async (req, res) => {
     await sendEmail(
       email, // Use agent's email
       `${vendor.firstName} ${vendor.lastName} has viewed the agreement for the property ${address}`, // Subject
-      text,
-      ["welcome@ausrealty.com.au", "concierge@ausrealty.com.au"]
+      text
     );
 
     vendor.viewedDate = viewedDate;
