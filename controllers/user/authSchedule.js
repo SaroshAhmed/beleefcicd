@@ -3430,8 +3430,12 @@ const generateProof = async (agent, content, propertyId) => {
       .join("")}
     <br>
 
+    <div>
     <strong>PROPERTY ADDRESS:</strong> ${propertyAddress}
+    </div>
+
     <br>
+    
     <div>
         <strong>
             Declaration:
@@ -3731,7 +3735,7 @@ exports.createAuthSchedule = async (req, res) => {
   const { id, name, email } = req.user;
   const propertyId = req.body.propertyId;
   const {
-    propertyAddress,
+    propertyAddress:address,
     solicitor,
     vendors,
     commissionFee,
@@ -3879,7 +3883,7 @@ exports.createAuthSchedule = async (req, res) => {
   
       await sendEmail(
         email, // Use agent's email
-        `Ausrealty eSign: Sales agreement copy of ${address}`, // Subject
+        `${vendor.firstName} ${vendor.lastName} has signed the agreement for the property ${address}`, // Subject
         text,
         ["welcome@ausrealty.com.au", "concierge@ausrealty.com.au"]
       );
@@ -3908,13 +3912,13 @@ exports.createAuthSchedule = async (req, res) => {
     }
 
     const vendorPost = {
-      msg: `Here is your signed copy of the sales agreement for the property ${propertyAddress}`,
+      msg: `Here is your signed copy of the sales agreement for the property ${address}`,
       link: `${REACT_APP_FRONTEND_URL}/agreement/${propertyId}`,
       title: "View Agreement",
     };
 
     const agentPost = {
-      msg: `Hi ${name}, vendor has completed the document for the property ${propertyAddress}`,
+      msg: `Hi ${name}, vendor has completed the document for the property ${address}`,
       link: `${REACT_APP_FRONTEND_URL}/agreement/${propertyId}`,
       title: "View Agreement",
     };
@@ -4151,13 +4155,13 @@ exports.createAuthSchedule = async (req, res) => {
 
       await sendEmail(
         filteredVendors.map((vendor) => vendor.email).join(","), // Use vendor's email
-        `Ausrealty eSign: Sales agreement copy of ${propertyAddress}`, // Subject
+        `Ausrealty eSign: Sales agreement copy of ${address}`, // Subject
         vendorText
       );
   
       await sendEmail(
         email, // Use agent's email
-        `Sales Agreement completed: ${propertyAddress}`, // Subject
+        `Sales Agreement completed: ${address}`, // Subject
         agentText,
         ["welcome@ausrealty.com.au", "concierge@ausrealty.com.au"]
       );
@@ -4167,7 +4171,7 @@ exports.createAuthSchedule = async (req, res) => {
     const authSchedule = await AuthSchedule.create({
       userId: id,
       propertyId,
-      address: propertyAddress,
+      address,
       solicitor,
       vendors, // Only vendors who agreed to terms
       commissionFee,
@@ -4879,7 +4883,7 @@ exports.updateAuthSchedule = async (req, res) => {
 
     await sendEmail(
       email, // Use agent's email
-      `Ausrealty eSign: Sales agreement copy of ${address}`, // Subject
+      `${vendor.firstName} ${vendor.lastName} has signed the agreement for the property ${address}`, // Subject
       text,
       ["welcome@ausrealty.com.au", "concierge@ausrealty.com.au"]
     );
