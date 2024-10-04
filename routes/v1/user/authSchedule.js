@@ -9,14 +9,16 @@ const {
   updateAuthSchedule,
   sendToSign,
   getVendorsSignatureUrl,
-  updateViewedDate
+  updateViewedDate,
+  getAllAuthSchedule,
+  deleteAuthSchedule
 } = require("../../../controllers/user/authSchedule");
 const { isAuthenticated } = require("../../../middleware/auth");
 
 router.post("/generatePdf", isAuthenticated, generatePdf);
 router.post("/generatePresignedUrl", isAuthenticated, generatePresignedUrl);
 router.post("/", isAuthenticated, createAuthSchedule);
-
+router.get("/", isAuthenticated, getAllAuthSchedule);
 router.get("/get-signature-url/:id", getAllSignatureUrl);
 router.get("/:propertyId", getAuthScheduleByPropertyId);
 router.put("/:propertyId", updateAuthSchedule);
@@ -24,5 +26,7 @@ router.put("/viewedDate/:propertyId", updateViewedDate);
 router.post("/sendToSign", isAuthenticated, sendToSign);
 
 router.get("/vendorsSign/:id", getVendorsSignatureUrl);
+
+router.delete('/:propertyId', isAuthenticated, deleteAuthSchedule);
 module.exports = router;
 

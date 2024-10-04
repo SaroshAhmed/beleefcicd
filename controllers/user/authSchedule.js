@@ -7,6 +7,7 @@ const sendEmail = require("../../utils/emailService");
 const {
   formatCurrency,
   formatDateToAEDT,
+  getVendorSignatureUrl,
 } = require("../../utils/helperFunctions");
 const { REACT_APP_FRONTEND_URL } = require("../../config");
 
@@ -35,6 +36,7 @@ exports.generatePdf = async (req, res) => {
       licenseNumber,
       gst,
       abn,
+      signature,
     } = req.user;
     const {
       vendors,
@@ -51,8 +53,19 @@ exports.generatePdf = async (req, res) => {
       address,
       recommendedSold,
       recommendedSales,
-      agentSignature,
+      agreementDate,
     } = req.body.content;
+
+    let agentSignature = req.body.content.agentSignature;
+
+    for (const vendor of vendors) {
+      if (vendor.signature) {
+        vendor.signature = await getVendorSignatureUrl(vendor.signature);
+      }
+    }
+    if (!agentSignature) {
+      agentSignature = await getVendorSignatureUrl(signature);
+    }
 
     const htmlContent = `
 <header>
@@ -185,7 +198,7 @@ exports.generatePdf = async (req, res) => {
     </div>
     <div>
         <p>
-            Date of Report <br /> agreement date comes here
+            Date of Report <br /> ${agreementDate}
         </p>
     </div>
 </section>
@@ -510,8 +523,8 @@ exports.generatePdf = async (req, res) => {
                     (vendor) => `
                 <tr class="border-b">
                     <td class="py-2 px-3">${vendor.firstName} ${vendor.lastName}</td>
-                    <td class="py-2 px-3"> <img src=${vendor.signature} alt="agent sign" class="w-auto h-8"></img></td>
-                    <td class="py-2 px-3"></td>
+                    <td class="py-2 px-3"> <img src=${vendor.signature} alt="vendor sign" class="w-auto h-8"></img></td>
+                    <td class="py-2 px-3">${vendor.signedDate}</td>
                 </tr>
                 `
                   )
@@ -1265,74 +1278,74 @@ exports.generatePdf = async (req, res) => {
 <br>
 <div class="page-break"></div>
 <div>
-    <h3 class="text-center">SOLD MATCHES</h3>
-    ${
-      recommendedSold.length > 0
-        ? `
-    <div class="w-full overflow-x-auto">
-        <table class="w-full border-collapse">
-            <thead>
-                <tr class="bg-gray-100">
-                    <th class="py-2 px-3 text-start">Address</th>
-                    <th class="py-2 px-3 text-start">Price</th>
-                    <th class="py-2 px-3 text-start">Score Match</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${recommendedSold
-                  .map(
-                    ({ property, score }) => `
-                <tr class="border-b">
-                    <td class="py-2 px-3">${property.address}</td>
-                    <td class="py-2 px-3">${formatCurrency(property.price)}</td>
-                    <td class="py-2 px-3">${score}%</td>
-                </tr>
-                `
-                  )
-                  .join("")}
-            </tbody>
-        </table>
-    </div>
-    `
-        : ""
-    }
-</div>
-
-<br>
-
-<div>
-    <h3 class="text-center">SALE MATCHES</h3>
-    ${
-      recommendedSales.length > 0
-        ? `
-    <div class="w-full overflow-x-auto">
-        <table class="w-full border-collapse">
-            <thead>
-                <tr class="bg-gray-100">
-                    <th class="py-2 px-3 text-start">Address</th>
-                    <th class="py-2 px-3 text-start">Price</th>
-                    <th class="py-2 px-3 text-start">Score Match</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${recommendedSales
-                  .map(
-                    ({ property, score }) => `
-                <tr class="border-b">
-                    <td class="py-2 px-3">${property.address}</td>
-                    <td class="py-2 px-3">${formatCurrency(property.price)}</td>
-                    <td class="py-2 px-3">${score}%</td>
-                </tr>
-                `
-                  )
-                  .join("")}
-            </tbody>
-        </table>
-    </div>
-    `
-        : ""
-    }
-</div>
+      <h3 class="text-center">SOLD MATCHES</h3>
+      ${
+        recommendedSold.length > 0
+          ? `
+      <div class="w-full overflow-x-auto">
+          <table class="w-full border-collapse">
+              <thead>
+                  <tr class="bg-gray-100">
+                      <th class="py-2 px-3 text-start">Address</th>
+                      <th class="py-2 px-3 text-start">Price</th>
+                      <th class="py-2 px-3 text-start">Score Match</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  ${recommendedSold
+                    .map(
+                      (item) => `
+                  <tr class="border-b">
+                      <td class="py-2 px-3">${item.address}</td>
+                      <td class="py-2 px-3">${formatCurrency(item.price)}</td>
+                      <td class="py-2 px-3">${item.score}%</td>
+                  </tr>
+                  `
+                    )
+                    .join("")}
+              </tbody>
+          </table>
+      </div>
+      `
+          : ""
+      }
+  </div>
+  
+  <br>
+  
+  <div>
+      <h3 class="text-center">SALE MATCHES</h3>
+      ${
+        recommendedSales.length > 0
+          ? `
+      <div class="w-full overflow-x-auto">
+          <table class="w-full border-collapse">
+              <thead>
+                  <tr class="bg-gray-100">
+                      <th class="py-2 px-3 text-start">Address</th>
+                      <th class="py-2 px-3 text-start">Price</th>
+                      <th class="py-2 px-3 text-start">Score Match</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  ${recommendedSales
+                    .map(
+                      (item) => `
+                  <tr class="border-b">
+                      <td class="py-2 px-3">${item.address}</td>
+                      <td class="py-2 px-3">${formatCurrency(item.price)}</td>
+                      <td class="py-2 px-3">${item.score}%</td>
+                  </tr>
+                  `
+                    )
+                    .join("")}
+              </tbody>
+          </table>
+      </div>
+      `
+          : ""
+      }
+  </div>
 
 <br>
 <div class="page-break"></div>
@@ -3735,7 +3748,7 @@ exports.createAuthSchedule = async (req, res) => {
   const { id, name, email } = req.user;
   const propertyId = req.body.propertyId;
   const {
-    propertyAddress:address,
+    propertyAddress: address,
     solicitor,
     vendors,
     commissionFee,
@@ -3768,15 +3781,17 @@ exports.createAuthSchedule = async (req, res) => {
       (vendor) => vendor.agreeTerms === true
     );
 
-    if(filteredVendors.length){
+    if (filteredVendors.length) {
       filteredVendors.forEach(async (vendor) => {
-      const post = {
-        msg: `Hi ${name}, ${vendor.firstName} ${vendor.lastName} has signed the agreement for the property ${address}`,
-        link: `${REACT_APP_FRONTEND_URL}/chat/${encodeURIComponent(address)}?tab=authorise-and-schedule`,
-        title: "View Property",
-      };
-      
-      const text = ` <html>
+        const post = {
+          msg: `Hi ${name}, ${vendor.firstName} ${vendor.lastName} has signed the agreement for the property ${address}`,
+          link: `${REACT_APP_FRONTEND_URL}/chat/${encodeURIComponent(
+            address
+          )}?tab=authorise-and-schedule`,
+          title: "View Property",
+        };
+
+        const text = ` <html>
         <head>
           <title>eSign</title>
           <meta http-equiv="Content-Type" content="text/html charset=UTF-8" />
@@ -3880,15 +3895,14 @@ exports.createAuthSchedule = async (req, res) => {
           </div>
         </body>
         </html>`;
-  
-      await sendEmail(
-        email, // Use agent's email
-        `${vendor.firstName} ${vendor.lastName} has signed the agreement for the property ${address}`, // Subject
-        text,
-        ["welcome@ausrealty.com.au", "concierge@ausrealty.com.au"]
-      );
+
+        await sendEmail(
+          email, // Use agent's email
+          `${vendor.firstName} ${vendor.lastName} has signed the agreement for the property ${address}`, // Subject
+          text
+        );
+      });
     }
-    )}
 
     for (let i = 0; i < vendors.length; i++) {
       const vendor = vendors[i];
@@ -4158,14 +4172,50 @@ exports.createAuthSchedule = async (req, res) => {
         `Ausrealty eSign: Sales agreement copy of ${address}`, // Subject
         vendorText
       );
-  
+
       await sendEmail(
         email, // Use agent's email
         `Sales Agreement completed: ${address}`, // Subject
         agentText,
         ["welcome@ausrealty.com.au", "concierge@ausrealty.com.au"]
       );
+
+      // Extract vendor first and last names, and join them into a string
+      const vendorNames = vendors
+        .map((vendor) => `${vendor.firstName} ${vendor.lastName}`)
+        .join(", ");
+
+      // Construct the solicitor text with corrected template literals
+      const solicitorText = `
+<p>Dear ${solicitor.name},</p>
+<p>
+  Please be advised Ausrealty has been appointed as the selling
+  agents for the property at ${address} on behalf of ${vendorNames}.
+</p>
+<p>
+  The vendors have requested you kindly prepare the contract of sale
+  so we can commence our marketing campaign.
+</p>
+<p>
+  Please feel free to contact our office should you have any further queries.
+</p>
+<p>Thank you</p>`;
+
+      // Extract vendor emails and filter out any undefined/null values
+      const vendorEmails = vendors
+        .map((vendor) => vendor.email)
+        .filter((email) => email); // Filters out falsy values (null, undefined, etc.)
+
+      // Send the email
+      await sendEmail(
+        solicitor.email, // Recipient email
+        `Contract Request: ${address}`, // Subject
+        solicitorText, // Email content
+        [email, ...vendorEmails] // CC list
+      );
     }
+
+    solicitor.sentDate = formatDateToAEDT(null);
 
     // Create the AuthSchedule with the updated filtered vendors array
     const authSchedule = await AuthSchedule.create({
@@ -4772,10 +4822,12 @@ exports.updateAuthSchedule = async (req, res) => {
 
     const post = {
       msg: `Hi ${name}, ${vendor.firstName} ${vendor.lastName} has signed the agreement for the property ${address}`,
-      link: `${REACT_APP_FRONTEND_URL}/chat/${encodeURIComponent(address)}?tab=authorise-and-schedule`,
+      link: `${REACT_APP_FRONTEND_URL}/chat/${encodeURIComponent(
+        address
+      )}?tab=authorise-and-schedule`,
       title: "View Property",
     };
-    
+
     const text = ` <html>
       <head>
         <title>eSign</title>
@@ -4884,11 +4936,8 @@ exports.updateAuthSchedule = async (req, res) => {
     await sendEmail(
       email, // Use agent's email
       `${vendor.firstName} ${vendor.lastName} has signed the agreement for the property ${address}`, // Subject
-      text,
-      ["welcome@ausrealty.com.au", "concierge@ausrealty.com.au"]
+      text
     );
-
-
 
     const allVendorsAgree = vendors.every(
       (vendor) => vendor.agreeTerms === true
@@ -4896,22 +4945,19 @@ exports.updateAuthSchedule = async (req, res) => {
     let agreementId = null;
     let proofId = null;
 
-
-
     if (allVendorsAgree) {
-
       const vendorPost = {
         msg: `Here is your signed copy of the sales agreement for the property ${address}`,
         link: `${REACT_APP_FRONTEND_URL}/agreement/${propertyId}`,
         title: "View Agreement",
       };
-  
+
       const agentPost = {
         msg: `Hi ${name}, vendor has completed the document for the property ${address}`,
         link: `${REACT_APP_FRONTEND_URL}/agreement/${propertyId}`,
         title: "View Agreement",
       };
-  
+
       const vendorText = ` <html>
         <head>
           <title>eSign</title>
@@ -5015,7 +5061,7 @@ exports.updateAuthSchedule = async (req, res) => {
           </div>
         </body>
         </html>`;
-  
+
       const agentText = ` <html>
         <head>
           <title>eSign</title>
@@ -5125,7 +5171,7 @@ exports.updateAuthSchedule = async (req, res) => {
         `Ausrealty eSign: Sales agreement copy of ${address}`, // Subject
         vendorText
       );
-  
+
       await sendEmail(
         email, // Use agent's email
         `Sales Agreement completed: ${address}`, // Subject
@@ -5133,8 +5179,37 @@ exports.updateAuthSchedule = async (req, res) => {
         ["welcome@ausrealty.com.au", "concierge@ausrealty.com.au"]
       );
 
+      // Construct the solicitor text with corrected template literals
+      const solicitorText = `
+       <p>Dear ${solicitor.name},</p>
+       <p>
+         Please be advised Ausrealty has been appointed as the selling
+         agents for the property at ${address} on behalf of ${vendorNames}.
+       </p>
+       <p>
+         The vendors have requested you kindly prepare the contract of sale
+         so we can commence our marketing campaign.
+       </p>
+       <p>
+         Please feel free to contact our office should you have any further queries.
+       </p>
+       <p>Thank you</p>`;
+
+      // Extract vendor emails and filter out any undefined/null values
+      const vendorEmails = vendors
+        .map((vendor) => vendor.email)
+        .filter((email) => email); // Filters out falsy values (null, undefined, etc.)
+
+      // Send the email
+      await sendEmail(
+        solicitor.email, // Recipient email
+        `Contract Request: ${address}`, // Subject
+        solicitorText, // Email content
+        [email, ...vendorEmails] // CC list
+      );
+
       authScheduleExists.isCompleted = allVendorsAgree ? true : false;
-    authScheduleExists.agreementDate = allVendorsAgree
+      authScheduleExists.agreementDate = allVendorsAgree
         ? formatDateToAEDT(null)
         : null;
 
@@ -5149,8 +5224,6 @@ exports.updateAuthSchedule = async (req, res) => {
         authScheduleExists,
         propertyId
       );
-
-      
     }
 
     (authScheduleExists.agreementId = agreementId
@@ -5159,10 +5232,8 @@ exports.updateAuthSchedule = async (req, res) => {
       (authScheduleExists.proofId = proofId
         ? `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${proofId}`
         : null),
-
-
-    // Save the updated vendors array back to the document
-    authScheduleExists.vendors[index] = vendor;
+      // Save the updated vendors array back to the document
+      (authScheduleExists.vendors[index] = vendor);
 
     // Save the AuthSchedule document
     await authScheduleExists.save();
@@ -5285,6 +5356,45 @@ exports.updateViewedDate = async (req, res) => {
     return res.status(200).json({ success: true, data: authScheduleExists });
   } catch (error) {
     console.error("Error creating property:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.getAllAuthSchedule = async (req, res) => {
+  try {
+    const { id } = req.user;
+
+    const authSchedules = await AuthSchedule.find({
+      userId: id,
+      isCompleted: true,
+    });
+
+    return res.status(200).json({ success: true, data: authSchedules });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.deleteAuthSchedule = async (req, res) => {
+  try {
+    const { propertyId } = req.params;
+
+    // Find and delete the AuthSchedule by propertyId
+    const deletedAuthSchedule = await AuthSchedule.findOneAndDelete({
+      propertyId,
+    });
+
+    if (!deletedAuthSchedule) {
+      return res
+        .status(404)
+        .json({ success: false, message: "AuthSchedule not found" });
+    }
+
+    return res
+      .status(200)
+      .json({ success: true, message: "AuthSchedule deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting AuthSchedule:", error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };

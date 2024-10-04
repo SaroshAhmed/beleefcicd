@@ -118,7 +118,7 @@ const imageCompletion = async (
   userInput,
   jsonFormat = false
 ) => {
-  console.log(systemPrompt, userInput);
+
   const filesIsArray = Array.isArray(files);
   const filesList = filesIsArray ? files : [files];
   try {
@@ -156,7 +156,6 @@ const imageCompletion = async (
     });
 
     const jsonString = response.choices[0].message.content;
-    console.log(jsonString);
     return jsonFormat ? JSON.parse(jsonString) : jsonString;
   } catch (error) {
     console.error("Error analyzing file: ", error.message);
