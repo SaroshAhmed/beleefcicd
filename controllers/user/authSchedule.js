@@ -1624,6 +1624,7 @@ const generateAgreement = async (agent, content, propertyId) => {
       licenseNumber,
       gst,
       abn,
+      signature
     } = agent;
     const {
       vendors,
@@ -1642,6 +1643,15 @@ const generateAgreement = async (agent, content, propertyId) => {
       agentSignature,
       agreementDate,
     } = content;
+
+    for (const vendor of vendors) {
+      if (vendor.signature) {
+        vendor.signature = await getVendorSignatureUrl(vendor.signature);
+      }
+    }
+    if (!agentSignature) {
+      agentSignature = await getVendorSignatureUrl(signature);
+    }
 
     const agreementContent = `
   <header>
