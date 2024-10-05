@@ -4187,19 +4187,33 @@ exports.createAuthSchedule = async (req, res) => {
 
       // Construct the solicitor text with corrected template literals
       const solicitorText = `
-<p>Dear ${solicitor.name},</p>
-<p>
-  Please be advised Ausrealty has been appointed as the selling
-  agents for the property at ${address} on behalf of ${vendorNames}.
-</p>
-<p>
-  The vendors have requested you kindly prepare the contract of sale
-  so we can commence our marketing campaign.
-</p>
-<p>
-  Please feel free to contact our office should you have any further queries.
-</p>
-<p>Thank you</p>`;
+      <p>Dear ${solicitor.name},</p>
+      <p>
+        Please be advised Ausrealty has been appointed as the selling
+        agents for the property at ${address} on behalf of ${vendorNames}.
+      </p>
+      <p>
+        The vendor${vendorNames.length > 1 ? 's' : ''} ${vendorNames} ${vendorNames.length > 1 ? 'have' : 'has'} requested you kindly prepare the contract of sale
+        so we can commence our marketing campaign.
+      </p>
+      <p>
+        Please find full contact details for the vendors:
+      </p>
+      ${vendors.map(
+        (vendor) => `
+        <p>
+          Name: ${vendor.firstName} ${vendor.lastName} <br />
+          Email: ${vendor.email} <br />
+          Mobile: ${vendor.mobile}
+        </p>
+      `
+      ).join('')}
+      <p>
+        Please feel free to contact our office should you have any further queries.
+      </p>
+      <p>Thank you</p>`;
+      
+      
 
       // Extract vendor emails and filter out any undefined/null values
       const vendorEmails = vendors
@@ -5181,20 +5195,32 @@ exports.updateAuthSchedule = async (req, res) => {
 
       // Construct the solicitor text with corrected template literals
       const solicitorText = `
-       <p>Dear ${solicitor.name},</p>
-       <p>
-         Please be advised Ausrealty has been appointed as the selling
-         agents for the property at ${address} on behalf of ${vendorNames}.
-       </p>
-       <p>
-         The vendors have requested you kindly prepare the contract of sale
-         so we can commence our marketing campaign.
-       </p>
-       <p>
-         Please feel free to contact our office should you have any further queries.
-       </p>
-       <p>Thank you</p>`;
-
+      <p>Dear ${solicitor.name},</p>
+      <p>
+        Please be advised Ausrealty has been appointed as the selling
+        agents for the property at ${address} on behalf of ${vendorNames}.
+      </p>
+      <p>
+        The vendor${vendorNames.length > 1 ? 's' : ''} ${vendorNames} ${vendorNames.length > 1 ? 'have' : 'has'} requested you kindly prepare the contract of sale
+        so we can commence our marketing campaign.
+      </p>
+      <p>
+        Please find full contact details for the vendors:
+      </p>
+      ${vendors.map(
+        (vendor) => `
+        <p>
+          Name: ${vendor.firstName} ${vendor.lastName} <br />
+          Email: ${vendor.email} <br />
+          Mobile: ${vendor.mobile}
+        </p>
+      `
+      ).join('')}
+      <p>
+        Please feel free to contact our office should you have any further queries.
+      </p>
+      <p>Thank you</p>`;
+      
       // Extract vendor emails and filter out any undefined/null values
       const vendorEmails = vendors
         .map((vendor) => vendor.email)
