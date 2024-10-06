@@ -30,6 +30,6 @@ router.get("/vendorsSign/:id", getVendorsSignatureUrl);
 
 router.delete('/:propertyId', isAuthenticated, deleteAuthSchedule);
 
-router.post("/fileUpload", isAuthenticated, fileUpload);
+router.post("/fileUpload", fileUpload);
 module.exports = router;
 

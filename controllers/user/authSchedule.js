@@ -1618,7 +1618,6 @@ td, th, tr {
 
 const generateAgreement = async (agent, content, propertyId) => {
   try {
-
     const {
       name,
       email,
@@ -1660,7 +1659,8 @@ const generateAgreement = async (agent, content, propertyId) => {
       }
     }
     if (!agentSignature) {
-      agentSignature = signature;
+      const base64Image = Buffer.from(signature, 'binary').toString('base64');
+      agentSignature = `data:image/jpeg;base64,${base64Image}`;
     }
 
     const agreementContent = `
@@ -5255,6 +5255,29 @@ exports.updateAuthSchedule = async (req, res) => {
       `
         )
         .join("")}
+        <table role="presentation" border="0" width="100%" cellspacing="0" cellpadding="0">
+    <tbody>
+        <tr>
+            <td style="padding-top: 30px;" align="center">
+                <a style="
+              font-size: 15px;
+              color: #ffffff;
+              background-color: #000000;
+              font-family: Helvetica, Arial, Sans Serif;
+              font-weight: bold;
+              text-align: center;
+              text-decoration: none;
+              border-radius: 2px;
+              display: inline-block;
+            " href="${REACT_APP_FRONTEND_URL}/upload/solicitor/${propertyId}" target="_blank" rel="noopener">
+                    <span style="padding: 0px 24px; line-height: 44px;">
+                        Upload Document
+                    </span>
+                </a>
+            </td>
+        </tr>
+    </tbody>
+</table>
       <p>
         Please feel free to contact our office should you have any further queries.
       </p>
@@ -5469,33 +5492,47 @@ exports.deleteAuthSchedule = async (req, res) => {
   }
 };
 
-
 exports.fileUpload = async (req, res) => {
-  const { fileName, fileType } = req.body;
+  const mimeToExtension = {
+    'application/pdf': 'pdf',
+    'application/msword': 'doc',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+  };
+
+  const { fileName, fileType, path, propertyId } = req.body;
+  const fileExtension = mimeToExtension[fileType];
+  if (!fileExtension) {
+    return res.status(400).json({ success: false, message: 'Unsupported file type' });
+  }
 
   const params = {
     Bucket: process.env.S3_BUCKET_NAME,
-    Key: `solicitor/${Date.now()}_${fileName}`,
+    Key: `${path}/${propertyId}.${fileExtension}`,
     ContentType: fileType,
-    Expires: 60, // URL valid for 60 seconds
+    Expires: 300, // URL valid for 5 minutes
   };
 
-  // s3.getSignedUrl('putObject', params, (err, url) => {
-  //   if (err) {
-  //     return res.status(500).json({ success: false, message: 'Error generating presigned URL', error: err });
-  //   }
-  //   res.status(200).json({ success: true, url, key: params.Key });
-  // });
+  s3.getSignedUrl("putObject", params, (err, url) => {
+    if (err) {
+      return res
+        .status(500)
+        .json({
+          success: false,
+          message: "Error generating presigned URL",
+          error: err,
+        });
+    }
+    res.status(200).json({ success: true, url, key: params.Key });
+  });
 
-  const uploadURL = await s3.getSignedUrlPromise("putObject", params);
-  if (uploadURL) {
-    await axios.put(uploadURL, req.body.file, {
-      headers: {
-        "Content-Type": fileType,
-      },
-    });
+  // const uploadURL = await s3.getSignedUrlPromise("putObject", params);
+  // if (uploadURL) {
+  //   await axios.put(uploadURL, req.body.file, {
+  //     headers: {
+  //       "Content-Type": fileType,
+  //     },
+  //   });
 
-        res.status(200).json({ success: true, url:uploadURL, key: params.Key });
-  }
-
+  //       res.status(200).json({ success: true, url:uploadURL, key: params.Key });
+  // }
 };
