@@ -1652,7 +1652,7 @@ const generateAgreement = async (agent, content, propertyId) => {
       agreementDate,
     } = contentCopy;
 
-    let agentSignature = contentCopy;
+    let agentSignature = contentCopy.agentSignature;
 
     for (const vendor of vendors) {
       if (vendor.signature) {
