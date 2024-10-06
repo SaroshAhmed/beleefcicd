@@ -5468,3 +5468,34 @@ exports.deleteAuthSchedule = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+
+exports.fileUpload = async (req, res) => {
+  const { fileName, fileType } = req.body;
+
+  const params = {
+    Bucket: process.env.S3_BUCKET_NAME,
+    Key: `solicitor/${Date.now()}_${fileName}`,
+    ContentType: fileType,
+    Expires: 60, // URL valid for 60 seconds
+  };
+
+  // s3.getSignedUrl('putObject', params, (err, url) => {
+  //   if (err) {
+  //     return res.status(500).json({ success: false, message: 'Error generating presigned URL', error: err });
+  //   }
+  //   res.status(200).json({ success: true, url, key: params.Key });
+  // });
+
+  const uploadURL = await s3.getSignedUrlPromise("putObject", params);
+  if (uploadURL) {
+    await axios.put(uploadURL, req.body.file, {
+      headers: {
+        "Content-Type": fileType,
+      },
+    });
+
+        res.status(200).json({ success: true, url:uploadURL, key: params.Key });
+  }
+
+};
