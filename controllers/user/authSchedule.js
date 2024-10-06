@@ -2,6 +2,7 @@ const puppeteer = require("puppeteer");
 const { PDFDocument } = require("pdf-lib");
 const axios = require("axios");
 const AuthSchedule = require("../../models/AuthSchedule");
+const UserProperty = require("../../models/UserProperty");
 const AWS = require("aws-sdk");
 const sendEmail = require("../../utils/emailService");
 const {
