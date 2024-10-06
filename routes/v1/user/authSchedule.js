@@ -12,7 +12,8 @@ const {
   updateViewedDate,
   getAllAuthSchedule,
   deleteAuthSchedule,
-  fileUpload
+  fileUpload,
+  getSignedUrl
 } = require("../../../controllers/user/authSchedule");
 const { isAuthenticated } = require("../../../middleware/auth");
 
@@ -31,5 +32,7 @@ router.get("/vendorsSign/:id", getVendorsSignatureUrl);
 router.delete('/:propertyId', isAuthenticated, deleteAuthSchedule);
 
 router.post("/fileUpload", fileUpload);
+
+router.get("/getSignedUrl/:url", getSignedUrl);
 module.exports = router;
 

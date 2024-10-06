@@ -3787,7 +3787,7 @@ exports.createAuthSchedule = async (req, res) => {
     prepareMarketing,
     termsCondition,
     access,
-    services
+    services,
   } = req.body.formattedData;
 
   try {
@@ -4293,7 +4293,7 @@ exports.createAuthSchedule = async (req, res) => {
       termsCondition,
       access,
       services,
-      fraudPrevention
+      fraudPrevention,
     });
 
     return res.status(200).json({ success: true, data: authSchedule });
@@ -4476,23 +4476,22 @@ exports.getAuthScheduleByPropertyId = async (req, res) => {
 
     const authSchedule = await AuthSchedule.findOne({
       propertyId: objectId,
-    }).populate("userId");;
+    }).populate("userId");
 
     if (!authSchedule) {
       return res
         .status(404)
         .json({ success: false, message: "Auth Schedule not found" });
     }
-    
- // Rename userId to agent
- const authScheduleWithAgent = {
-  ...authSchedule._doc, // Spread all the fields from the original document
-  agent: authSchedule.userId, // Rename userId to agent
-};
-delete authScheduleWithAgent.userId; // Remove userId
 
-return res.status(200).json({ success: true, data: authScheduleWithAgent });
+    // Rename userId to agent
+    const authScheduleWithAgent = {
+      ...authSchedule._doc, // Spread all the fields from the original document
+      agent: authSchedule.userId, // Rename userId to agent
+    };
+    delete authScheduleWithAgent.userId; // Remove userId
 
+    return res.status(200).json({ success: true, data: authScheduleWithAgent });
   } catch (error) {
     console.error("Error fetching AuthSchedule: ", error.message);
     return res.status(500).json({ success: false, message: error.message });
@@ -4523,7 +4522,7 @@ exports.sendToSign = async (req, res) => {
         prepareMarketing,
         termsCondition,
         access,
-        services
+        services,
       } = req.body.formattedData;
 
       // Check if a UserProperty with the same userId and propertyId already exists
@@ -4697,7 +4696,7 @@ exports.sendToSign = async (req, res) => {
         termsCondition,
         access,
         services,
-        fraudPrevention
+        fraudPrevention,
       });
 
       return res.status(200).json({ success: true, data: authSchedule });
@@ -5554,4 +5553,38 @@ exports.fileUpload = async (req, res) => {
 
   //       res.status(200).json({ success: true, url:uploadURL, key: params.Key });
   // }
+};
+
+exports.getSignedUrl = async (req, res) => {
+  try {
+    const urlObj = new URL(decodeURIComponent(req.params.url));
+    // Remove the leading '/' from pathname to get the Key
+    const key = urlObj.pathname.startsWith("/")
+      ? urlObj.pathname.substring(1)
+      : urlObj.pathname;
+
+    const params = {
+      Bucket: process.env.S3_BUCKET_NAME,
+      Key: key,
+      Expires: 300, // URL expires in 5 minutes
+    };
+
+    // Generate signed URL to access the S3 object
+    const signedUrl = s3.getSignedUrl("getObject", params);
+
+    // Fetch the image from S3 using the signed URL
+    const response = await axios.get(signedUrl, {
+      responseType: "arraybuffer",
+    });
+
+    // Convert the image buffer to base64
+    const base64Image = Buffer.from(response.data, "binary").toString("base64");
+
+    return res
+      .status(200)
+      .json({ success: true, data: `data:image/jpeg;base64,${base64Image}` });
+  } catch (error) {
+    console.error("Error in getting signed url:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
 };
