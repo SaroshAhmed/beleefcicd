@@ -4835,7 +4835,7 @@ exports.updateAuthSchedule = async (req, res) => {
 
     const { name, email } = authScheduleExists.userId;
 
-    const { vendors, address } = authScheduleExists;
+    const { vendors, address,solicitor } = authScheduleExists;
 
     const vendor = vendors[index];
     vendor.agreeTerms = agreeTerms;
