@@ -199,7 +199,7 @@ exports.generatePdf = async (req, res) => {
     </div>
     <div>
         <p>
-            Date of Report <br /> ${agreementDate ? agreementDate:'' }
+            Date of Report <br /> ${agreementDate ? agreementDate : ""}
         </p>
     </div>
 </section>
@@ -505,7 +505,9 @@ exports.generatePdf = async (req, res) => {
                 (failure to do so is an offence)
             </p>
             <p>Yes</p>
-            <p>Date Provided: ${agreementDate ? agreementDate:'' } [Clause 13].</p>
+            <p>Date Provided: ${
+              agreementDate ? agreementDate : ""
+            } [Clause 13].</p>
         </div>
     </section>
 
@@ -1625,28 +1627,28 @@ const generateAgreement = async (agent, content, propertyId) => {
       licenseNumber,
       gst,
       abn,
-      signature
+      signature,
     } = agent;
-// Create a deep copy of content
-const contentCopy = structuredClone(content);
-    
-const {
-  vendors,
-  solicitor,
-  status,
-  terms,
-  saleProcess,
-  startPrice,
-  endPrice,
-  commissionFee,
-  commissionRange,
-  marketing,
-  propertyAddress,
-  recommendedSold,
-  recommendedSales,
-  agentSignature,
-  agreementDate,
-} = contentCopy;
+    // Create a deep copy of content
+    const contentCopy = structuredClone(content);
+
+    const {
+      vendors,
+      solicitor,
+      status,
+      terms,
+      saleProcess,
+      startPrice,
+      endPrice,
+      commissionFee,
+      commissionRange,
+      marketing,
+      propertyAddress,
+      recommendedSold,
+      recommendedSales,
+      agentSignature,
+      agreementDate,
+    } = contentCopy;
 
     for (const vendor of vendors) {
       if (vendor.signature) {
@@ -1790,7 +1792,7 @@ const {
       </div>
       <div>
           <p>
-              Date of Report <br /> ${agreementDate ? agreementDate:'' }
+              Date of Report <br /> ${agreementDate ? agreementDate : ""}
           </p>
       </div>
   </section>
@@ -2096,7 +2098,9 @@ const {
                   (failure to do so is an offence)
               </p>
               <p>Yes</p>
-              <p>Date Provided: ${agreementDate ? agreementDate:'' } [Clause 13].</p>
+              <p>Date Provided: ${
+                agreementDate ? agreementDate : ""
+              } [Clause 13].</p>
           </div>
       </section>
   
@@ -4207,26 +4211,30 @@ exports.createAuthSchedule = async (req, res) => {
         agents for the property at ${address} on behalf of ${vendorNames}.
       </p>
       <p>
-        The vendor${vendorNames.length > 1 ? 's' : ''} ${vendorNames} ${vendorNames.length > 1 ? 'have' : 'has'} requested you kindly prepare the contract of sale
+        The vendor${vendorNames.length > 1 ? "s" : ""} ${vendorNames} ${
+        vendorNames.length > 1 ? "have" : "has"
+      } requested you kindly prepare the contract of sale
         so we can commence our marketing campaign.
       </p>
       <p>
         Please find full contact details for the vendors:
       </p>
-      ${vendors.map(
-        (vendor) => `
+      ${vendors
+        .map(
+          (vendor) => `
         <p>
           Name: ${vendor.firstName} ${vendor.lastName} <br />
           Email: ${vendor.email} <br />
           Mobile: ${vendor.mobile}
         </p>
       `
-      ).join('')}
+        )
+        .join("")}
       <p>
         Please feel free to contact our office should you have any further queries.
       </p>
       <p>Thank you</p>`;
-      
+
       // Extract vendor emails and filter out any undefined/null values
       const vendorEmails = vendors
         .map((vendor) => vendor.email)
@@ -4244,7 +4252,6 @@ exports.createAuthSchedule = async (req, res) => {
         { _id: new mongoose.Types.ObjectId(propertyId) },
         { $set: { "boxStatus.3.status": "complete" } }
       );
-      
     }
 
     solicitor.sentDate = formatDateToAEDT(null);
@@ -4835,7 +4842,7 @@ exports.updateAuthSchedule = async (req, res) => {
 
     const { name, email } = authScheduleExists.userId;
 
-    const { vendors, address,solicitor } = authScheduleExists;
+    const { vendors, address, solicitor } = authScheduleExists;
 
     const vendor = vendors[index];
     vendor.agreeTerms = agreeTerms;
@@ -5211,6 +5218,11 @@ exports.updateAuthSchedule = async (req, res) => {
         ["welcome@ausrealty.com.au", "concierge@ausrealty.com.au"]
       );
 
+      // Extract vendor first and last names, and join them into a string
+      const vendorNames = vendors
+        .map((vendor) => `${vendor.firstName} ${vendor.lastName}`)
+        .join(", ");
+
       // Construct the solicitor text with corrected template literals
       const solicitorText = `
       <p>Dear ${solicitor.name},</p>
@@ -5219,26 +5231,30 @@ exports.updateAuthSchedule = async (req, res) => {
         agents for the property at ${address} on behalf of ${vendorNames}.
       </p>
       <p>
-        The vendor${vendorNames.length > 1 ? 's' : ''} ${vendorNames} ${vendorNames.length > 1 ? 'have' : 'has'} requested you kindly prepare the contract of sale
+        The vendor${vendorNames.length > 1 ? "s" : ""} ${vendorNames} ${
+        vendorNames.length > 1 ? "have" : "has"
+      } requested you kindly prepare the contract of sale
         so we can commence our marketing campaign.
       </p>
       <p>
         Please find full contact details for the vendors:
       </p>
-      ${vendors.map(
-        (vendor) => `
+      ${vendors
+        .map(
+          (vendor) => `
         <p>
           Name: ${vendor.firstName} ${vendor.lastName} <br />
           Email: ${vendor.email} <br />
           Mobile: ${vendor.mobile}
         </p>
       `
-      ).join('')}
+        )
+        .join("")}
       <p>
         Please feel free to contact our office should you have any further queries.
       </p>
       <p>Thank you</p>`;
-      
+
       // Extract vendor emails and filter out any undefined/null values
       const vendorEmails = vendors
         .map((vendor) => vendor.email)
@@ -5256,7 +5272,6 @@ exports.updateAuthSchedule = async (req, res) => {
         { _id: new mongoose.Types.ObjectId(propertyId) },
         { $set: { "boxStatus.3.status": "complete" } }
       );
-      
 
       authScheduleExists.isCompleted = allVendorsAgree ? true : false;
       authScheduleExists.agreementDate = allVendorsAgree
