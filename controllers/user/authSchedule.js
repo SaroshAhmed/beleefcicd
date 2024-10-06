@@ -3786,6 +3786,8 @@ exports.createAuthSchedule = async (req, res) => {
     recommendedSold,
     prepareMarketing,
     termsCondition,
+    access,
+    services
   } = req.body.formattedData;
 
   try {
@@ -4289,6 +4291,9 @@ exports.createAuthSchedule = async (req, res) => {
       isCompleted: allVendorsAgree ? true : false,
       agreementDate: allVendorsAgree ? formatDateToAEDT(null) : null,
       termsCondition,
+      access,
+      services,
+      fraudPrevention
     });
 
     return res.status(200).json({ success: true, data: authSchedule });
@@ -4471,15 +4476,23 @@ exports.getAuthScheduleByPropertyId = async (req, res) => {
 
     const authSchedule = await AuthSchedule.findOne({
       propertyId: objectId,
-    });
+    }).populate("userId");;
 
     if (!authSchedule) {
       return res
         .status(404)
         .json({ success: false, message: "Auth Schedule not found" });
     }
+    
+ // Rename userId to agent
+ const authScheduleWithAgent = {
+  ...authSchedule._doc, // Spread all the fields from the original document
+  agent: authSchedule.userId, // Rename userId to agent
+};
+delete authScheduleWithAgent.userId; // Remove userId
 
-    return res.status(200).json({ success: true, data: authSchedule });
+return res.status(200).json({ success: true, data: authScheduleWithAgent });
+
   } catch (error) {
     console.error("Error fetching AuthSchedule: ", error.message);
     return res.status(500).json({ success: false, message: error.message });
@@ -4509,6 +4522,8 @@ exports.sendToSign = async (req, res) => {
         recommendedSold,
         prepareMarketing,
         termsCondition,
+        access,
+        services
       } = req.body.formattedData;
 
       // Check if a UserProperty with the same userId and propertyId already exists
@@ -4680,6 +4695,9 @@ exports.sendToSign = async (req, res) => {
         recommendedSold,
         isLock: true,
         termsCondition,
+        access,
+        services,
+        fraudPrevention
       });
 
       return res.status(200).json({ success: true, data: authSchedule });

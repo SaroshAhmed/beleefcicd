@@ -40,7 +40,12 @@ const authScheduleSchema = new Schema(
     termsCondition: { type: String },
     isLock: { type: Boolean, default: false },
     isCompleted: { type: Boolean, default: false },
-    agreementDate: { type: String }
+    agreementDate: { type: String },
+    fraudPrevention: { type: String },
+    access: { type: String },
+    services: {
+      type: Schema.Types.Mixed,
+    },
   },
   {
     timestamps: true,
