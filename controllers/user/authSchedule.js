@@ -1646,6 +1646,7 @@ const generateAgreement = async (agent, content, propertyId) => {
       commissionRange,
       marketing,
       propertyAddress,
+      address,
       recommendedSold,
       recommendedSales,
       agreementDate,
@@ -1659,8 +1660,7 @@ const generateAgreement = async (agent, content, propertyId) => {
       }
     }
     if (!agentSignature) {
-      const base64Image = Buffer.from(signature, 'binary').toString('base64');
-      agentSignature = `data:image/jpeg;base64,${base64Image}`;
+      agentSignature = await getVendorSignatureUrl(signature);
     }
 
     const agreementContent = `
@@ -1738,7 +1738,7 @@ const generateAgreement = async (agent, content, propertyId) => {
               for Rural Land]
           </small>
       </h3>
-      <strong>ADDRESS:</strong> ${propertyAddress}
+      <strong>ADDRESS:</strong> ${propertyAddress || address}
       <div>
           <strong>Occupation status of Property: </strong>
           <span>${status}</span>
@@ -5494,15 +5494,18 @@ exports.deleteAuthSchedule = async (req, res) => {
 
 exports.fileUpload = async (req, res) => {
   const mimeToExtension = {
-    'application/pdf': 'pdf',
-    'application/msword': 'doc',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+    "application/pdf": "pdf",
+    "application/msword": "doc",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+      "docx",
   };
 
   const { fileName, fileType, path, propertyId } = req.body;
   const fileExtension = mimeToExtension[fileType];
   if (!fileExtension) {
-    return res.status(400).json({ success: false, message: 'Unsupported file type' });
+    return res
+      .status(400)
+      .json({ success: false, message: "Unsupported file type" });
   }
 
   const params = {
@@ -5514,13 +5517,11 @@ exports.fileUpload = async (req, res) => {
 
   s3.getSignedUrl("putObject", params, (err, url) => {
     if (err) {
-      return res
-        .status(500)
-        .json({
-          success: false,
-          message: "Error generating presigned URL",
-          error: err,
-        });
+      return res.status(500).json({
+        success: false,
+        message: "Error generating presigned URL",
+        error: err,
+      });
     }
     res.status(200).json({ success: true, url, key: params.Key });
   });
