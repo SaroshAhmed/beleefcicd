@@ -3914,27 +3914,6 @@ exports.createAuthSchedule = async (req, res) => {
       });
     }
 
-    for (let i = 0; i < vendors.length; i++) {
-      const vendor = vendors[i];
-      if (vendor.isSigned) {
-        // Generate URL for vendor signature
-        const signatureResult = await generatePresignedUrl(
-          `vendor-signatures`,
-          `${propertyId}-vendor-${i}`,
-          base64ToBuffer(vendor.signature)
-        );
-        vendor.signature = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${signatureResult.key}`;
-      }
-
-      // Generate URL for vendor license
-      const licenceResult = await generatePresignedUrl(
-        `vendor-licences`,
-        `${propertyId}-vendor-${i}`,
-        base64ToBuffer(vendor.licence)
-      );
-      vendor.licence = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${licenceResult.key}`;
-    }
-
     const vendorPost = {
       msg: `Here is your signed copy of the sales agreement for the property ${address}`,
       link: `${REACT_APP_FRONTEND_URL}/agreement/${propertyId}`,
@@ -4241,6 +4220,27 @@ exports.createAuthSchedule = async (req, res) => {
 
     solicitor.sentDate = formatDateToAEDT(null);
 
+    for (let i = 0; i < vendors.length; i++) {
+      const vendor = vendors[i];
+      if (vendor.isSigned) {
+        // Generate URL for vendor signature
+        const signatureResult = await generatePresignedUrl(
+          `vendor-signatures`,
+          `${propertyId}-vendor-${i}`,
+          base64ToBuffer(vendor.signature)
+        );
+        vendor.signature = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${signatureResult.key}`;
+      }
+
+      // Generate URL for vendor license
+      const licenceResult = await generatePresignedUrl(
+        `vendor-licences`,
+        `${propertyId}-vendor-${i}`,
+        base64ToBuffer(vendor.licence)
+      );
+      vendor.licence = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${licenceResult.key}`;
+    }
+
     // Create the AuthSchedule with the updated filtered vendors array
     const authSchedule = await AuthSchedule.create({
       userId: id,
@@ -4504,27 +4504,6 @@ exports.sendToSign = async (req, res) => {
           .json({ success: true, data: authScheduleExists });
       }
 
-      for (let i = 0; i < vendors.length; i++) {
-        const vendor = vendors[i];
-        if (vendor.isSigned) {
-          // Generate URL for vendor signature
-          const signatureResult = await generatePresignedUrl(
-            `vendor-signatures`,
-            `${propertyId}-vendor-${i}`,
-            base64ToBuffer(vendor.signature)
-          );
-          vendor.signature = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${signatureResult.key}`;
-        }
-
-        // Generate URL for vendor license
-        const licenceResult = await generatePresignedUrl(
-          `vendor-licences`,
-          `${propertyId}-vendor-${i}`,
-          base64ToBuffer(vendor.licence)
-        );
-        vendor.licence = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${licenceResult.key}`;
-      }
-
       // Prepare post details
       const post = {
         msg: `${name} sent you a document to review and sign.`,
@@ -4640,6 +4619,27 @@ exports.sendToSign = async (req, res) => {
       // Update the vendor's sent date
       vendors[vendorIndex].sentDate = formatDateToAEDT(null);
 
+      for (let i = 0; i < vendors.length; i++) {
+        const vendor = vendors[i];
+        if (vendor.isSigned) {
+          // Generate URL for vendor signature
+          const signatureResult = await generatePresignedUrl(
+            `vendor-signatures`,
+            `${propertyId}-vendor-${i}`,
+            base64ToBuffer(vendor.signature)
+          );
+          vendor.signature = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${signatureResult.key}`;
+        }
+
+        // Generate URL for vendor license
+        const licenceResult = await generatePresignedUrl(
+          `vendor-licences`,
+          `${propertyId}-vendor-${i}`,
+          base64ToBuffer(vendor.licence)
+        );
+        vendor.licence = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${licenceResult.key}`;
+      }
+      
       // Create the AuthSchedule with the updated filtered vendors array
       const authSchedule = await AuthSchedule.create({
         userId: id,
