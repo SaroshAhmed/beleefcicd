@@ -1626,23 +1626,26 @@ const generateAgreement = async (agent, content, propertyId) => {
       abn,
       signature
     } = agent;
-    const {
-      vendors,
-      solicitor,
-      status,
-      terms,
-      saleProcess,
-      startPrice,
-      endPrice,
-      commissionFee,
-      commissionRange,
-      marketing,
-      propertyAddress,
-      recommendedSold,
-      recommendedSales,
-      agentSignature,
-      agreementDate,
-    } = content;
+// Create a deep copy of content
+const contentCopy = structuredClone(content);
+    
+const {
+  vendors,
+  solicitor,
+  status,
+  terms,
+  saleProcess,
+  startPrice,
+  endPrice,
+  commissionFee,
+  commissionRange,
+  marketing,
+  propertyAddress,
+  recommendedSold,
+  recommendedSales,
+  agentSignature,
+  agreementDate,
+} = contentCopy;
 
     for (const vendor of vendors) {
       if (vendor.signature) {
@@ -4139,6 +4142,27 @@ exports.createAuthSchedule = async (req, res) => {
       (vendor) => vendor.agreeTerms === true
     );
 
+    for (let i = 0; i < vendors.length; i++) {
+      const vendor = vendors[i];
+      if (vendor.isSigned) {
+        // Generate URL for vendor signature
+        const signatureResult = await generatePresignedUrl(
+          `vendor-signatures`,
+          `${propertyId}-vendor-${i}`,
+          base64ToBuffer(vendor.signature)
+        );
+        vendor.signature = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${signatureResult.key}`;
+      }
+
+      // Generate URL for vendor license
+      const licenceResult = await generatePresignedUrl(
+        `vendor-licences`,
+        `${propertyId}-vendor-${i}`,
+        base64ToBuffer(vendor.licence)
+      );
+      vendor.licence = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${licenceResult.key}`;
+    }
+
     // Initialize agreementId and proofId with default values (null or empty string)
     let agreementId = null;
     let proofId = null;
@@ -4202,8 +4226,6 @@ exports.createAuthSchedule = async (req, res) => {
       </p>
       <p>Thank you</p>`;
       
-      
-
       // Extract vendor emails and filter out any undefined/null values
       const vendorEmails = vendors
         .map((vendor) => vendor.email)
@@ -4216,30 +4238,14 @@ exports.createAuthSchedule = async (req, res) => {
         solicitorText, // Email content
         [email, ...vendorEmails] // CC list
       );
+
+      await UserProperty.updateOne(
+        { _id:mongoose.Types.ObjectId(propertyId) },
+        { $set: { "boxStatus.3.status": "complete" } }
+      );
     }
 
     solicitor.sentDate = formatDateToAEDT(null);
-
-    for (let i = 0; i < vendors.length; i++) {
-      const vendor = vendors[i];
-      if (vendor.isSigned) {
-        // Generate URL for vendor signature
-        const signatureResult = await generatePresignedUrl(
-          `vendor-signatures`,
-          `${propertyId}-vendor-${i}`,
-          base64ToBuffer(vendor.signature)
-        );
-        vendor.signature = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${signatureResult.key}`;
-      }
-
-      // Generate URL for vendor license
-      const licenceResult = await generatePresignedUrl(
-        `vendor-licences`,
-        `${propertyId}-vendor-${i}`,
-        base64ToBuffer(vendor.licence)
-      );
-      vendor.licence = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${licenceResult.key}`;
-    }
 
     // Create the AuthSchedule with the updated filtered vendors array
     const authSchedule = await AuthSchedule.create({
@@ -5242,6 +5248,11 @@ exports.updateAuthSchedule = async (req, res) => {
         `Contract Request: ${address}`, // Subject
         solicitorText, // Email content
         [email, ...vendorEmails] // CC list
+      );
+
+      await UserProperty.updateOne(
+        { _id: mongoose.Types.ObjectId(propertyId) },
+        { $set: { "boxStatus.3.status": "complete" } }
       );
 
       authScheduleExists.isCompleted = allVendorsAgree ? true : false;
