@@ -1630,7 +1630,7 @@ const generateAgreement = async (agent, content, propertyId) => {
       signature,
     } = agent;
     // Create a deep copy of content
-    const contentCopy = structuredClone(content);
+    const contentCopy = structuredClone(content.toObject());
 
     const {
       vendors,
