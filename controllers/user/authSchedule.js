@@ -5292,14 +5292,14 @@ exports.updateAuthSchedule = async (req, res) => {
       );
     }
 
-    (authScheduleExists.agreementId = agreementId
+    authScheduleExists.agreementId = agreementId
       ? `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${agreementId}`
-      : null),
-      (authScheduleExists.proofId = proofId
-        ? `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${proofId}`
-        : null),
-      // Save the updated vendors array back to the document
-      (authScheduleExists.vendors[index] = vendor);
+      : null;
+    authScheduleExists.proofId = proofId
+      ? `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${proofId}`
+      : null;
+    // Save the updated vendors array back to the document
+    authScheduleExists.vendors[index] = vendor;
 
     // Save the AuthSchedule document
     await authScheduleExists.save();
