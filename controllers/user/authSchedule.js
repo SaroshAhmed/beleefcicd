@@ -4844,7 +4844,9 @@ exports.updateAuthSchedule = async (req, res) => {
 
     const { vendors, address, solicitor } = authScheduleExists;
 
-    const vendor = vendors[index];
+    const updatedVendors = [...authScheduleExists.vendors]; // Create a shallow copy of vendors array
+    const vendor = updatedVendors[index];
+
     vendor.agreeTerms = agreeTerms;
     vendor.signedDate = signedDate;
     vendor.isSigned = isSigned;
@@ -4858,6 +4860,8 @@ exports.updateAuthSchedule = async (req, res) => {
       );
       vendor.signature = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${signatureResult.key}`;
     }
+
+    authScheduleExists.vendors = updatedVendors;
 
     const post = {
       msg: `Hi ${name}, ${vendor.firstName} ${vendor.lastName} has signed the agreement for the property ${address}`,
