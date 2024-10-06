@@ -504,7 +504,7 @@ exports.generatePdf = async (req, res) => {
                 (failure to do so is an offence)
             </p>
             <p>Yes</p>
-            <p>Date Provided: signing date comes here [Clause 13].</p>
+            <p>Date Provided: ${agreementDate} [Clause 13].</p>
         </div>
     </section>
 
@@ -2092,7 +2092,7 @@ const generateAgreement = async (agent, content, propertyId) => {
                   (failure to do so is an offence)
               </p>
               <p>Yes</p>
-              <p>Date Provided: signing date comes here [Clause 13].</p>
+              <p>Date Provided: ${agreementDate} [Clause 13].</p>
           </div>
       </section>
   
@@ -2112,7 +2112,7 @@ const generateAgreement = async (agent, content, propertyId) => {
                   <tr class="border-b">
                       <td class="py-2 px-3">${vendor.firstName} ${vendor.lastName}</td>
                       <td class="py-2 px-3"> <img src=${vendor.signature} alt="agent sign" class="w-auto h-8"></img></td>
-                      <td class="py-2 px-3"></td>
+                      <td class="py-2 px-3">${vendor.signedDate}</td>
                   </tr>
                   `
                     )
