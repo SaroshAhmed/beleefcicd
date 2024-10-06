@@ -4241,9 +4241,10 @@ exports.createAuthSchedule = async (req, res) => {
       );
 
       await UserProperty.updateOne(
-        { _id:mongoose.Types.ObjectId(propertyId) },
+        { _id: new mongoose.Types.ObjectId(propertyId) },
         { $set: { "boxStatus.3.status": "complete" } }
       );
+      
     }
 
     solicitor.sentDate = formatDateToAEDT(null);
@@ -5252,9 +5253,10 @@ exports.updateAuthSchedule = async (req, res) => {
       );
 
       await UserProperty.updateOne(
-        { _id: mongoose.Types.ObjectId(propertyId) },
+        { _id: new mongoose.Types.ObjectId(propertyId) },
         { $set: { "boxStatus.3.status": "complete" } }
       );
+      
 
       authScheduleExists.isCompleted = allVendorsAgree ? true : false;
       authScheduleExists.agreementDate = allVendorsAgree
