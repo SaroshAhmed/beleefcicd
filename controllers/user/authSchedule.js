@@ -1618,6 +1618,7 @@ td, th, tr {
 
 const generateAgreement = async (agent, content, propertyId) => {
   try {
+
     const {
       name,
       email,
@@ -1630,7 +1631,9 @@ const generateAgreement = async (agent, content, propertyId) => {
       signature,
     } = agent;
     // Create a deep copy of content
-    const contentCopy = structuredClone(content.toObject());
+    const contentCopy = structuredClone(
+      content.toObject ? content.toObject() : content
+    );
 
     const {
       vendors,
@@ -1657,7 +1660,7 @@ const generateAgreement = async (agent, content, propertyId) => {
       }
     }
     if (!agentSignature) {
-      agentSignature = await getVendorSignatureUrl(signature);
+      agentSignature = signature;
     }
 
     const agreementContent = `
