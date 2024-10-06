@@ -198,7 +198,7 @@ exports.generatePdf = async (req, res) => {
     </div>
     <div>
         <p>
-            Date of Report <br /> ${agreementDate}
+            Date of Report <br /> ${agreementDate ? agreementDate:'' }
         </p>
     </div>
 </section>
@@ -504,7 +504,7 @@ exports.generatePdf = async (req, res) => {
                 (failure to do so is an offence)
             </p>
             <p>Yes</p>
-            <p>Date Provided: ${agreementDate} [Clause 13].</p>
+            <p>Date Provided: ${agreementDate ? agreementDate:'' } [Clause 13].</p>
         </div>
     </section>
 
@@ -1786,7 +1786,7 @@ const generateAgreement = async (agent, content, propertyId) => {
       </div>
       <div>
           <p>
-              Date of Report <br /> ${agreementDate}
+              Date of Report <br /> ${agreementDate ? agreementDate:'' }
           </p>
       </div>
   </section>
@@ -2092,7 +2092,7 @@ const generateAgreement = async (agent, content, propertyId) => {
                   (failure to do so is an offence)
               </p>
               <p>Yes</p>
-              <p>Date Provided: ${agreementDate} [Clause 13].</p>
+              <p>Date Provided: ${agreementDate ? agreementDate:'' } [Clause 13].</p>
           </div>
       </section>
   
