@@ -4639,7 +4639,7 @@ exports.sendToSign = async (req, res) => {
         );
         vendor.licence = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${licenceResult.key}`;
       }
-      
+
       // Create the AuthSchedule with the updated filtered vendors array
       const authSchedule = await AuthSchedule.create({
         userId: id,
