@@ -10,6 +10,7 @@ const bookingRoutes = require("./booking");
 const openaiRoutes = require("./openai");
 const postListRoutes = require("./postList");
 const authScheduleRoutes = require("./authSchedule");
+const marketingPriceRoutes = require("./marketingPrice");
 
 router.use("/auth", authRoutes);
 router.use("/profile", profileRoutes);
@@ -20,4 +21,5 @@ router.use("/bookings", bookingRoutes);
 router.use("/openai", openaiRoutes);
 router.use("/postList", postListRoutes);
 router.use("/authSchedule", authScheduleRoutes);
+router.use("/marketingPrice", marketingPriceRoutes);
 module.exports = router;
