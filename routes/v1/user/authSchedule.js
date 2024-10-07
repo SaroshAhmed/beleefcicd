@@ -17,7 +17,7 @@ const {
 } = require("../../../controllers/user/authSchedule");
 const { isAuthenticated } = require("../../../middleware/auth");
 
-router.post("/generatePdf", isAuthenticated, generatePdf);
+router.post("/generatePdf", generatePdf);
 router.post("/generatePresignedUrl", isAuthenticated, generatePresignedUrl);
 router.post("/", isAuthenticated, createAuthSchedule);
 router.get("/", isAuthenticated, getAllAuthSchedule);

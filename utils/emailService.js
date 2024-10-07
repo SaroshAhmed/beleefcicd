@@ -1,5 +1,10 @@
 const nodemailer = require("nodemailer");
-const { MYSIGN_MAIL_USER, MYSIGN_MAIL_PASS } = require("../config");
+const {
+  MYSIGN_MAIL_USER,
+  MYSIGN_MAIL_PASS,
+  CONCIERGE_MAIL_USER,
+  CONCIERGE_MAIL_PASS,
+} = require("../config");
 
 const transporter = nodemailer.createTransport({
   service: "Gmail",
@@ -9,16 +14,13 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// const sendEmail = (to, subject, text) => {
-//   const mailOptions = {
-//     // from: mailUser,
-//     from: `Ausrealty <${MYSIGN_MAIL_USER}>`,
-//     to,
-//     subject,
-//     html: text,
-//   };
-//   return transporter.sendMail(mailOptions);
-// };
+const transporter2 = nodemailer.createTransport({
+  service: "Gmail",
+  auth: {
+    user: CONCIERGE_MAIL_USER,
+    pass: CONCIERGE_MAIL_PASS,
+  },
+});
 
 const sendEmail = (to, subject, text, cc = []) => {
   const mailOptions = {
@@ -31,4 +33,17 @@ const sendEmail = (to, subject, text, cc = []) => {
 
   return transporter.sendMail(mailOptions);
 };
-module.exports = sendEmail;
+
+const sendConciergeEmail = (to, subject, text, cc = []) => {
+  const mailOptions = {
+    from: `Ausrealty <${process.env.CONCIERGE_MAIL_USER}>`,
+    to,
+    cc,
+    subject,
+    html: text,
+  };
+
+  return transporter2.sendMail(mailOptions);
+};
+
+module.exports = { sendEmail, sendConciergeEmail };

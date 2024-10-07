@@ -4,7 +4,7 @@ const axios = require("axios");
 const AuthSchedule = require("../../models/AuthSchedule");
 const UserProperty = require("../../models/UserProperty");
 const AWS = require("aws-sdk");
-const sendEmail = require("../../utils/emailService");
+const { sendEmail, sendConciergeEmail } = require("../../utils/emailService");
 const {
   formatCurrency,
   formatDateToAEDT,
@@ -28,17 +28,7 @@ const formatDate = (dateString, options = {}) => {
 
 exports.generatePdf = async (req, res) => {
   try {
-    const {
-      name,
-      email,
-      mobile,
-      company,
-      companyAddress,
-      licenseNumber,
-      gst,
-      abn,
-      signature,
-    } = req.user;
+
     const {
       vendors,
       solicitor,
@@ -55,7 +45,20 @@ exports.generatePdf = async (req, res) => {
       recommendedSold,
       recommendedSales,
       agreementDate,
+      agent
     } = req.body.content;
+
+    const {
+      name,
+      email,
+      mobile,
+      company,
+      companyAddress,
+      licenseNumber,
+      gst,
+      abn,
+      signature,
+    } =  req.user ? req.user : agent;
 
     let agentSignature = req.body.content.agentSignature;
 
@@ -527,7 +530,7 @@ exports.generatePdf = async (req, res) => {
                 <tr class="border-b">
                     <td class="py-2 px-3">${vendor.firstName} ${vendor.lastName}</td>
                     <td class="py-2 px-3"> <img src=${vendor.signature} alt="vendor sign" class="w-auto h-8"></img></td>
-                    <td class="py-2 px-3">${vendor.signedDate}</td>
+                    <td class="py-2 px-3">${vendor.signedDate?vendor.signedDate:''}</td>
                 </tr>
                 `
                   )
@@ -2124,7 +2127,7 @@ const generateAgreement = async (agent, content, propertyId) => {
                   <tr class="border-b">
                       <td class="py-2 px-3">${vendor.firstName} ${vendor.lastName}</td>
                       <td class="py-2 px-3"> <img src=${vendor.signature} alt="agent sign" class="w-auto h-8"></img></td>
-                      <td class="py-2 px-3">${vendor.signedDate}</td>
+                      <td class="py-2 px-3">${vendor.signedDate?vendor.signedDate:''}</td>
                   </tr>
                   `
                     )
@@ -4247,7 +4250,7 @@ exports.createAuthSchedule = async (req, res) => {
         .filter((email) => email); // Filters out falsy values (null, undefined, etc.)
 
       // Send the email
-      await sendEmail(
+      await sendConciergeEmail(
         solicitor.email, // Recipient email
         `Contract Request: ${address}`, // Subject
         solicitorText, // Email content
@@ -4501,8 +4504,10 @@ exports.getAuthScheduleByPropertyId = async (req, res) => {
 exports.sendToSign = async (req, res) => {
   try {
     const { id, name, email } = req.user;
+
     if (req.body.formattedData) {
       const vendorIndex = req.body.vendorIndex;
+
       const {
         propertyId,
         propertyAddress,
@@ -4537,15 +4542,21 @@ exports.sendToSign = async (req, res) => {
           .json({ success: true, data: authScheduleExists });
       }
 
-      // Prepare post details
-      const post = {
-        msg: `${name} sent you a document to review and sign.`,
-        link: `${REACT_APP_FRONTEND_URL}/esign/${propertyId}/${vendorIndex}`,
-        title: "Review & Sign",
-      };
+      // Determine if vendorIndex is an array or a single value
+      const vendorIndexes = Array.isArray(vendorIndex)
+        ? vendorIndex
+        : [vendorIndex];
 
-      // Prepare email content
-      const text = `<html>
+      for (const index of vendorIndexes) {
+        // Prepare post details
+        const post = {
+          msg: `${name} sent you a document to review and sign.`,
+          link: `${REACT_APP_FRONTEND_URL}/esign/${propertyId}/${index}`,
+          title: "Review & Sign",
+        };
+
+        // Prepare email content
+        const text = `<html>
         <head>
           <title>eSign</title>
           <meta http-equiv="Content-Type" content="text/html charset=UTF-8" />
@@ -4642,15 +4653,16 @@ exports.sendToSign = async (req, res) => {
         </body>
       </html>`;
 
-      // Send the email to the vendor
-      await sendEmail(
-        vendors[vendorIndex].email, // Recipient email
-        `Ausrealty eSign: ${propertyAddress}`, // Subject
-        text // Email content
-      );
+        // Send the email to the vendor
+        await sendEmail(
+          vendors[index].email, // Recipient email
+          `Ausrealty eSign: ${propertyAddress}`, // Subject
+          text // Email content
+        );
 
-      // Update the vendor's sent date
-      vendors[vendorIndex].sentDate = formatDateToAEDT(null);
+        // Update the vendor's sent date
+        vendors[index].sentDate = formatDateToAEDT(null);
+      }
 
       for (let i = 0; i < vendors.length; i++) {
         const vendor = vendors[i];
@@ -5306,7 +5318,7 @@ exports.updateAuthSchedule = async (req, res) => {
         .filter((email) => email); // Filters out falsy values (null, undefined, etc.)
 
       // Send the email
-      await sendEmail(
+      await sendConciergeEmail(
         solicitor.email, // Recipient email
         `Contract Request: ${address}`, // Subject
         solicitorText, // Email content
@@ -5518,6 +5530,13 @@ exports.fileUpload = async (req, res) => {
   };
 
   const { fileName, fileType, path, propertyId } = req.body;
+
+  const authSchedule = await AuthSchedule.findOne({
+    propertyId: new mongoose.Types.ObjectId(propertyId),
+  }).populate("userId");
+  const { solicitor, address } = authSchedule;
+  const { name, email } = authSchedule.userId;
+
   const fileExtension = mimeToExtension[fileType];
   if (!fileExtension) {
     return res
@@ -5532,7 +5551,7 @@ exports.fileUpload = async (req, res) => {
     Expires: 300, // URL valid for 5 minutes
   };
 
-  s3.getSignedUrl("putObject", params, (err, url) => {
+  s3.getSignedUrl("putObject", params, async (err, url) => {
     if (err) {
       return res.status(500).json({
         success: false,
@@ -5540,19 +5559,15 @@ exports.fileUpload = async (req, res) => {
         error: err,
       });
     }
+    if (path === "solicitor") {
+      await sendConciergeEmail(
+        email, // Recipient email
+        `${solicitor.name} has just uploaded the contract of Sale for ${address}`, // Subject
+        `Hi ${name}, Solicitor ${solicitor.name} has just uploaded the contract of Sale for ${address}`
+      );
+    }
     res.status(200).json({ success: true, url, key: params.Key });
   });
-
-  // const uploadURL = await s3.getSignedUrlPromise("putObject", params);
-  // if (uploadURL) {
-  //   await axios.put(uploadURL, req.body.file, {
-  //     headers: {
-  //       "Content-Type": fileType,
-  //     },
-  //   });
-
-  //       res.status(200).json({ success: true, url:uploadURL, key: params.Key });
-  // }
 };
 
 exports.getSignedUrl = async (req, res) => {
