@@ -4291,6 +4291,14 @@ exports.createAuthSchedule = async (req, res) => {
       </p>
       <p>Thank you</p>`;
 
+      // Message:
+      // Dear (vendor name),
+      // We look forward to achieving a premium result.
+      // Best regards
+      // (insert Agent name) & Ausrealty Team
+
+      // Thank you
+
       // Extract vendor emails and filter out any undefined/null values
       const vendorEmails = vendors
         .map((vendor) => vendor.email)
@@ -4303,6 +4311,203 @@ exports.createAuthSchedule = async (req, res) => {
         solicitorText, // Email content
         [email, ...vendorEmails] // CC list
       );
+
+      await sendConciergeEmail(
+        "sufiyan@ausrealty.com.au", // moussa.c@themarketrun.com.au
+        `Fruit box Request: ${address}`, // Subject
+        `
+       <div style="text-align: center;">
+        <img
+          style="border: none; margin-top: 30px;margin-bottom: 30px"
+          src="https://myapp.ausrealty.com.au/img/ausrealtylogo.png"
+          alt="Ausrealty eSign"
+          width="130"
+        />
+      </div>
+      <p>Hi Team,</p>
+      <p>Could we please order a fruit box for our vendors</p>
+      ${vendors
+        .map(
+          (vendor) => `
+        <p>
+          Name: ${vendor.firstName} ${vendor.lastName} <br />
+          Address: ${vendor.address} <br />
+          Mobile: ${vendor.mobile}
+        </p>
+      `
+        )
+        .join("")}
+        
+      <p>
+        Please feel free to contact our office should you have any further queries.
+      </p>
+      <p>Thank you</p>` // Email content
+        // ["Anabel.m@ausrealty.com.au"] // CC list
+      );
+
+      if (services[0].value !== "No") {
+        await sendConciergeEmail(
+          "riverwood@ausrealty.com.au", // inspect@absolutepropertyinspections.com.au
+          `Building & Pest report: ${address}`, // Subject
+          `
+         <div style="text-align: center;">
+          <img
+            style="border: none; margin-top: 30px;margin-bottom: 30px"
+            src="https://myapp.ausrealty.com.au/img/ausrealtylogo.png"
+            alt="Ausrealty eSign"
+            width="130"
+          />
+        </div>
+        <p>Hi Team,</p>
+        <p>We would like to request the building and pest inspection for ${address}</p>
+        <p>Agent: ${name}</p>
+        <p>Please contact the vendor to organise on:</p>
+        ${vendors
+          .map(
+            (vendor) => `
+          <p>
+            Name: ${vendor.firstName} ${vendor.lastName} <br />
+            Email: ${vendor.email} <br />
+            Mobile: ${vendor.mobile}
+          </p>
+        `
+          )
+          .join("")}
+         <table role="presentation" border="0" width="100%" cellspacing="0" cellpadding="0">
+      <tbody>
+          <tr>
+              <td style="padding: 30px 0px;" align="center">
+                  <a style="
+                font-size: 15px;
+                color: #ffffff;
+                background-color: #000000;
+                font-family: Helvetica, Arial, Sans Serif;
+                font-weight: bold;
+                text-align: center;
+                text-decoration: none;
+                border-radius: 2px;
+                display: inline-block;
+              " href="${REACT_APP_FRONTEND_URL}/upload/serviceBuilding/${propertyId}" target="_blank" rel="noopener">
+                      <span style="padding: 0px 24px; line-height: 44px;">
+                          Upload Document
+                      </span>
+                  </a>
+              </td>
+          </tr>
+      </tbody>
+  </table>
+        <p>Thank you</p>`, // Email content
+          [email, "welcome@ausrealty.com.au"] // CC list
+        );
+        services[0].sentDate = formatDateToAEDT(null);
+      }
+
+      if (services[1].value !== "No") {
+        await sendConciergeEmail(
+          "riverwood@ausrealty.com.au", // inspect@absolutepropertyinspections.com.au
+          `Strata report: ${address}`, // Subject
+          `
+         <div style="text-align: center;">
+          <img
+            style="border: none; margin-top: 30px;margin-bottom: 30px"
+            src="https://myapp.ausrealty.com.au/img/ausrealtylogo.png"
+            alt="Ausrealty eSign"
+            width="130"
+          />
+        </div>
+        <p>Hi Team,</p>
+        <p>We would like to request the strata report for ${address}</p>
+        <p>Agent: ${name}</p>
+        <p>Please contact the vendor to organise on:</p>
+        ${vendors
+          .map(
+            (vendor) => `
+          <p>
+            Name: ${vendor.firstName} ${vendor.lastName} <br />
+            Email: ${vendor.email} <br />
+            Mobile: ${vendor.mobile}
+          </p>
+        `
+          )
+          .join("")}
+         <table role="presentation" border="0" width="100%" cellspacing="0" cellpadding="0">
+      <tbody>
+          <tr>
+              <td style="padding: 30px 0px;" align="center">
+                  <a style="
+                font-size: 15px;
+                color: #ffffff;
+                background-color: #000000;
+                font-family: Helvetica, Arial, Sans Serif;
+                font-weight: bold;
+                text-align: center;
+                text-decoration: none;
+                border-radius: 2px;
+                display: inline-block;
+              " href="${REACT_APP_FRONTEND_URL}/upload/serviceStrata/${propertyId}" target="_blank" rel="noopener">
+                      <span style="padding: 0px 24px; line-height: 44px;">
+                          Upload Document
+                      </span>
+                  </a>
+              </td>
+          </tr>
+      </tbody>
+  </table>
+        <p>Thank you</p>`, // Email content
+          [email, "welcome@ausrealty.com.au"] // CC list
+        );
+        services[1].sentDate = formatDateToAEDT(null);
+      }
+
+      if (services[2].value !== "No") {
+        let stylingEmail;
+
+        switch (services[2].value) {
+          case "Urban chic":
+            stylingEmail = "kristy@urbanchic.net.au";
+            break;
+          case "Style to sell":
+            stylingEmail = "rola@styletosellproperties.com.au";
+            break;
+          case "Little styling co":
+            stylingEmail = "hello@thelittlestylingco.com";
+            break;
+          default:
+            stylingEmail = ""; // In case there's an unexpected value
+        }
+
+        await sendConciergeEmail(
+          "riverwood@ausrealty.com.au", // stylingEmail
+          `Styling: ${address}`, // Subject
+          `
+         <div style="text-align: center;">
+          <img
+            style="border: none; margin-top: 30px;margin-bottom: 30px"
+            src="https://myapp.ausrealty.com.au/img/ausrealtylogo.png"
+            alt="Ausrealty eSign"
+            width="130"
+          />
+        </div>
+        <p>Hi Team,</p>
+        <p>We would like to request styling for ${address}</p>
+        <p>Agent: ${name}</p>
+        <p>Please contact the vendor to organise on:</p>
+        ${vendors
+          .map(
+            (vendor) => `
+          <p>
+            Name: ${vendor.firstName} ${vendor.lastName} <br />
+            Email: ${vendor.email} <br />
+            Mobile: ${vendor.mobile}
+          </p>
+        `
+          )
+          .join("")}
+        <p>Thank you</p>`, // Email content
+          [email, "welcome@ausrealty.com.au"] // CC list
+        );
+        services[2].sentDate = formatDateToAEDT(null);
+      }
 
       await UserProperty.updateOne(
         { _id: new mongoose.Types.ObjectId(propertyId) },
@@ -4405,7 +4610,9 @@ exports.getAllSignatureUrl = async (req, res) => {
     //
 
     //
+    let solicitorSignedUrl;
     const solicitorUrl = authSchedule.solicitor?.contract;
+    if(solicitorUrl){
     const solicitorUrlObj = new URL(solicitorUrl);
     const solicitorKey = solicitorUrlObj.pathname.startsWith("/")
       ? solicitorUrlObj.pathname.substring(1)
@@ -4417,8 +4624,51 @@ exports.getAllSignatureUrl = async (req, res) => {
       Expires: 3600, // URL expires in 1 hour
     };
 
-    const solicitorSignedUrl = s3.getSignedUrl("getObject", solicitorParams);
+    solicitorSignedUrl = s3.getSignedUrl("getObject", solicitorParams);
+  }
     //
+
+    // Service Building URL generation
+    let serviceBuildingSignedUrl;
+    const serviceBuildingUrl = authSchedule.services[0]?.report;
+    if (serviceBuildingUrl) {
+      const serviceBuildingUrlObj = new URL(serviceBuildingUrl);
+      const serviceBuildingKey = serviceBuildingUrlObj.pathname.startsWith("/")
+        ? serviceBuildingUrlObj.pathname.substring(1)
+        : serviceBuildingUrlObj.pathname;
+
+      const serviceBuildingParams = {
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: serviceBuildingKey,
+        Expires: 3600, // URL expires in 1 hour
+      };
+
+      serviceBuildingSignedUrl = s3.getSignedUrl(
+        "getObject",
+        serviceBuildingParams
+      );
+    }
+
+    // Service Strata URL generation
+    let serviceStrataSignedUrl;
+    const serviceStrataUrl = authSchedule.services[1]?.report;
+    if (serviceStrataUrl) {
+      const serviceStrataUrlObj = new URL(serviceStrataUrl);
+      const serviceStrataKey = serviceStrataUrlObj.pathname.startsWith("/")
+        ? serviceStrataUrlObj.pathname.substring(1)
+        : serviceStrataUrlObj.pathname;
+
+      const serviceStrataParams = {
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: serviceStrataKey,
+        Expires: 3600, // URL expires in 1 hour
+      };
+
+      serviceStrataSignedUrl = s3.getSignedUrl(
+        "getObject",
+        serviceStrataParams
+      );
+    }
 
     // Loop through vendors to get licences
     const vendors = authSchedule.vendors || [];
@@ -4468,6 +4718,15 @@ exports.getAllSignatureUrl = async (req, res) => {
         vendors: vendorsWithLicenceUrls,
         proofUrl: proofSignedUrl,
         solicitorUrl: solicitorSignedUrl,
+        ...(solicitorSignedUrl && {
+          solicitorUrl: solicitorSignedUrl,
+        }),
+        ...(serviceBuildingSignedUrl && {
+          serviceBuildingUrl: serviceBuildingSignedUrl,
+        }),
+        ...(serviceStrataSignedUrl && {
+          serviceStrataUrl: serviceStrataSignedUrl,
+        }),
       },
     });
   } catch (error) {
@@ -4940,7 +5199,7 @@ exports.updateAuthSchedule = async (req, res) => {
 
     const { name, email } = authScheduleExists.userId;
 
-    const { vendors, address, solicitor } = authScheduleExists;
+    const { vendors, address, solicitor, services } = authScheduleExists;
 
     const vendor = vendors[index];
 
@@ -5397,6 +5656,208 @@ exports.updateAuthSchedule = async (req, res) => {
         { $set: { "boxStatus.3.status": "complete" } }
       );
 
+      //
+      await sendConciergeEmail(
+        "sufiyan@ausrealty.com.au", // moussa.c@themarketrun.com.au
+        `Fruit box Request: ${address}`, // Subject
+        `
+       <div style="text-align: center;">
+        <img
+          style="border: none; margin-top: 30px;margin-bottom: 30px"
+          src="https://myapp.ausrealty.com.au/img/ausrealtylogo.png"
+          alt="Ausrealty eSign"
+          width="130"
+        />
+      </div>
+      <p>Hi Team,</p>
+      <p>Could we please order a fruit box for our vendors</p>
+      ${vendors
+        .map(
+          (vendor) => `
+        <p>
+          Name: ${vendor.firstName} ${vendor.lastName} <br />
+          Address: ${vendor.address} <br />
+          Mobile: ${vendor.mobile}
+        </p>
+      `
+        )
+        .join("")}
+        
+      <p>
+        Please feel free to contact our office should you have any further queries.
+      </p>
+      <p>Thank you</p>` // Email content
+        // ["Anabel.m@ausrealty.com.au"] // CC list
+      );
+
+      if (services[0].value !== "No") {
+        await sendConciergeEmail(
+          "riverwood@ausrealty.com.au", // inspect@absolutepropertyinspections.com.au
+          `Building & Pest report: ${address}`, // Subject
+          `
+         <div style="text-align: center;">
+          <img
+            style="border: none; margin-top: 30px;margin-bottom: 30px"
+            src="https://myapp.ausrealty.com.au/img/ausrealtylogo.png"
+            alt="Ausrealty eSign"
+            width="130"
+          />
+        </div>
+        <p>Hi Team,</p>
+        <p>We would like to request the building and pest inspection for ${address}</p>
+        <p>Agent: ${name}</p>
+        <p>Please contact the vendor to organise on:</p>
+        ${vendors
+          .map(
+            (vendor) => `
+          <p>
+            Name: ${vendor.firstName} ${vendor.lastName} <br />
+            Email: ${vendor.email} <br />
+            Mobile: ${vendor.mobile}
+          </p>
+        `
+          )
+          .join("")}
+         <table role="presentation" border="0" width="100%" cellspacing="0" cellpadding="0">
+      <tbody>
+          <tr>
+              <td style="padding: 30px 0px;" align="center">
+                  <a style="
+                font-size: 15px;
+                color: #ffffff;
+                background-color: #000000;
+                font-family: Helvetica, Arial, Sans Serif;
+                font-weight: bold;
+                text-align: center;
+                text-decoration: none;
+                border-radius: 2px;
+                display: inline-block;
+              " href="${REACT_APP_FRONTEND_URL}/upload/serviceBuilding/${propertyId}" target="_blank" rel="noopener">
+                      <span style="padding: 0px 24px; line-height: 44px;">
+                          Upload Document
+                      </span>
+                  </a>
+              </td>
+          </tr>
+      </tbody>
+  </table>
+        <p>Thank you</p>`, // Email content
+          [email, "welcome@ausrealty.com.au"] // CC list
+        );
+        services[0].sentDate = formatDateToAEDT(null);
+      }
+
+      if (services[1].value !== "No") {
+        await sendConciergeEmail(
+          "riverwood@ausrealty.com.au", // inspect@absolutepropertyinspections.com.au
+          `Strata report: ${address}`, // Subject
+          `
+         <div style="text-align: center;">
+          <img
+            style="border: none; margin-top: 30px;margin-bottom: 30px"
+            src="https://myapp.ausrealty.com.au/img/ausrealtylogo.png"
+            alt="Ausrealty eSign"
+            width="130"
+          />
+        </div>
+        <p>Hi Team,</p>
+        <p>We would like to request the strata report for ${address}</p>
+        <p>Agent: ${name}</p>
+        <p>Please contact the vendor to organise on:</p>
+        ${vendors
+          .map(
+            (vendor) => `
+          <p>
+            Name: ${vendor.firstName} ${vendor.lastName} <br />
+            Email: ${vendor.email} <br />
+            Mobile: ${vendor.mobile}
+          </p>
+        `
+          )
+          .join("")}
+         <table role="presentation" border="0" width="100%" cellspacing="0" cellpadding="0">
+      <tbody>
+          <tr>
+              <td style="padding: 30px 0px;" align="center">
+                  <a style="
+                font-size: 15px;
+                color: #ffffff;
+                background-color: #000000;
+                font-family: Helvetica, Arial, Sans Serif;
+                font-weight: bold;
+                text-align: center;
+                text-decoration: none;
+                border-radius: 2px;
+                display: inline-block;
+              " href="${REACT_APP_FRONTEND_URL}/upload/serviceStrata/${propertyId}" target="_blank" rel="noopener">
+                      <span style="padding: 0px 24px; line-height: 44px;">
+                          Upload Document
+                      </span>
+                  </a>
+              </td>
+          </tr>
+      </tbody>
+  </table>
+        <p>Thank you</p>`, // Email content
+          [email, "welcome@ausrealty.com.au"] // CC list
+        );
+        services[1].sentDate = formatDateToAEDT(null);
+      }
+
+      if (services[2].value !== "No") {
+        let stylingEmail;
+
+        switch (services[2].value) {
+          case "Urban chic":
+            stylingEmail = "kristy@urbanchic.net.au";
+            break;
+          case "Style to sell":
+            stylingEmail = "rola@styletosellproperties.com.au";
+            break;
+          case "Little styling co":
+            stylingEmail = "hello@thelittlestylingco.com";
+            break;
+          default:
+            stylingEmail = ""; // In case there's an unexpected value
+        }
+
+        await sendConciergeEmail(
+          "riverwood@ausrealty.com.au", // stylingEmail
+          `Styling: ${address}`, // Subject
+          `
+         <div style="text-align: center;">
+          <img
+            style="border: none; margin-top: 30px;margin-bottom: 30px"
+            src="https://myapp.ausrealty.com.au/img/ausrealtylogo.png"
+            alt="Ausrealty eSign"
+            width="130"
+          />
+        </div>
+        <p>Hi Team,</p>
+        <p>We would like to request styling for ${address}</p>
+        <p>Agent: ${name}</p>
+        <p>Please contact the vendor to organise on:</p>
+        ${vendors
+          .map(
+            (vendor) => `
+          <p>
+            Name: ${vendor.firstName} ${vendor.lastName} <br />
+            Email: ${vendor.email} <br />
+            Mobile: ${vendor.mobile}
+          </p>
+        `
+          )
+          .join("")}
+        <p>Thank you</p>`, // Email content
+          [email, "welcome@ausrealty.com.au"] // CC list
+        );
+        services[2].sentDate = formatDateToAEDT(null);
+      }
+
+      authScheduleExists.services = services;
+      authScheduleExists.markModified("services");
+      //
+
       authScheduleExists.isCompleted = allVendorsAgree ? true : false;
       authScheduleExists.agreementDate = allVendorsAgree
         ? formatDateToAEDT(null)
@@ -5697,6 +6158,42 @@ exports.fileUpload = async (req, res) => {
       // await authSchedule.save();
       // Mark solicitor as modified since it's a Mixed type
       authSchedule.markModified("solicitor");
+
+      // Save the updated document
+      await authSchedule.save();
+    }
+
+    if (path === "serviceBuilding") {
+      // Send email notification
+      await sendConciergeEmail(
+        email, // Recipient email
+        `Building and Pest Report Uploaded for ${address}`, // Subject
+        `Hi ${name}, the Building and Pest report has just been uploaded for ${address}.`
+      );
+
+      // Update solicitor contract URL in AuthSchedule document
+      authSchedule.services[0].report = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${params.Key}`;
+
+      // Mark solicitor as modified since it's a Mixed type
+      authSchedule.markModified("services");
+
+      // Save the updated document
+      await authSchedule.save();
+    }
+
+    if (path === "serviceStrata") {
+      // Send email notification
+      await sendConciergeEmail(
+        email, // Recipient email
+        `Strata Report Uploaded for ${address}`, // Subject
+        `Hi ${name}, the Strata report has just been uploaded for ${address}.`
+      );
+
+      // Update solicitor contract URL in AuthSchedule document
+      authSchedule.services[0].report = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${params.Key}`;
+
+      // Mark solicitor as modified since it's a Mixed type
+      authSchedule.markModified("services");
 
       // Save the updated document
       await authSchedule.save();
