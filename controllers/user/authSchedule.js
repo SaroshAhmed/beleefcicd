@@ -28,7 +28,6 @@ const formatDate = (dateString, options = {}) => {
 
 exports.generatePdf = async (req, res) => {
   try {
-
     const {
       vendors,
       solicitor,
@@ -45,7 +44,7 @@ exports.generatePdf = async (req, res) => {
       recommendedSold,
       recommendedSales,
       agreementDate,
-      agent
+      agent,
     } = req.body.content;
 
     const {
@@ -58,7 +57,7 @@ exports.generatePdf = async (req, res) => {
       gst,
       abn,
       signature,
-    } =  req.user ? req.user : agent;
+    } = req.user ? req.user : agent;
 
     let agentSignature = req.body.content.agentSignature;
 
@@ -528,9 +527,15 @@ exports.generatePdf = async (req, res) => {
                   .map(
                     (vendor) => `
                 <tr class="border-b">
-                    <td class="py-2 px-3">${vendor.firstName} ${vendor.lastName}</td>
-                    <td class="py-2 px-3"> <img src=${vendor.signature} alt="vendor sign" class="w-auto h-8"></img></td>
-                    <td class="py-2 px-3">${vendor.signedDate?vendor.signedDate:''}</td>
+                    <td class="py-2 px-3">${vendor.firstName} ${
+                      vendor.lastName
+                    }</td>
+                    <td class="py-2 px-3"> <img src=${
+                      vendor.signature
+                    } alt="vendor sign" class="w-auto h-8"></img></td>
+                    <td class="py-2 px-3">${
+                      vendor.signedDate ? vendor.signedDate : ""
+                    }</td>
                 </tr>
                 `
                   )
@@ -2125,9 +2130,15 @@ const generateAgreement = async (agent, content, propertyId) => {
                     .map(
                       (vendor) => `
                   <tr class="border-b">
-                      <td class="py-2 px-3">${vendor.firstName} ${vendor.lastName}</td>
-                      <td class="py-2 px-3"> <img src=${vendor.signature} alt="agent sign" class="w-auto h-8"></img></td>
-                      <td class="py-2 px-3">${vendor.signedDate?vendor.signedDate:''}</td>
+                      <td class="py-2 px-3">${vendor.firstName} ${
+                        vendor.lastName
+                      }</td>
+                      <td class="py-2 px-3"> <img src=${
+                        vendor.signature
+                      } alt="agent sign" class="w-auto h-8"></img></td>
+                      <td class="py-2 px-3">${
+                        vendor.signedDate ? vendor.signedDate : ""
+                      }</td>
                   </tr>
                   `
                     )
@@ -3449,9 +3460,20 @@ const generateCertificate = async (agent, content, propertyId) => {
 
 const generateProof = async (agent, content, propertyId) => {
   try {
-    const { name } = agent;
-    const { vendors, propertyAddress, fraudPrevention, agentSignature } =
-      content;
+    const { name, signature } = agent;
+
+    // Create a deep copy of content
+    const contentCopy = structuredClone(
+      content.toObject ? content.toObject() : content
+    );
+
+    const { vendors, propertyAddress } = contentCopy;
+
+    let agentSignature = contentCopy.agentSignature;
+
+    if (!agentSignature) {
+      agentSignature = await getVendorSignatureUrl(signature);
+    }
 
     const proofContent = `<section>
 
@@ -4445,7 +4467,7 @@ exports.getAllSignatureUrl = async (req, res) => {
         agreementUrl: agreementSignedUrl,
         vendors: vendorsWithLicenceUrls,
         proofUrl: proofSignedUrl,
-        solicitorUrl:solicitorSignedUrl
+        solicitorUrl: solicitorSignedUrl,
       },
     });
   } catch (error) {
@@ -5566,55 +5588,129 @@ exports.deleteAuthSchedule = async (req, res) => {
   }
 };
 
+// exports.fileUpload = async (req, res) => {
+//   const mimeToExtension = {
+//     "application/pdf": "pdf",
+//     "application/msword": "doc",
+//     "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+//       "docx",
+//   };
+
+//   const { fileName, fileType, path, propertyId } = req.body;
+
+//   const authSchedule = await AuthSchedule.findOne({
+//     propertyId: new mongoose.Types.ObjectId(propertyId),
+//   }).populate("userId");
+//   const { solicitor, address } = authSchedule;
+//   const { name, email } = authSchedule.userId;
+
+//   const fileExtension = mimeToExtension[fileType];
+//   if (!fileExtension) {
+//     return res
+//       .status(400)
+//       .json({ success: false, message: "Unsupported file type" });
+//   }
+
+//   const params = {
+//     Bucket: process.env.S3_BUCKET_NAME,
+//     Key: `${path}/${propertyId}.${fileExtension}`,
+//     ContentType: fileType,
+//     Expires: 300, // URL valid for 5 minutes
+//   };
+
+//   s3.getSignedUrl("putObject", params, async (err, url) => {
+//     if (err) {
+//       return res.status(500).json({
+//         success: false,
+//         message: "Error generating presigned URL",
+//         error: err,
+//       });
+//     }
+//     if (path === "solicitor") {
+//       await sendConciergeEmail(
+//         email, // Recipient email
+//         `${solicitor.name} has just uploaded the contract of Sale for ${address}`, // Subject
+//         `Hi ${name}, ${solicitor.name} has just uploaded the contract of Sale for ${address}`
+//       );
+//       authSchedule.solicitor.contract=`https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${params.Key}`
+//       await authSchedule.save()
+//     }
+//     res.status(200).json({ success: true, url, key: params.Key });
+//   });
+// };
+
 exports.fileUpload = async (req, res) => {
-  const mimeToExtension = {
-    "application/pdf": "pdf",
-    "application/msword": "doc",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-      "docx",
-  };
+  try {
+    const mimeToExtension = {
+      "application/pdf": "pdf",
+      "application/msword": "doc",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        "docx",
+    };
 
-  const { fileName, fileType, path, propertyId } = req.body;
+    const { fileName, fileType, path, propertyId } = req.body;
 
-  const authSchedule = await AuthSchedule.findOne({
-    propertyId: new mongoose.Types.ObjectId(propertyId),
-  }).populate("userId");
-  const { solicitor, address } = authSchedule;
-  const { name, email } = authSchedule.userId;
-
-  const fileExtension = mimeToExtension[fileType];
-  if (!fileExtension) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Unsupported file type" });
-  }
-
-  const params = {
-    Bucket: process.env.S3_BUCKET_NAME,
-    Key: `${path}/${propertyId}.${fileExtension}`,
-    ContentType: fileType,
-    Expires: 300, // URL valid for 5 minutes
-  };
-
-  s3.getSignedUrl("putObject", params, async (err, url) => {
-    if (err) {
-      return res.status(500).json({
-        success: false,
-        message: "Error generating presigned URL",
-        error: err,
-      });
+    // Validate file type
+    const fileExtension = mimeToExtension[fileType];
+    if (!fileExtension) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Unsupported file type" });
     }
+
+    // Find the AuthSchedule document and populate user details
+    const authSchedule = await AuthSchedule.findOne({
+      propertyId: new mongoose.Types.ObjectId(propertyId),
+    }).populate("userId");
+
+    if (!authSchedule) {
+      return res
+        .status(404)
+        .json({ success: false, message: "AuthSchedule not found" });
+    }
+
+    const { solicitor, address } = authSchedule;
+    const { name, email } = authSchedule.userId;
+
+    // Define S3 parameters for generating the presigned URL
+    const params = {
+      Bucket: process.env.S3_BUCKET_NAME,
+      Key: `${path}/${propertyId}.${fileExtension}`,
+      ContentType: fileType,
+      Expires: 300, // URL valid for 5 minutes
+    };
+
+    // Generate signed URL
+    const url = await s3.getSignedUrlPromise("putObject", params);
+
     if (path === "solicitor") {
+      // Send email notification
       await sendConciergeEmail(
         email, // Recipient email
         `${solicitor.name} has just uploaded the contract of Sale for ${address}`, // Subject
-        `Hi ${name}, Solicitor ${solicitor.name} has just uploaded the contract of Sale for ${address}`
+        `Hi ${name}, ${solicitor.name} has just uploaded the contract of Sale for ${address}`
       );
-      authSchedule.solicitor.contract=`https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${params.Key}`
-      await authSchedule.save()
+
+      // Update solicitor contract URL in AuthSchedule document
+      authSchedule.solicitor.contract = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${params.Key}`;
+      console.log(authSchedule.solicitor);
+      // await authSchedule.save();
+      // Mark solicitor as modified since it's a Mixed type
+      authSchedule.markModified("solicitor");
+
+      // Save the updated document
+      await authSchedule.save();
     }
+
+    // Send response with signed URL and key
     res.status(200).json({ success: true, url, key: params.Key });
-  });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Error processing request",
+      error: err.message,
+    });
+  }
 };
 
 exports.getSignedUrl = async (req, res) => {
