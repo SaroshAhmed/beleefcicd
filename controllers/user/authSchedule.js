@@ -3270,7 +3270,13 @@ const generateCertificate = async (agent, content, propertyId) => {
       licenseNumber,
       gst,
       abn,
+      signature,
     } = agent;
+    // Create a deep copy of content
+    const contentCopy = structuredClone(
+      content.toObject ? content.toObject() : content
+    );
+
     const {
       vendors,
       solicitor,
@@ -3283,10 +3289,22 @@ const generateCertificate = async (agent, content, propertyId) => {
       commissionRange,
       marketing,
       propertyAddress,
+      address,
       recommendedSold,
       recommendedSales,
-      agentSignature,
-    } = content;
+      agreementDate,
+    } = contentCopy;
+
+    let agentSignature = contentCopy.agentSignature;
+
+    for (const vendor of vendors) {
+      if (vendor.signature) {
+        vendor.signature = await getVendorSignatureUrl(vendor.signature);
+      }
+    }
+    if (!agentSignature) {
+      agentSignature = await getVendorSignatureUrl(signature);
+    }
 
     const htmlContent = `
     <h1>A U S R E A L T Y</h1>
@@ -3467,7 +3485,7 @@ const generateProof = async (agent, content, propertyId) => {
       content.toObject ? content.toObject() : content
     );
 
-    const { vendors, propertyAddress } = contentCopy;
+    const { vendors, propertyAddress,address } = contentCopy;
 
     let agentSignature = contentCopy.agentSignature;
 
@@ -3491,7 +3509,7 @@ const generateProof = async (agent, content, propertyId) => {
     <br>
 
     <div>
-    <strong>PROPERTY ADDRESS:</strong> ${propertyAddress}
+    <strong>PROPERTY ADDRESS:</strong> ${propertyAddress || address}
     </div>
 
     <br>
