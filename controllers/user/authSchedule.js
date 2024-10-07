@@ -4239,6 +4239,31 @@ exports.createAuthSchedule = async (req, res) => {
       `
         )
         .join("")}
+        <p>For security and ease of communication, please upload the contract of sale upon completion. Both the vendor and the agent will be notified once the upload is complete.
+        </p>
+        <table role="presentation" border="0" width="100%" cellspacing="0" cellpadding="0">
+    <tbody>
+        <tr>
+            <td style="padding-top: 30px;" align="center">
+                <a style="
+              font-size: 15px;
+              color: #ffffff;
+              background-color: #000000;
+              font-family: Helvetica, Arial, Sans Serif;
+              font-weight: bold;
+              text-align: center;
+              text-decoration: none;
+              border-radius: 2px;
+              display: inline-block;
+            " href="${REACT_APP_FRONTEND_URL}/upload/solicitor/${propertyId}" target="_blank" rel="noopener">
+                    <span style="padding: 0px 24px; line-height: 44px;">
+                        Upload Document
+                    </span>
+                </a>
+            </td>
+        </tr>
+    </tbody>
+</table>
       <p>
         Please feel free to contact our office should you have any further queries.
       </p>
@@ -4341,6 +4366,7 @@ exports.getAllSignatureUrl = async (req, res) => {
 
     const agreementSignedUrl = s3.getSignedUrl("getObject", agreementParams);
 
+    //
     const proofUrl = authSchedule.proofId;
     const proofUrlObj = new URL(proofUrl);
     const proofKey = proofUrlObj.pathname.startsWith("/")
@@ -4354,6 +4380,22 @@ exports.getAllSignatureUrl = async (req, res) => {
     };
 
     const proofSignedUrl = s3.getSignedUrl("getObject", proofParams);
+    //
+
+    //
+    const solicitorUrl = authSchedule.solicitor?.contract;
+    const solicitorUrlObj = new URL(solicitorUrl);
+    const solicitorKey = solicitorUrlObj.pathname.startsWith("/")
+      ? solicitorUrlObj.pathname.substring(1)
+      : solicitorUrlObj.pathname;
+
+    const solicitorParams = {
+      Bucket: process.env.S3_BUCKET_NAME,
+      Key: solicitorKey,
+      Expires: 3600, // URL expires in 1 hour
+    };
+
+    const solicitorSignedUrl = s3.getSignedUrl("getObject", solicitorParams);
     //
 
     // Loop through vendors to get licences
@@ -4403,6 +4445,7 @@ exports.getAllSignatureUrl = async (req, res) => {
         agreementUrl: agreementSignedUrl,
         vendors: vendorsWithLicenceUrls,
         proofUrl: proofSignedUrl,
+        solicitorUrl:solicitorSignedUrl
       },
     });
   } catch (error) {
@@ -5284,6 +5327,8 @@ exports.updateAuthSchedule = async (req, res) => {
       `
         )
         .join("")}
+        <p>For security and ease of communication, please upload the contract of sale upon completion. Both the vendor and the agent will be notified once the upload is complete.
+        </p>
         <table role="presentation" border="0" width="100%" cellspacing="0" cellpadding="0">
     <tbody>
         <tr>
@@ -5565,6 +5610,8 @@ exports.fileUpload = async (req, res) => {
         `${solicitor.name} has just uploaded the contract of Sale for ${address}`, // Subject
         `Hi ${name}, Solicitor ${solicitor.name} has just uploaded the contract of Sale for ${address}`
       );
+      authSchedule.solicitor.contract=`https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${params.Key}`
+      await authSchedule.save()
     }
     res.status(200).json({ success: true, url, key: params.Key });
   });
