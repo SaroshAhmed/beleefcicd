@@ -5225,6 +5225,11 @@ exports.updateAuthSchedule = async (req, res) => {
     vendor.signedDate = signedDate;
     vendor.isSigned = isSigned;
 
+    if(!vendor.sentDate){
+      vendor.sentDate=formatDateToAEDT(null)
+      vendor.viewedDate=formatDateToAEDT(null)
+    }
+
     if (isSigned) {
       // Generate URL for vendor signature
       const signatureResult = await generatePresignedUrl(
