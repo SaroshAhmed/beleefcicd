@@ -108,50 +108,111 @@ exports.saveProfile = async (req, res) => {
         .json({ success: false, message: "User not found" });
     }
 
-     // Check if image is provided
-     if (image) {
+    // Check if image is provided
+    if (image) {
       // Check the image format and set appropriate ContentType
       const mimeTypeMatch = image.match(/^data:(image\/\w+);base64,/); // Extract mime type from base64 string
       if (!mimeTypeMatch) {
         return res.status(400).json({
           success: false,
-          message: 'Invalid image format',
+          message: "Invalid image format",
         });
       }
 
       const mimeType = mimeTypeMatch[1]; // e.g., 'image/png', 'image/jpeg', etc.
-      const imageExtension = mimeType.split('/')[1]; // Extract the extension (e.g., 'png', 'jpeg', 'jpg')
+      const imageExtension = mimeType.split("/")[1]; // Extract the extension (e.g., 'png', 'jpeg', 'jpg')
 
       // Decode base64 image to buffer
-      const imageBuffer = Buffer.from(image.split(',')[1], 'base64'); // Remove 'data:image/png;base64,' part
+      const imageBuffer = Buffer.from(image.split(",")[1], "base64"); // Remove 'data:image/png;base64,' part
 
       const imageKey = `pictures/${userId}.${imageExtension}`; // Each user's image saved in subfolder with user ID
 
       // Upload image to S3
-      await s3.putObject({
-        Bucket: process.env.S3_PUBLIC_BUCKET_NAME, // Your S3 bucket name
-        Key: imageKey,
-        Body: imageBuffer,
-        ContentEncoding: 'base64',
-        ContentType: mimeType, // Use the detected mime type (e.g., 'image/png', 'image/jpeg')
-        // ACL: 'public-read', // Optional: Make the image public
-        // CacheControl: 'no-cache', // Ensure the image is not cached
-        CacheControl: 'no-cache, no-store, must-revalidate',
-        Expires: 0,
-      }).promise();
+      await s3
+        .putObject({
+          Bucket: process.env.S3_PUBLIC_BUCKET_NAME, // Your S3 bucket name
+          Key: imageKey,
+          Body: imageBuffer,
+          ContentEncoding: "base64",
+          ContentType: mimeType, // Use the detected mime type (e.g., 'image/png', 'image/jpeg')
+          // ACL: 'public-read', // Optional: Make the image public
+          // CacheControl: 'no-cache', // Ensure the image is not cached
+          CacheControl: "no-cache, no-store, must-revalidate",
+          Expires: 0,
+        })
+        .promise();
 
       user.picture = `https://${process.env.S3_PUBLIC_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${imageKey}`;
     }
 
-    if(s3Key){
+    if (s3Key) {
       user.signature = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`;
     }
 
     user.company = company || user.company;
     user.title = title || user.title;
     user.mobile = mobile || user.mobile;
-    if(company){
-      user.abn = assignABN(company);
+
+    const companies = [
+      {
+        name: "Ausrealty (Riverwood) Pty Ltd (Licenced user of Ausrealty)",
+        gst: "Yes",
+        companyAddress: "166 Belmore Road, Riverwood NSW 2210",
+        licenseNumber: "10044297",
+      },
+      {
+        name: "KK Property Services Pty Ltd (Licenced user of Ausrealty)",
+        gst: "Yes",
+        companyAddress: "7 Padstow Parade, Padstow NSW 2211",
+        licenseNumber: "10074701",
+      },
+      {
+        name: "I.M Group Pty Ltd (Licenced user of Ausrealty)",
+        gst: "Yes",
+        companyAddress:
+          "Shop AG08, 52 Soldiers Parade, Edmondson Park NSW 2174",
+        licenseNumber: "10128898",
+      },
+      {
+        name: "MRL Property Group Pty Ltd (Licenced user of Ausrealty)",
+        gst: "Yes",
+        companyAddress: "51-53 Princes Highway, Sylvania NSW 2224",
+        licenseNumber: "10138644",
+      },
+      {
+        name: "Hani Property Services Pty Ltd (Licenced user of Ausrealty)",
+        gst: "Yes",
+        companyAddress: "166 Belmore Road, Riverwood NSW 2210",
+        licenseNumber: "10128535",
+      },
+      {
+        name: "Suti Investments Pty Ltd (Licenced user of Ausrealty)",
+        gst: "Yes",
+        companyAddress: "166 Belmore Road, Riverwood NSW 2210",
+        licenseNumber: "10094072",
+      },
+      {
+        name: "Anodos Enterprises Pty Ltd (Licenced user of Ausrealty)",
+        gst: "Yes",
+        companyAddress: "848 King Georges Road, South Hurstville NSW 2221",
+        licenseNumber: "10089089",
+      },
+      {
+        name: "I Sayed Investments Pty Ltd (Licenced user of Ausrealty)",
+        gst: "Yes",
+        companyAddress: "848 King Georges Road, South Hurstville NSW 2221",
+        licenseNumber: "10119295",
+      },
+    ];
+
+    // Match the company object with the company name provided in the request
+    const matchedCompany = companies.find((comp) => comp.name === company);
+
+    if (matchedCompany) {
+      user.abn = assignABN(matchedCompany);
+      user.gst = matchedCompany.gst;
+      user.companyAddress = matchedCompany.companyAddress;
+      user.licenseNumber = matchedCompany.licenseNumber;
     }
 
     user.profileComplete = true;
@@ -210,8 +271,6 @@ exports.saveProfile = async (req, res) => {
 //     res.status(500).json({ success: false, message: error.message });
 //   }
 // };
-
-
 
 exports.uploadImage = async (req, res) => {
   try {

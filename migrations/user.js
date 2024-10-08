@@ -64,7 +64,7 @@ async function addFieldsToUser() {
 
     for (const company of companies) {
       await User.updateMany(
-        { company: company.name},
+        { company: company.name, gst: null },
         {
           $set: {
             gst: company.gst,
