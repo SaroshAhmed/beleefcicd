@@ -9,7 +9,7 @@ const cookieParser = require("cookie-parser");
 const { MONGO_URI, SECRET_KEY, REACT_APP_FRONTEND_URL } = require("./config");
 
 const bookingReminder = require("./cronJobs/bookingReminder");
-const startPropertyUpdaterCron = require("./cronJobs/aiCleanup")
+const startPropertyUpdaterCron = require("./cronJobs/aiCleanup");
 const app = express();
 require("./config/passport");
 
@@ -20,9 +20,9 @@ require("./config/passport");
 //   })
 // );
 const allowedOrigins = [
-  'http://localhost:8080',
-  'https://beleef.com.au',
-  'https://www.beleef.com.au',
+  "http://localhost:8080",
+  "https://beleef.com.au",
+  "https://www.beleef.com.au",
 ];
 
 app.use(
@@ -30,19 +30,18 @@ app.use(
     origin: function (origin, callback) {
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-      
+
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(new Error('Not allowed by CORS'));
+        callback(new Error("Not allowed by CORS"));
       }
     },
     credentials: true,
   })
 );
 
-app.use(express.json({limit: '50mb'}));
-
+app.use(express.json({ limit: "50mb" }));
 
 app.use(
   session({
@@ -51,8 +50,8 @@ app.use(
     saveUninitialized: false,
     store: MongoStore.create({
       mongoUrl: MONGO_URI,
-      collectionName: 'sessions', // Ensure the collection name is correctly defined
-      autoRemove: 'native', // Automatically remove expired sessions
+      collectionName: "sessions", // Ensure the collection name is correctly defined
+      autoRemove: "native", // Automatically remove expired sessions
       stringify: false, // Avoids issues with saving undefined or null values as strings
     }),
     cookie: {

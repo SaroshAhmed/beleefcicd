@@ -108,6 +108,67 @@ async function generatePromptAndAnalyze(property) {
   }
 }
 
+async function getPropertySuggestion(address, suburb) {
+  try {
+    const response = await axios.get(
+      "https://api.pricefinder.com.au/v1/suggest/properties",
+      {
+        params: {
+          q: address,
+          match_ids: false,
+        },
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${process.env.PRICE_FINDER_KEY}`,
+        },
+      }
+    );
+
+    // Check if there are matches in the response
+    const matches = response.data.matches;
+    if (matches && matches.length > 0) {
+      const firstMatch = matches[0];
+
+      // Safely check if address and locality exist in the match
+      if (firstMatch.address && firstMatch.address.locality) {
+        // Compare locality with the provided suburb (case-insensitive)
+        if (
+          firstMatch.address.locality.toLowerCase() === suburb.toLowerCase()
+        ) {
+          return firstMatch.property.id;
+        } else {
+          return null;
+        }
+      } else {
+        return null;
+      }
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+async function getExtendedPropertyDetails(propertyId) {
+  try {
+    const response = await axios.get(
+      `https://api.pricefinder.com.au/v1/properties/${propertyId}/extended`,
+      {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${process.env.PRICE_FINDER_KEY}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching extended property details:", error);
+  }
+}
+
 const runtimeFetchProperty = async (
   address,
   suburb,
@@ -116,6 +177,34 @@ const runtimeFetchProperty = async (
   longitude
 ) => {
   try {
+    const propertyId = await getPropertySuggestion(address, suburb);
+    if (propertyId) {
+      const response = await getExtendedPropertyDetails(propertyId);
+      const { features, landDetails, type } = response;
+
+      const property = await Property.create({
+        address: address.replace(/,? NSW.*$/, ""),
+        listingType: "Sale",
+        price: null,
+        postcode: postcode,
+        suburb: suburb.toUpperCase(),
+        latitude,
+        longitude,
+        channel: "residential",
+        fetchMode: "manual",
+        isCleaned: false, //
+        dataSource: "priceFinder",
+        bedrooms: features?.bedrooms || null,
+        bathrooms: features?.bathrooms || null,
+        carspaces: features?.carParks || null,
+        pool: features?.pool || null,
+        propertyType: type || null,
+        landArea: landDetails?.propertyArea || null,
+        buildingArea: landDetails?.propertyArea || null,
+      });
+      return property;
+    }
+
     const property = await Property.create({
       address: address.replace(/,? NSW.*$/, ""),
       listingType: "Sale",
@@ -396,7 +485,7 @@ exports.updateProperty = async (req, res) => {
       "lowEndProperties",
       "vendorDetails",
       "marketingPrice",
-      "microPockets"
+      "microPockets",
     ];
 
     // Build the update query by including only allowed fields

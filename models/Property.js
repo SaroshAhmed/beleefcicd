@@ -168,6 +168,7 @@ const propertySchema = new Schema(
     logicalPrice: { type: String, default: null },
     logicalReasoning: { type: String, default: null },
     engagedPurchaser: { type: String, default: null },
+    dataSource: { type: String, default: null },
     isCleaned: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date, default: null },
