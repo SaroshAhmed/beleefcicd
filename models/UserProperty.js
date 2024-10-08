@@ -221,6 +221,9 @@ const userPropertySchema = new Schema(
     marketingItems: {
       type: [String],
     },
+    saleHistory: { type: Schema.Types.Mixed, default: null },
+    listingHistory: { type: Schema.Types.Mixed, default: null },
+    rentalHistory: { type: Schema.Types.Mixed, default: null },
     isCleaned: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date, default: null },
