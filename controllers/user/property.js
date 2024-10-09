@@ -22,7 +22,7 @@ async function areaDynamics(suburb) {
         description: null,
       };
     }
-    
+
     // Get the maximum year from both houseStats and unitStats
     const houseYears = suburbData.houseStats.map((stat) => stat.year);
     const unitYears = suburbData.unitStats.map((stat) => stat.year);
@@ -773,27 +773,77 @@ Suburb: ${property.suburb}`,
       (jsonFormat = false)
     );
 
+    // const sixMonthsAgo = new Date();
+    // sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    // const recentAreaSoldProcessQuery = {
+    //   suburb: property.suburb, // Matching the suburb field of the property
+    //   _id: { $ne: property._id }, // Ensures the property is not the same as the one being processed
+    //   beleefSaleProcess: {
+    //     $in: ["Private treaty adjustment", "Not sold at auction", "Withdrawn"], // Filters by specific sale processes
+    //   },
+    //   listingType: "Sold", // Filters for current listings
+    //   "saleHistory.sales": {
+    //     $elemMatch: {
+    //       $expr: {
+    //         $gte: [
+    //           { $dateFromString: { dateString: "$saleDate.display", format: "%d/%m/%Y" } }, // Converts string to Date
+    //           sixMonthsAgo
+    //         ]
+    //       }
+    //     }
+    //   }
+    // };
+
+    // const currentAreaProcessQuery = {
+    //   suburb: property.suburb, // Matching the suburb field of the property
+    //   _id: { $ne: property._id }, // Ensures the property is not the same as the one being processed
+    //   beleefSaleProcess: {
+    //     $in: ["Private treaty adjustment", "Not sold at auction", "Withdrawn"], // Filters by specific sale processes
+    //   },
+    //   listingType: "Sale", // Filters for current listings
+    //   "saleHistory.sales": {
+    //     $elemMatch: {
+    //       $expr: {
+    //         $gte: [
+    //           { $dateFromString: { dateString: "$saleDate.display", format: "%d/%m/%Y" } }, // Converts string to Date
+    //           sixMonthsAgo
+    //         ]
+    //       }
+    //     }
+    //   }
+    // };
+
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-    const recentAreaSoldProcessQuery = {
-      suburb: property.suburb,
-      dateListed: { $gte: sixMonthsAgo }, // Last 6 months
-      listingId: { $ne: property.listingId }, // Not equal to property.listingId
+    // Convert sixMonthsAgo to DD/MM/YYYY format
+    const day = String(sixMonthsAgo.getDate()).padStart(2, "0");
+    const month = String(sixMonthsAgo.getMonth() + 1).padStart(2, "0"); // Months are zero-indexed
+    const year = sixMonthsAgo.getFullYear();
+    const sixMonthsAgoString = `${day}/${month}/${year}`;
+
+    // MongoDB Query
+    const currentAreaProcessQuery = {
+      suburb: property.suburb, // Matching the suburb field of the property
+      _id: { $ne: property._id }, // Ensures the property is not the same as the one being processed
       beleefSaleProcess: {
-        $in: ["Private treaty adjustment", "Not sold at auction", "Withdrawn"],
+        $in: ["Private treaty adjustment", "Not sold at auction", "Withdrawn"], // Filters by specific sale processes
       },
-      listingType: "Sold",
+      listingType: "Sale", // Filters for sold listings
+      "saleHistory.sales.0.saleDate.display": { $gte: sixMonthsAgoString }, // Directly access the first element
+      listingHistory: { $ne: null }
     };
 
-    const currentAreaProcessQuery = {
-      suburb: property.suburb,
-      dateListed: { $gte: sixMonthsAgo }, // Last 6 months
-      listingId: { $ne: property.listingId }, // Not equal to property.listingId
+    const recentAreaSoldProcessQuery = {
+      suburb: property.suburb, // Matching the suburb field of the property
+      _id: { $ne: property._id }, // Ensures the property is not the same as the one being processed
       beleefSaleProcess: {
-        $in: ["Private treaty adjustment", "Not sold at auction", "Withdrawn"],
+        $in: ["Private treaty adjustment", "Not sold at auction", "Withdrawn"], // Filters by specific sale processes
       },
-      listingType: "Sale",
+      listingType: "Sold", // Filters for sold listings
+      "saleHistory.sales.0.saleDate.display": { $gte: sixMonthsAgoString }, // Directly access the first element
+      listingHistory: { $ne: null }
     };
 
     const duplexPropertiesQuery = {
@@ -845,8 +895,11 @@ Suburb: ${property.suburb}`,
     );
 
     const checkProcess = () => {
-      console.log(sourceDevelopmentPotential)
-      if (sourceDevelopmentPotential !== null && sourceDevelopmentPotential!=="") {
+      console.log(sourceDevelopmentPotential);
+      if (
+        sourceDevelopmentPotential !== null &&
+        sourceDevelopmentPotential !== ""
+      ) {
         return "Auction - Development Site";
       }
 

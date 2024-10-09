@@ -49,7 +49,7 @@ const initializeServiceAccountClient = () => {
   return client;
 };
 
-exports.createBooking = async (req, res) => { 
+exports.createBooking = async (req, res) => {
   if (!req.isAuthenticated()) {
     return res.redirect("/auth/google");
   }
@@ -73,7 +73,8 @@ exports.createBooking = async (req, res) => {
   const firstName = nameArray[0];
   const lastName = nameArray.length > 1 ? nameArray[1] : "";
 
-  const { vendors, startTime, endTime, address, property } = req.body;
+  const { vendors, startTime, endTime, address, property, followers } =
+    req.body;
 
   const agent = {
     firstName,
@@ -132,6 +133,12 @@ ${agent.firstName} ${agent.lastName}
           displayName: `${agent.firstName} ${agent.lastName}`, // Agent name
         },
         ...validVendorAttendees, // Only vendors with valid emails are added
+        ...(followers?.length
+          ? followers.map((follower) => ({
+              email: follower.email, // Agent email
+              displayName: follower.name, // Use full name from follower
+            }))
+          : []),
       ],
       reminders: {
         useDefault: false,
@@ -161,6 +168,7 @@ ${agent.firstName} ${agent.lastName}
       name,
       address,
       vendors,
+      followers,
       agent,
       startTime,
       endTime,
@@ -203,6 +211,38 @@ ${agent.firstName} ${agent.lastName}
 
       // Await all SMS sends
       await Promise.all(smsPromises);
+
+      if (followers && followers.length > 0) {
+        const smsFPromises = followers.map((follower) => {
+          const nameArray = follower.name.toString().split(" ");
+          const firstName = nameArray[0];
+          const lastName = nameArray.length > 1 ? nameArray[1] : "";
+
+          const recipient = {
+            firstName,
+            lastName,
+            mobile: follower.mobile,
+          };
+
+          return sendSms(
+            "create",
+            recipient,
+            agent,
+            startTime,
+            prelistLink,
+            address
+          )
+            .then(() => {
+              // console.log(`SMS sent successfully to ${vendor.mobile}`);
+            })
+            .catch((error) => {
+              console.error(`Error sending SMS to ${vendor.mobile}`, error);
+            });
+        });
+
+        // Await all SMS sends
+        await Promise.all(smsFPromises);
+      }
     } catch (error) {
       console.error("Error during booking creation or SMS sending", error);
       res.status(500).json({ success: false, message: error.message });
@@ -213,7 +253,6 @@ ${agent.firstName} ${agent.lastName}
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 
 exports.rescheduleBooking = async (req, res) => {
   if (!req.isAuthenticated()) {
@@ -233,7 +272,7 @@ exports.rescheduleBooking = async (req, res) => {
       });
     }
 
-    const { googleEventId, vendors, address, agent } = booking;
+    const { googleEventId, vendors, address, agent, followers } = booking;
 
     // Use the authenticated user's OAuth2 credentials for event rescheduling
     const oauth2Client = new google.auth.OAuth2();
@@ -248,11 +287,11 @@ exports.rescheduleBooking = async (req, res) => {
     const serviceOauth2Client = await serviceAccountClient.getClient(); // Get the authenticated client
 
     const validVendorAttendees = vendors
-    .filter((vendor) => vendor.email) // Remove vendors without an email
-    .map((vendor) => ({
-      email: vendor.email,
-      displayName: `${vendor.firstName} ${vendor.lastName}`,
-    }));
+      .filter((vendor) => vendor.email) // Remove vendors without an email
+      .map((vendor) => ({
+        email: vendor.email,
+        displayName: `${vendor.firstName} ${vendor.lastName}`,
+      }));
 
     // Update the existing event in Google Calendar
     const updatedEvent = {
@@ -263,7 +302,13 @@ exports.rescheduleBooking = async (req, res) => {
           email: agent.email, // Agent email
           displayName: `${agent.firstName} ${agent.lastName}`, // Agent name
         },
-        ...validVendorAttendees
+        ...validVendorAttendees,
+        ...(followers?.length
+          ? followers.map((follower) => ({
+              email: follower.email, // Agent email
+              displayName: follower.name, // Use full name from follower
+            }))
+          : []),
       ],
       reminders: {
         useDefault: false,
@@ -325,6 +370,38 @@ exports.rescheduleBooking = async (req, res) => {
         booking.prelistLink,
         address
       );
+
+      if (followers && followers.length > 0) {
+        const smsFPromises = followers.map((follower) => {
+          const nameArray = follower.name.toString().split(" ");
+          const firstName = nameArray[0];
+          const lastName = nameArray.length > 1 ? nameArray[1] : "";
+
+          const recipient = {
+            firstName,
+            lastName,
+            mobile: follower.mobile,
+          };
+
+          return sendSms(
+            "update",
+            recipient,
+            agent,
+            newStartTime,
+            booking.prelistLink,
+            address
+          )
+            .then(() => {
+              // console.log(`SMS sent successfully to ${vendor.mobile}`);
+            })
+            .catch((error) => {
+              console.error(`Error sending SMS to ${follower.mobile}`, error);
+            });
+        });
+
+        // Await all SMS sends
+        await Promise.all(smsFPromises);
+      }
     } catch (error) {
       console.error("Error during booking rescheduling or SMS sending", error);
       res.status(500).json({ success: false, message: error.message });
@@ -357,7 +434,8 @@ exports.cancelBooking = async (req, res) => {
       });
     }
 
-    const { googleEventId, vendors, agent, address, startTime } = booking;
+    const { googleEventId, vendors, agent, address, startTime, followers } =
+      booking;
 
     // Use the authenticated user's OAuth2 credentials for deleting the event
     const oauth2Client = new google.auth.OAuth2();
@@ -423,6 +501,38 @@ exports.cancelBooking = async (req, res) => {
         booking.prelistLink,
         address
       );
+
+      if (followers && followers.length > 0) {
+        const smsFPromises = followers.map((follower) => {
+          const nameArray = follower.name.toString().split(" ");
+          const firstName = nameArray[0];
+          const lastName = nameArray.length > 1 ? nameArray[1] : "";
+
+          const recipient = {
+            firstName,
+            lastName,
+            mobile: follower.mobile,
+          };
+
+          return sendSms(
+            "cancel",
+            agent,
+            agent,
+            startTime,
+            booking.prelistLink,
+            address
+          )
+            .then(() => {
+              // console.log(`SMS sent successfully to ${vendor.mobile}`);
+            })
+            .catch((error) => {
+              console.error(`Error sending SMS to ${follower.mobile}`, error);
+            });
+        });
+
+        // Await all SMS sends
+        await Promise.all(smsFPromises);
+      }
     } catch (error) {
       console.error("Error during booking cancellation or SMS sending", error);
       res.status(500).json({ success: false, message: error.message });

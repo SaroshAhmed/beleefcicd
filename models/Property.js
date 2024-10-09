@@ -169,6 +169,7 @@ const propertySchema = new Schema(
     logicalReasoning: { type: String, default: null },
     engagedPurchaser: { type: String, default: null },
     dataSource: { type: String, default: null },
+    pfRun: { type: Boolean, default: null },
     isCleaned: { type: Boolean, default: false },
     saleHistory: { type: Schema.Types.Mixed, default: null },
     listingHistory: { type: Schema.Types.Mixed, default: null },

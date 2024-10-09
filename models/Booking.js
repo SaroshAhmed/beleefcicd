@@ -23,6 +23,9 @@ const bookingSchema = new mongoose.Schema({
   address: { type: String, required: true },
   vendors: [vendorSchema],
   agent: agentSchema,
+  followers: {
+    type: [Schema.Types.Mixed],
+  },
   startTime: { type: Date, required: true },
   endTime: { type: Date, required: true },
   googleEventId: { type: String, required: true },
