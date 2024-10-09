@@ -197,7 +197,7 @@ const runtimeFetchProperty = async (
         bedrooms: features?.bedrooms || null,
         bathrooms: features?.bathrooms || null,
         carspaces: features?.carParks || null,
-        pool: features?.pool || null,
+        pool: features?.pool !== undefined ? (features.pool ? "Yes" : "No") : null,
         propertyType: type || null,
         landArea: landDetails?.propertyArea || null,
         buildingArea: landDetails?.propertyArea || null,
