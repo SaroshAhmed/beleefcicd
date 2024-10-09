@@ -57,6 +57,7 @@ exports.generatePdf = async (req, res) => {
       gst,
       abn,
       signature,
+      conjunctionAgent
     } = req.user ? req.user : agent;
 
     let agentSignature = req.body.content.agentSignature;
@@ -114,16 +115,41 @@ exports.generatePdf = async (req, res) => {
       )
       .join("")}
     <br>
-    <div>
-        <h3>LICENSEE</h3>
-        <div><strong>BUSINESS NAME:</strong> ${company} <strong>ABN:</strong> ${abn} <strong>Registered for
-                GST:</strong> ${gst}</div>
-        <div><strong>NAME:</strong> ${name}</div>
-        <div><strong>ADDRESS:</strong> ${companyAddress}</div>
-        <div><strong>PHONE:</strong> ${mobile}</div>
-        <div><strong>EMAIL:</strong> ${email}</div>
-        <div><strong>LICENCE NUMBER:</strong> ${licenseNumber}</div>
-    </div>
+
+    ${conjunctionAgent === "Yes" ? `
+      <div>
+          <h3>LICENSEE</h3>
+          <div><strong>BUSINESS NAME:</strong> Ausrealty (Riverwood) Pty Ltd (Licenced user of Ausrealty) <strong>ABN:</strong> 97 610 838 643 <strong>Registered for
+                  GST:</strong> Yes </div>
+          <div><strong>ADDRESS:</strong> 166 Belmore Road, Riverwood NSW 2210 </div>
+          <div><strong>PHONE:</strong> 0290116888 </div>
+          <div><strong>EMAIL:</strong> riverwood@ausrealty.com.au </div>
+          <div><strong>LICENCE NUMBER:</strong> 10044297 </div>
+      </div>
+      <br>
+      <div>
+          <h3>CONJUNCTION AGENT</h3>
+          <div><strong>NAME:</strong> ${name}</div>
+          <div><strong>ABN:</strong> ${abn}</div>
+          <div><strong>Registered for GST:</strong> ${gst}</div>
+          <div><strong>ADDRESS:</strong> ${companyAddress}</div>
+          <div><strong>PHONE:</strong> ${mobile}</div>
+          <div><strong>EMAIL:</strong> ${email}</div>
+          <div><strong>LICENCE NUMBER:</strong> ${licenseNumber}</div>
+      </div>` 
+  : 
+  `
+      <div>
+          <h3>LICENSEE</h3>
+          <div><strong>BUSINESS NAME:</strong> ${company} <strong>ABN:</strong> ${abn} <strong>Registered for GST:</strong> ${gst}</div>
+          <div><strong>NAME:</strong> ${name}</div>
+          <div><strong>ADDRESS:</strong> ${companyAddress}</div>
+          <div><strong>PHONE:</strong> ${mobile}</div>
+          <div><strong>EMAIL:</strong> ${email}</div>
+          <div><strong>LICENCE NUMBER:</strong> ${licenseNumber}</div>
+      </div>
+  `}
+
     <br>
     <div>
         <h3>VENDORS SOLICITOR/CONVEYANCER</h3>
@@ -1636,6 +1662,7 @@ const generateAgreement = async (agent, content, propertyId) => {
       gst,
       abn,
       signature,
+      conjunctionAgent
     } = agent;
     // Create a deep copy of content
     const contentCopy = structuredClone(
@@ -1717,16 +1744,41 @@ const generateAgreement = async (agent, content, propertyId) => {
         )
         .join("")}
       <br>
+     
+       ${conjunctionAgent === "Yes" ? `
       <div>
           <h3>LICENSEE</h3>
-          <div><strong>BUSINESS NAME:</strong> ${company} <strong>ABN:</strong> ${abn} <strong>Registered for
-                  GST:</strong> ${gst}</div>
+          <div><strong>BUSINESS NAME:</strong> Ausrealty (Riverwood) Pty Ltd (Licenced user of Ausrealty) <strong>ABN:</strong> 97 610 838 643 <strong>Registered for
+                  GST:</strong> Yes </div>
+          <div><strong>ADDRESS:</strong> 166 Belmore Road, Riverwood NSW 2210 </div>
+          <div><strong>PHONE:</strong> 0290116888 </div>
+          <div><strong>EMAIL:</strong> riverwood@ausrealty.com.au </div>
+          <div><strong>LICENCE NUMBER:</strong> 10044297 </div>
+      </div>
+      <br>
+      <div>
+          <h3>CONJUNCTION AGENT</h3>
+          <div><strong>NAME:</strong> ${name}</div>
+          <div><strong>ABN:</strong> ${abn}</div>
+          <div><strong>Registered for GST:</strong> ${gst}</div>
+          <div><strong>ADDRESS:</strong> ${companyAddress}</div>
+          <div><strong>PHONE:</strong> ${mobile}</div>
+          <div><strong>EMAIL:</strong> ${email}</div>
+          <div><strong>LICENCE NUMBER:</strong> ${licenseNumber}</div>
+      </div>` 
+  : 
+  `
+      <div>
+          <h3>LICENSEE</h3>
+          <div><strong>BUSINESS NAME:</strong> ${company} <strong>ABN:</strong> ${abn} <strong>Registered for GST:</strong> ${gst}</div>
           <div><strong>NAME:</strong> ${name}</div>
           <div><strong>ADDRESS:</strong> ${companyAddress}</div>
           <div><strong>PHONE:</strong> ${mobile}</div>
           <div><strong>EMAIL:</strong> ${email}</div>
           <div><strong>LICENCE NUMBER:</strong> ${licenseNumber}</div>
       </div>
+  `}
+
       <br>
       <div>
           <h3>VENDORS SOLICITOR/CONVEYANCER</h3>

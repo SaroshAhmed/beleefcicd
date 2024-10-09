@@ -29,6 +29,9 @@ const userSchema = new mongoose.Schema(
     companyAddress: {
       type: String,
     },
+    conjunctionAgent: {
+      type: String,
+    },
     accessToken: String,
     refreshToken: String,
   },
