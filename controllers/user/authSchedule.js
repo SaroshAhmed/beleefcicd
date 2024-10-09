@@ -129,7 +129,7 @@ exports.generatePdf = async (req, res) => {
       <br>
       <div>
           <h3>CONJUNCTION AGENT</h3>
-          <div><strong>NAME:</strong> ${name}</div>
+          <div><strong>NAME:</strong> ${company}</div>
           <div><strong>ABN:</strong> ${abn}</div>
           <div><strong>Registered for GST:</strong> ${gst}</div>
           <div><strong>ADDRESS:</strong> ${companyAddress}</div>
@@ -1758,7 +1758,7 @@ const generateAgreement = async (agent, content, propertyId) => {
       <br>
       <div>
           <h3>CONJUNCTION AGENT</h3>
-          <div><strong>NAME:</strong> ${name}</div>
+          <div><strong>NAME:</strong> ${company}</div>
           <div><strong>ABN:</strong> ${abn}</div>
           <div><strong>Registered for GST:</strong> ${gst}</div>
           <div><strong>ADDRESS:</strong> ${companyAddress}</div>
