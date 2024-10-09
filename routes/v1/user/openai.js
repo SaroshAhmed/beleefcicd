@@ -6,7 +6,6 @@ const multer = require("multer");
 // Set up multer storage configuration (you can change destination as per your need)
 const storage = multer.memoryStorage(); // Store files in memory (you can configure for file system)
 const upload = multer({ storage });
-const { isAuthenticated } = require("../../../middleware/auth");
 
 router.post("/text", isAuthenticated, text);
 router.post("/image", upload.array("files"), isAuthenticated, image);
