@@ -11,6 +11,7 @@ const openaiRoutes = require("./openai");
 const postListRoutes = require("./postList");
 const authScheduleRoutes = require("./authSchedule");
 const marketingPriceRoutes = require("./marketingPrice");
+const userRoutes = require("./user");
 
 router.use("/auth", authRoutes);
 router.use("/profile", profileRoutes);
@@ -22,4 +23,6 @@ router.use("/openai", openaiRoutes);
 router.use("/postList", postListRoutes);
 router.use("/authSchedule", authScheduleRoutes);
 router.use("/marketingPrice", marketingPriceRoutes);
+router.use("/user", userRoutes);
+
 module.exports = router;
