@@ -773,8 +773,8 @@ Suburb: ${property.suburb}`,
       (jsonFormat = false)
     );
 
-    // const sixMonthsAgo = new Date();
-    // sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
     // const recentAreaSoldProcessQuery = {
     //   suburb: property.suburb, // Matching the suburb field of the property
@@ -814,14 +814,15 @@ Suburb: ${property.suburb}`,
     //   }
     // };
 
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12); // Subtract 12 months
 
-    // Convert sixMonthsAgo to DD/MM/YYYY format
-    const day = String(sixMonthsAgo.getDate()).padStart(2, "0");
-    const month = String(sixMonthsAgo.getMonth() + 1).padStart(2, "0"); // Months are zero-indexed
-    const year = sixMonthsAgo.getFullYear();
-    const sixMonthsAgoString = `${day}/${month}/${year}`;
+    const parseDate = (dateString) => {
+      const parsedDate = new Date(dateString);
+      console.log("Parsed sale date:", parsedDate); // Check the parsed date
+      return parsedDate;
+    };
+    
 
     // MongoDB Query
     const currentAreaProcessQuery = {
@@ -831,8 +832,7 @@ Suburb: ${property.suburb}`,
         $in: ["Private treaty adjustment", "Not sold at auction", "Withdrawn"], // Filters by specific sale processes
       },
       listingType: "Sale", // Filters for sold listings
-      "saleHistory.sales.0.saleDate.display": { $gte: sixMonthsAgoString }, // Directly access the first element
-      listingHistory: { $ne: null }
+      // "saleHistory.sales.0.saleDate.value": { $gte: twelveMonthsAgo }, // Directly access the first element
     };
 
     const recentAreaSoldProcessQuery = {
@@ -842,8 +842,7 @@ Suburb: ${property.suburb}`,
         $in: ["Private treaty adjustment", "Not sold at auction", "Withdrawn"], // Filters by specific sale processes
       },
       listingType: "Sold", // Filters for sold listings
-      "saleHistory.sales.0.saleDate.display": { $gte: sixMonthsAgoString }, // Directly access the first element
-      listingHistory: { $ne: null }
+      // "saleHistory.sales.0.saleDate.value": { $gte: twelveMonthsAgo }, // Directly access the first element
     };
 
     const duplexPropertiesQuery = {
@@ -857,7 +856,30 @@ Suburb: ${property.suburb}`,
     const recentAreaSoldProcess = await Property.find(
       recentAreaSoldProcessQuery
     );
+
     const currentAreaProcess = await Property.find(currentAreaProcessQuery);
+
+    // Filter the properties based on the converted saleDate.value
+const filteredRProperties = recentAreaSoldProcess.filter((property) => {
+  const saleDateValue = property?.saleHistory?.sales?.[0]?.saleDate?.value;
+  if (saleDateValue) {
+    const saleDate = parseDate(saleDateValue); // Convert string to Date object
+    console.log("Comparing sale date:", saleDate, "with", twelveMonthsAgo); 
+    return saleDate >= twelveMonthsAgo; // Perform the comparison
+  }
+  return false; // Exclude properties without a valid saleDate.value
+});
+
+const filteredCProperties = currentAreaProcess.filter((property) => {
+  const saleDateValue = property?.saleHistory?.sales?.[0]?.saleDate?.value;
+  if (saleDateValue) {
+    const saleDate = parseDate(saleDateValue); // Convert string to Date object
+    return saleDate >= twelveMonthsAgo; // Perform the comparison
+  }
+  return false; // Exclude properties without a valid saleDate.value
+});
+  
+
     const duplexProperties = await Property.find(duplexPropertiesQuery).sort({
       price: -1,
     });
@@ -930,8 +952,8 @@ Suburb: ${property.suburb}`,
       logicalReasoning: logical.logicalReasoning,
       recommendedSales,
       recommendedSold,
-      recentAreaSoldProcess,
-      currentAreaProcess,
+      recentAreaSoldProcess:filteredRProperties,
+      currentAreaProcess:filteredCProperties,
       duplexProperties,
       engagedPurchaser,
       recommendedSaleProcess,

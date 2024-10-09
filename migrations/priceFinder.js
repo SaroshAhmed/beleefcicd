@@ -10,7 +10,7 @@ databaseConnect();
 async function updatePropertyHistories() {
   try {
     // Step 1: Fetch all properties with address field
-    const properties = await Property.find({}, "address");
+    const properties = await Property.find({ saleHistory: null }, "address");
 
     const abbreviationsMap = {
       ST: "STREET",
