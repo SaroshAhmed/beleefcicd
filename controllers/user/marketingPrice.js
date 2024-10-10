@@ -76,14 +76,6 @@ exports.fetchReaPricingAPI = async (req,res) => {
 
 exports.getAllMarketingPrices = async (req, res) => {
   try {
-    const data = {
-      suburb: "Peakhurst",
-      state: "NSW",
-      postcode: "2210",
-      agency_id: "RPKRUK",
-    };
-    const res1=await fetchReaPricingAPI(data);
-    console.log(res1)
     const marketingPrices = await MarketingPrice.find();
     res.status(200).json({ success: true, data: marketingPrices });
   } catch (error) {
