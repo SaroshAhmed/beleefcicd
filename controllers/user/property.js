@@ -776,53 +776,10 @@ Suburb: ${property.suburb}`,
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-    // const recentAreaSoldProcessQuery = {
-    //   suburb: property.suburb, // Matching the suburb field of the property
-    //   _id: { $ne: property._id }, // Ensures the property is not the same as the one being processed
-    //   beleefSaleProcess: {
-    //     $in: ["Private treaty adjustment", "Not sold at auction", "Withdrawn"], // Filters by specific sale processes
-    //   },
-    //   listingType: "Sold", // Filters for current listings
-    //   "saleHistory.sales": {
-    //     $elemMatch: {
-    //       $expr: {
-    //         $gte: [
-    //           { $dateFromString: { dateString: "$saleDate.display", format: "%d/%m/%Y" } }, // Converts string to Date
-    //           sixMonthsAgo
-    //         ]
-    //       }
-    //     }
-    //   }
-    // };
-
-    // const currentAreaProcessQuery = {
-    //   suburb: property.suburb, // Matching the suburb field of the property
-    //   _id: { $ne: property._id }, // Ensures the property is not the same as the one being processed
-    //   beleefSaleProcess: {
-    //     $in: ["Private treaty adjustment", "Not sold at auction", "Withdrawn"], // Filters by specific sale processes
-    //   },
-    //   listingType: "Sale", // Filters for current listings
-    //   "saleHistory.sales": {
-    //     $elemMatch: {
-    //       $expr: {
-    //         $gte: [
-    //           { $dateFromString: { dateString: "$saleDate.display", format: "%d/%m/%Y" } }, // Converts string to Date
-    //           sixMonthsAgo
-    //         ]
-    //       }
-    //     }
-    //   }
-    // };
-
     const twelveMonthsAgo = new Date();
     twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12); // Subtract 12 months
 
-    const parseDate = (dateString) => {
-      const parsedDate = new Date(dateString);
-      console.log("Parsed sale date:", parsedDate); // Check the parsed date
-      return parsedDate;
-    };
-    
+    const parseDate = (dateString) => new Date(dateString);
 
     // MongoDB Query
     const currentAreaProcessQuery = {
@@ -833,6 +790,7 @@ Suburb: ${property.suburb}`,
       },
       listingType: "Sale", // Filters for sold listings
       // "saleHistory.sales.0.saleDate.value": { $gte: twelveMonthsAgo }, // Directly access the first element
+      "listingHistory.listings": { $exists: true, $ne: [] },
     };
 
     const recentAreaSoldProcessQuery = {
@@ -843,6 +801,7 @@ Suburb: ${property.suburb}`,
       },
       listingType: "Sold", // Filters for sold listings
       // "saleHistory.sales.0.saleDate.value": { $gte: twelveMonthsAgo }, // Directly access the first element
+      "listingHistory.listings": { $exists: true, $ne: [] },
     };
 
     const duplexPropertiesQuery = {
@@ -855,30 +814,29 @@ Suburb: ${property.suburb}`,
 
     const recentAreaSoldProcess = await Property.find(
       recentAreaSoldProcessQuery
-    );
+    ).select('address beleefSaleProcess saleHistory listingHistory');
 
-    const currentAreaProcess = await Property.find(currentAreaProcessQuery);
+    const currentAreaProcess = await Property.find(currentAreaProcessQuery).select('address beleefSaleProcess saleHistory listingHistory');
 
     // Filter the properties based on the converted saleDate.value
-const filteredRProperties = recentAreaSoldProcess.filter((property) => {
-  const saleDateValue = property?.saleHistory?.sales?.[0]?.saleDate?.value;
-  if (saleDateValue) {
-    const saleDate = parseDate(saleDateValue); // Convert string to Date object
-    console.log("Comparing sale date:", saleDate, "with", twelveMonthsAgo); 
-    return saleDate >= twelveMonthsAgo; // Perform the comparison
-  }
-  return false; // Exclude properties without a valid saleDate.value
-});
+    const filteredRProperties = recentAreaSoldProcess.filter((property) => {
+      const saleDateValue = property?.saleHistory?.sales?.[0]?.saleDate?.value;
+      if (saleDateValue) {
+        const saleDate = parseDate(saleDateValue); // Convert string to Date object
+        console.log("Comparing sale date:", saleDate, "with", twelveMonthsAgo);
+        return saleDate >= twelveMonthsAgo; // Perform the comparison
+      }
+      return false; // Exclude properties without a valid saleDate.value
+    });
 
-const filteredCProperties = currentAreaProcess.filter((property) => {
-  const saleDateValue = property?.saleHistory?.sales?.[0]?.saleDate?.value;
-  if (saleDateValue) {
-    const saleDate = parseDate(saleDateValue); // Convert string to Date object
-    return saleDate >= twelveMonthsAgo; // Perform the comparison
-  }
-  return false; // Exclude properties without a valid saleDate.value
-});
-  
+    const filteredCProperties = currentAreaProcess.filter((property) => {
+      const saleDateValue = property?.saleHistory?.sales?.[0]?.saleDate?.value;
+      if (saleDateValue) {
+        const saleDate = parseDate(saleDateValue); // Convert string to Date object
+        return saleDate >= twelveMonthsAgo; // Perform the comparison
+      }
+      return false; // Exclude properties without a valid saleDate.value
+    });
 
     const duplexProperties = await Property.find(duplexPropertiesQuery).sort({
       price: -1,
@@ -952,8 +910,8 @@ const filteredCProperties = currentAreaProcess.filter((property) => {
       logicalReasoning: logical.logicalReasoning,
       recommendedSales,
       recommendedSold,
-      recentAreaSoldProcess:filteredRProperties,
-      currentAreaProcess:filteredCProperties,
+      recentAreaSoldProcess: filteredRProperties,
+      currentAreaProcess: filteredCProperties,
       duplexProperties,
       engagedPurchaser,
       recommendedSaleProcess,
@@ -983,8 +941,8 @@ const filteredCProperties = currentAreaProcess.filter((property) => {
         logical,
         recommendedSales,
         recommendedSold,
-        recentAreaSoldProcess,
-        currentAreaProcess,
+        recentAreaSoldProcess: filteredRProperties,
+        currentAreaProcess: filteredCProperties,
         duplexProperties,
         recommendedSaleProcess,
         highEndProperties,
