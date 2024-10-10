@@ -2,7 +2,10 @@ const User = require("../../models/User");
 
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({}).select("name email phone picture mobile");
+    const { id } = req.user;
+    const users = await User.find({ _id: { $ne: id } }).select(
+      "name email phone picture mobile"
+    );
 
     if (!users) {
       return res
