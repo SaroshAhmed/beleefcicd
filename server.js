@@ -80,8 +80,8 @@ app.get("/", (req, res) => {
               <title>Welcome</title>
           </head>
           <body>
-              <h1>Welcome to Beleef APIs</h1>
-              <p>This is backend</p>
+              <h1>Welcome to Beleef Backend</h1>
+              <p>This is backend page</p>
           </body>
       </html>
   `;
