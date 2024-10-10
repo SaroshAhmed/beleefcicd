@@ -1,8 +1,11 @@
 // routes/marketingPriceRoutes.js
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { getAllMarketingPrices } = require('../../../controllers/user/marketingPrice');
+const {
+  getAllMarketingPrices,
+  fetchReaPricingAPI,
+} = require("../../../controllers/user/marketingPrice");
 
-router.get('/', getAllMarketingPrices);
-
+router.get("/", getAllMarketingPrices);
+router.get("/rea", fetchReaPricingAPI);
 module.exports = router;

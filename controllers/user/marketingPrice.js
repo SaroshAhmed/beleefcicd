@@ -44,14 +44,14 @@ const getToken = async () => {
 };
 
 // Controller function to fetch data from REA
-const fetchReaPricingAPI = async (data) => {
+exports.fetchReaPricingAPI = async (req,res) => {
   try {
     const validToken = await getToken();
     console.log("valid token", validToken);
     const apiUrl =
       "https://api.realestate.com.au/prices/v1/realestate-properties";
 
-    const { suburb, state, postcode, agency_id } = data;
+    const { suburb, state, postcode, agency_id } = req.query;
 
     const params = {
       suburb,
@@ -66,7 +66,8 @@ const fetchReaPricingAPI = async (data) => {
       },
       params: params,
     });
-    return response.data
+    // return response.data
+    res.status(200).json({ success: true, data: response.data });
   } catch (error) {
     console.error("Error fetching data from API:", error);
     throw error;

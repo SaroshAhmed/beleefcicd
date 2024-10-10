@@ -295,7 +295,7 @@ exports.createProperty = async (req, res) => {
       { label: "4", name: "Offers", selected: null },
       { label: "5", name: "Close Feedback", selected: null },
       { label: "6", name: "Vendor Acceptance", selected: null },
-      { label: "7", name: "Solid", selected: null },
+      { label: "7", name: "Sold", selected: null },
     ];
 
     if (property) {
