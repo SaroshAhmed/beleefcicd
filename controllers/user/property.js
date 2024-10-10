@@ -791,6 +791,7 @@ Suburb: ${property.suburb}`,
       listingType: "Sale", // Filters for sold listings
       // "saleHistory.sales.0.saleDate.value": { $gte: twelveMonthsAgo }, // Directly access the first element
       "listingHistory.listings": { $exists: true, $ne: [] },
+      propertyType:property.propertyType
     };
 
     const recentAreaSoldProcessQuery = {
@@ -802,6 +803,7 @@ Suburb: ${property.suburb}`,
       listingType: "Sold", // Filters for sold listings
       // "saleHistory.sales.0.saleDate.value": { $gte: twelveMonthsAgo }, // Directly access the first element
       "listingHistory.listings": { $exists: true, $ne: [] },
+      propertyType:property.propertyType
     };
 
     const duplexPropertiesQuery = {
@@ -823,7 +825,6 @@ Suburb: ${property.suburb}`,
       const saleDateValue = property?.saleHistory?.sales?.[0]?.saleDate?.value;
       if (saleDateValue) {
         const saleDate = parseDate(saleDateValue); // Convert string to Date object
-        console.log("Comparing sale date:", saleDate, "with", twelveMonthsAgo);
         return saleDate >= twelveMonthsAgo; // Perform the comparison
       }
       return false; // Exclude properties without a valid saleDate.value

@@ -197,7 +197,8 @@ const runtimeFetchProperty = async (
         bedrooms: features?.bedrooms || null,
         bathrooms: features?.bathrooms || null,
         carspaces: features?.carParks || null,
-        pool: features?.pool !== undefined ? (features.pool ? "Yes" : "No") : null,
+        pool:
+          features?.pool !== undefined ? (features.pool ? "Yes" : "No") : null,
         propertyType: type || null,
         landArea: landDetails?.propertyArea || null,
         buildingArea: landDetails?.propertyArea || null,
@@ -228,7 +229,7 @@ const runtimeFetchProperty = async (
 };
 
 exports.createProperty = async (req, res) => {
-  const { id } = req.user;
+  const { id, company } = req.user;
   const { address, suburb, postcode, latitude, longitude } = req.body;
 
   const extractStreetAddress = (fullAddress) => {
@@ -311,22 +312,292 @@ exports.createProperty = async (req, res) => {
         ...restPropertyData,
         boxStatus,
         processChain,
-        marketingPrice: "$5000-8000",
-        marketingItems: [
-          "Photography",
-          "Floorplan",
-          "Video",
-          "Copywriting",
-          "Styling",
-          "Brochures",
-          "Signboard",
-          "Mailcards",
-          "Social media",
-          "Realestate.com.au",
-          "Domain.com.au",
-          "Ausrealty.com.au",
-          "Auctioneer",
-        ],
+        marketing: {
+          categories: [
+            {
+              _id: "6703c393bc19928c57a02a3d",
+              category: "Signboards",
+              items: [
+                {
+                  name: "Melo - 8x4 Satin Laminated Edge Wrap Signboard",
+                  price: 375,
+                  _id: "6703c393bc19928c57a02a3e",
+                  isChecked: false,
+                },
+                {
+                  name: "Melo - 8x6 Satin Laminated Edge Wrap Signboard",
+                  price: 780,
+                  _id: "6703c393bc19928c57a02a3f",
+                  isChecked: false,
+                },
+                {
+                  name: "Melo - 8x6 Solar Illuminated Signboard",
+                  price: 1112,
+                  _id: "6703c393bc19928c57a02a40",
+                  isChecked: false,
+                },
+              ],
+              __v: 0,
+            },
+            {
+              _id: "6703c393bc19928c57a02a41",
+              category: "Internet Portals",
+              items: [
+                {
+                  name: "Realestate.com.au",
+                  price: "$0",
+                  _id: "6703c393bc19928c57a02a42",
+                  isChecked: false,
+                },
+                {
+                  name: "Domain.com.au",
+                  price: "$0",
+                  _id: "6703c393bc19928c57a02a43",
+                  isChecked: false,
+                },
+                {
+                  name: "Campaign Fee",
+                  price: "$40",
+                  _id: "6703c393bc19928c57a02a44",
+                  isChecked: false,
+                },
+              ],
+              __v: 0,
+            },
+            {
+              _id: "6703c393bc19928c57a02a23",
+              category: "Mailcards & Brochures",
+              items: [
+                {
+                  name: "Melo A6 Mailcard Double Sided Colour - Landscape - 300gsm Uncoated Bright White",
+                  price: 388,
+                  _id: "6703c393bc19928c57a02a24",
+                  isChecked: false,
+                },
+                {
+                  name: "Melo 16 Page A4 Booklet - 300gsm Uncoated Bright White Landscape (Short Edge Bound)",
+                  price: 358,
+                  _id: "6703c393bc19928c57a02a25",
+                  isChecked: false,
+                },
+                {
+                  name: "Melo 8 Page A5 Brochure - 300gsm Uncoated Bright White Landscape (Short Edge Bound)",
+                  price: 106,
+                  _id: "6703c393bc19928c57a02a26",
+                  isChecked: false,
+                },
+              ],
+              __v: 0,
+            },
+            {
+              _id: "6703c393bc19928c57a02a37",
+              category: "Video",
+              items: [
+                {
+                  name: "Melo - Property Video",
+                  price: 1150,
+                  _id: "6703c393bc19928c57a02a38",
+                  isChecked: false,
+                },
+                {
+                  name: "Melo - Storytelling Videos",
+                  price: 2200,
+                  _id: "6703c393bc19928c57a02a39",
+                  isChecked: false,
+                },
+              ],
+              __v: 0,
+            },
+            ...(company === "I.M Group Pty Ltd (Licenced user of Ausrealty)"
+              ? [
+                  {
+                    _id: "6703c393bc19928c57a02a48",
+                    category: "I.M Group",
+                    items: [
+                      {
+                        name: "The Merjan Group Package",
+                        price: 1500,
+                        _id: "6703c393bc19928c57a02a49",
+                        isChecked: false,
+                      },
+                      {
+                        name: "The Merjan Group Package with video",
+                        price: 2274,
+                        _id: "6703c393bc19928c57a02a4a",
+                        isChecked: false,
+                      },
+                      {
+                        name: "I.M Group Pty Ltd *realestate.com.au (Portal Export)",
+                        price: 2200,
+                        _id: "6703c393bc19928c57a02a4b",
+                        isChecked: false,
+                      },
+                      {
+                        name: "I.M Group Pty Ltd domain.com.au (API) - Existing Build",
+                        price: 250,
+                        _id: "6703c393bc19928c57a02a4c",
+                        isChecked: false,
+                      },
+                      {
+                        name: "The Merjan Group Auctioneer",
+                        price: 795,
+                        _id: "6703c393bc19928c57a02a4d",
+                        isChecked: false,
+                      },
+                      {
+                        name: "The Merjan Group DL Package",
+                        price: 532,
+                        _id: "6703c393bc19928c57a02a4e",
+                        isChecked: false,
+                      },
+                    ],
+                    __v: 0,
+                  },
+                ]
+              : []),
+            {
+              _id: "6703c393bc19928c57a02a3a",
+              category: "Copy & social media",
+              items: [
+                {
+                  name: "Melo - Property Copywriting",
+                  price: 140,
+                  _id: "6703c393bc19928c57a02a3b",
+                  isChecked: false,
+                },
+                {
+                  name: "Melo - Social Media Advertising",
+                  price: 300,
+                  _id: "6703c393bc19928c57a02a3c",
+                  isChecked: false,
+                },
+              ],
+              __v: 0,
+            },
+            {
+              _id: "6703c393bc19928c57a02a30",
+              category: "Floorplans",
+              items: [
+                {
+                  name: "Melo - Large Floor Plan",
+                  price: 319,
+                  _id: "6703c393bc19928c57a02a31",
+                  isChecked: false,
+                },
+                {
+                  name: "Melo - Medium Floor Plan",
+                  price: 242,
+                  _id: "6703c393bc19928c57a02a32",
+                  isChecked: false,
+                },
+                {
+                  name: "Melo - Small Floor Plan",
+                  price: 193,
+                  _id: "6703c393bc19928c57a02a33",
+                  isChecked: false,
+                },
+                {
+                  name: "Melo - Redraw Large Floorplan",
+                  price: 198,
+                  _id: "6703c393bc19928c57a02a34",
+                  isChecked: false,
+                },
+                {
+                  name: "Melo - Redraw Medium Floorplan",
+                  price: 143,
+                  _id: "6703c393bc19928c57a02a35",
+                  isChecked: false,
+                },
+                {
+                  name: "Melo - Redraw Small Floorplan",
+                  price: 99,
+                  _id: "6703c393bc19928c57a02a36",
+                  isChecked: false,
+                },
+              ],
+              __v: 0,
+            },
+            {
+              _id: "6703c393bc19928c57a02a45",
+              category: "Auctioneer",
+              items: [
+                {
+                  name: "Narz Sayed - Auctioneer",
+                  price: 550,
+                  _id: "6703c393bc19928c57a02a46",
+                  isChecked: false,
+                },
+                {
+                  name: "Andrew Cooley Auctioneer",
+                  price: 995,
+                  _id: "6703c393bc19928c57a02a47",
+                  isChecked: false,
+                },
+              ],
+              __v: 0,
+            },
+            {
+              _id: "6703c393bc19928c57a02a27",
+              category: "Photos",
+              items: [
+                {
+                  name: "Melo Photography - Photography 10 Images",
+                  price: 430,
+                  _id: "6703c393bc19928c57a02a28",
+                  isChecked: false,
+                },
+                {
+                  name: "Melo Photography - Photography 20 Images",
+                  price: 730,
+                  _id: "6703c393bc19928c57a02a29",
+                  isChecked: false,
+                },
+                {
+                  name: "Melo Photography - Photography 7 Images",
+                  price: 340,
+                  _id: "6703c393bc19928c57a02a2a",
+                  isChecked: false,
+                },
+                {
+                  name: "Melo Photography - Photography 5 Images",
+                  price: 280,
+                  _id: "6703c393bc19928c57a02a2b",
+                  isChecked: false,
+                },
+                {
+                  name: "Melo Photography - Dusk Photography",
+                  price: 160,
+                  _id: "6703c393bc19928c57a02a2c",
+                  isChecked: false,
+                },
+                {
+                  name: "Melo Photography - Drone Shots",
+                  price: 250,
+                  _id: "6703c393bc19928c57a02a2d",
+                  isChecked: false,
+                },
+                {
+                  name: "Melo Photography - Virtual Furniture 2 Images",
+                  price: 154,
+                  _id: "6703c393bc19928c57a02a2e",
+                  isChecked: false,
+                },
+                {
+                  name: "Melo Photography - Virtual Furniture 4 Images",
+                  price: 308,
+                  _id: "6703c393bc19928c57a02a2f",
+                  isChecked: false,
+                },
+              ],
+              __v: 0,
+            },
+          ],
+          agentContribution: {
+            amount: "$0",
+            isChecked: false,
+          },
+          total: 0,
+        },
         isCleaned: true,
       });
 
@@ -486,6 +757,7 @@ exports.updateProperty = async (req, res) => {
       "vendorDetails",
       "marketingPrice",
       "microPockets",
+      "marketing",
     ];
 
     // Build the update query by including only allowed fields

@@ -215,12 +215,7 @@ const userPropertySchema = new Schema(
       type: [Schema.Types.Mixed],
       default: null,
     },
-    marketingPrice: {
-      type: String,
-    },
-    marketingItems: {
-      type: [String],
-    },
+    marketing: { type: Schema.Types.Mixed, default: null },
     saleHistory: { type: Schema.Types.Mixed, default: null },
     listingHistory: { type: Schema.Types.Mixed, default: null },
     rentalHistory: { type: Schema.Types.Mixed, default: null },
