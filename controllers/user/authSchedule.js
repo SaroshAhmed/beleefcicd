@@ -1387,27 +1387,51 @@ exports.generatePdf = async (req, res) => {
 <br>
 <div class="page-break"></div>
 <div>
-    <h3 class="text-center">MARKETING</h3>
-    <table class="w-full border">
-        <tbody>
-            ${marketing?.marketingItems
-              ?.map(
-                (item) => `
-            <tr key={index} class="border-b">
-                <td class="px-4 py-2">${item.name}</td>
-                <td class="px-4 py-2"></td>
+  <h3 class="text-center">MARKETING</h3>
+ <table class="w-full border border-collapse border-gray-400">
+    <thead>
+      <tr>
+        <th class="border px-4 py-2 bg-gray-200 text-left">Item</th>
+        <th class="border px-4 py-2 bg-gray-200 text-left">Price</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${
+        marketing?.categories
+          ?.flatMap((category) =>
+            category.items.filter((item) => item.isChecked)
+          )
+          ?.map(
+            (item) => `
+            <tr key="${item._id}">
+              <td class="border px-4 py-2">${item.name || 'N/A'}</td>
+              <td class="border px-4 py-2">$${item.price || '0'}</td>
             </tr>`
-              )
-              .join("")}
+          )
+          .join('') || `
+          <tr>
+            <td class="border px-4 py-2" colspan="2">No items selected</td>
+          </tr>`
+      }
 
-            <tr>
-                <td class="border px-4 py-2 font-bold">TOTAL</td>
-                <td class=" px-4 py-2 flex items-center">
-                    ${marketing.marketingPrice}
-                </td>
-            </tr>
-        </tbody>
-    </table>
+      ${
+        marketing?.agentContribution?.isChecked
+          ? `
+          <tr>
+            <td class="border px-4 py-2">Agent Contribution</td>
+            <td class="border px-4 py-2">${marketing.agentContribution.amount || 'N/A'}</td>
+          </tr>`
+          : ''
+      }
+
+      <tr>
+        <td class="border px-4 py-2 font-bold">TOTAL</td>
+        <td class="border px-4 py-2">
+          $${marketing?.total || '0'}
+        </td>
+      </tr>
+    </tbody>
+  </table>
 </div>`;
 
     const styledhtmlContent = `
@@ -3015,29 +3039,54 @@ const generateAgreement = async (agent, content, propertyId) => {
   
   <br>
   <div class="page-break"></div>
-  <div>
-      <h3 class="text-center">MARKETING</h3>
-      <table class="w-full border">
-          <tbody>
-              ${marketing?.marketingItems
-                ?.map(
-                  (item) => `
-              <tr key={index} class="border-b">
-                  <td class="px-4 py-2">${item.name}</td>
-                  <td class="px-4 py-2"></td>
-              </tr>`
-                )
-                .join("")}
-  
-              <tr>
-                  <td class="border px-4 py-2 font-bold">TOTAL</td>
-                  <td class=" px-4 py-2 flex items-center">
-                      ${marketing.marketingPrice}
-                  </td>
-              </tr>
-          </tbody>
-      </table>
-  </div>`;
+<div>
+  <h3 class="text-center">MARKETING</h3>
+ <table class="w-full border border-collapse border-gray-400">
+    <thead>
+      <tr>
+        <th class="border px-4 py-2 bg-gray-200 text-left">Item</th>
+        <th class="border px-4 py-2 bg-gray-200 text-left">Price</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${
+        marketing?.categories
+          ?.flatMap((category) =>
+            category.items.filter((item) => item.isChecked)
+          )
+          ?.map(
+            (item) => `
+            <tr key="${item._id}">
+              <td class="border px-4 py-2">${item.name || 'N/A'}</td>
+              <td class="border px-4 py-2">$${item.price || '0'}</td>
+            </tr>`
+          )
+          .join('') || `
+          <tr>
+            <td class="border px-4 py-2" colspan="2">No items selected</td>
+          </tr>`
+      }
+
+      ${
+        marketing?.agentContribution?.isChecked
+          ? `
+          <tr>
+            <td class="border px-4 py-2">Agent Contribution</td>
+            <td class="border px-4 py-2">${marketing.agentContribution.amount || 'N/A'}</td>
+          </tr>`
+          : ''
+      }
+
+      <tr>
+        <td class="border px-4 py-2 font-bold">TOTAL</td>
+        <td class="border px-4 py-2">
+          $${marketing?.total || '0'}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+`;
 
     const styledAgreementContent = `
   <!DOCTYPE html>
