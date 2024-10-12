@@ -18,7 +18,7 @@ const data = [
     ]
   },
   {
-    category: "Photos, videos, plans, copy, social media",
+    category: "Photos",
     items: [
       { name: "Melo Photography - Photography 10 Images", price: 430 },
       { name: "Melo Photography - Photography 20 Images", price: 730 },
@@ -60,6 +60,7 @@ const data = [
     items: [
       { name: "Melo - 8x4 Satin Laminated Edge Wrap Signboard", price: 375 },
       { name: "Melo - 8x6 Satin Laminated Edge Wrap Signboard", price: 780 },
+      { name: "Melo - 8x4 Solar Illuminated Signboard", price: 830 },
       { name: "Melo - 8x6 Solar Illuminated Signboard", price: 1112 }
     ]
   },

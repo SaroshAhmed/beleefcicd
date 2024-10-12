@@ -8,6 +8,7 @@ const quickSearchSchema = new Schema(
       unique: true,
       required: true,
     },
+    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     property: {
       type: Schema.Types.Mixed,
       required: true,
@@ -27,18 +28,6 @@ const quickSearchSchema = new Schema(
     pieChartData: {
       type: [Array],
       required: true,
-    },
-    agent: {
-      type:  Schema.Types.Mixed,
-      required: true,
-    },
-    isDeleted: {
-      type: Boolean,
-      default: false,
-    },
-    deletedAt: {
-      type: Date,
-      default: null,
     },
   },
   {

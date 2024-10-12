@@ -5,13 +5,13 @@ const { REACT_APP_FRONTEND_URL } = require("../../config");
 
 exports.createQuickSearch = async (req, res) => {
   try {
+    const {id}=req.user
     const {
       property,
       saleProperties,
       soldProperties,
       areaDynamics,
       pieChartData,
-      agent,
     } = req.body;
 
     // Create a unique identifier for the property (could also be a slug or hash)
@@ -19,13 +19,13 @@ exports.createQuickSearch = async (req, res) => {
 
     // Save the property with the uniqueId in the database
     const quickSearch = new QuickSearch({
+      userId:id,
       shareableLink: uniqueId,
       property,
       saleProperties,
       soldProperties,
       areaDynamics,
       pieChartData,
-      agent,
     });
 
     await quickSearch.save();
@@ -42,7 +42,7 @@ exports.getQuickSearch = async (req, res) => {
   try {
     const { uuid } = req.params;
 
-    const quickSearch = await QuickSearch.findOne({ shareableLink: uuid });
+    const quickSearch = await QuickSearch.findOne({ shareableLink: uuid }).populate("userId");
 
     if (!quickSearch) {
       return res
@@ -50,7 +50,18 @@ exports.getQuickSearch = async (req, res) => {
         .json({ success: false, message: "Property not found" });
     }
 
-    res.status(200).json({ success: true, data: quickSearch });
+    const agent = {
+      name: quickSearch.userId.name,
+      email: quickSearch.userId.email,
+      picture: quickSearch.userId.picture
+    };
+
+    const result = {
+      ...quickSearch._doc,
+      agent,
+    };
+
+    res.status(200).json({ success: true, data: result });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: error.message });
@@ -74,7 +85,6 @@ exports.updateQuickSearch = async (req, res) => {
     if (saleProperties) quickSearch.saleProperties = saleProperties;
     if (areaDynamics) quickSearch.areaDynamics = areaDynamics;
     if (pieChartData) quickSearch.pieChartData = pieChartData;
-    if (agent) quickSearch.agent = agent;
 
     // Update soldProperties array (either replace or modify)
     if (soldProperties && Array.isArray(soldProperties)) {

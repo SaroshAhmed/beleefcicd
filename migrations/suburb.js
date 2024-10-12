@@ -25,7 +25,7 @@ const suburbs = [
   // { suburb: "Merrylands", postcode: "2160" },
   // { suburb: "Kyle Bay", postcode: "2221" },
   // { suburb: "South Hurstville", postcode: "2221" },
-  { suburb: "Penshurst", postcode: "2222" },
+  // { suburb: "Penshurst", postcode: "2222" },
   // { suburb: "Denham Court", postcode: "2565" },
   // { suburb: "Leppington", postcode: "2179" },
   // { suburb: "Austral", postcode: "2179" },

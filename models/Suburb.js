@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
 const suburbSchema = new mongoose.Schema(
   {
@@ -34,6 +35,8 @@ const suburbSchema = new mongoose.Schema(
     },
     listingsFetched: { type: Boolean, default: false },
     listingsFetchedAt: { type: Date, default: null },
+    reaPrice: { type: String },
+    domainPrice: { type: [Schema.Types.Mixed] },
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date, default: null },
   },
