@@ -1,5 +1,7 @@
 const axios = require("axios");
 const AWS = require("aws-sdk");
+const MarketingPrice = require("../models/MarketingPrice");
+const Suburb = require("../models/Suburb");
 
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -59,7 +61,6 @@ function formatDateToAEDT(date) {
 
 const getVendorSignatureUrl = async (signatureUrl) => {
   try {
-
     const urlObj = new URL(signatureUrl);
     // Remove the leading '/' from pathname to get the Key
     const key = urlObj.pathname.startsWith("/")
@@ -76,10 +77,12 @@ const getVendorSignatureUrl = async (signatureUrl) => {
     const signedUrl = s3.getSignedUrl("getObject", params);
 
     // Fetch the image from S3 using the signed URL
-    const response = await axios.get(signedUrl, { responseType: 'arraybuffer' });
+    const response = await axios.get(signedUrl, {
+      responseType: "arraybuffer",
+    });
 
     // Convert the image buffer to base64
-    const base64Image = Buffer.from(response.data, 'binary').toString('base64');
+    const base64Image = Buffer.from(response.data, "binary").toString("base64");
 
     // Return the base64 image in a data URL format
     return `data:image/jpeg;base64,${base64Image}`;
@@ -89,4 +92,91 @@ const getVendorSignatureUrl = async (signatureUrl) => {
   }
 };
 
-module.exports = { formatCurrency, formatDateToAEDT,getVendorSignatureUrl };
+const getMarketingPrices = async (company, price, suburb) => {
+  try {
+    // Handle price range (like $1.9-2.1M)
+    let maxPrice = price.split("-")[1] || price; // Take the higher range
+    maxPrice = maxPrice.toUpperCase().replace("$", "").trim(); // Remove $ and spaces
+
+    // Convert the price from K/M format
+    if (maxPrice.includes("M")) {
+      maxPrice = parseFloat(maxPrice.replace("M", "")) * 1_000_000; // Convert 'M' to millions
+    } else if (maxPrice.includes("K")) {
+      maxPrice = parseFloat(maxPrice.replace("K", "")) * 1_000; // Convert 'K' to thousands
+    } else {
+      maxPrice = parseFloat(maxPrice); // Regular number conversion
+    }
+
+    // Fetch the suburb data from the database
+    const suburbData = await Suburb.findOne({
+      suburb: new RegExp(`^${suburb}$`, "i"), // Case-insensitive match
+    });
+    if (!suburbData) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Suburb not found" });
+    }
+
+    const { reaPrice, domainPrice } = suburbData;
+
+    // Find the matching domainPrice range
+    const matchedPriceRange = domainPrice.find((range) => {
+      return maxPrice >= range.minPrice && maxPrice <= range.maxPrice;
+    });
+
+    if (!matchedPriceRange) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No matching price range found" });
+    }
+
+    const domainFee = matchedPriceRange.fee;
+
+    // Fetch marketing prices from the database
+    let data = await MarketingPrice.find();
+
+    // Remove the "I.M Group Pty Ltd (Licenced user of Ausrealty)" category if the company matches
+    if (company !== "I.M Group Pty Ltd (Licenced user of Ausrealty)") {
+      data = data.filter(
+        (item) =>
+          item.category !== "I.M Group"
+      );
+    }
+
+    // Update "Internet Portals" category with reaPrice and domainFee
+    data = data.map((item) => {
+      if (item.category === "Internet Portals") {
+        item.items = item.items.map((internetItem) => {
+          if (internetItem.name === "Realestate.com.au") {
+            internetItem.price = reaPrice ? parseFloat(reaPrice) : 0;
+          } else if (internetItem.name === "Domain.com.au") {
+            internetItem.price = domainFee ? parseFloat(domainFee) : 0;
+          }
+          return internetItem;
+        });
+      }
+      return item;
+    });
+
+    const marketing = {
+      categories: data,
+      agentContribution: {
+        amount: "$0",
+        isChecked: false,
+      },
+      total: 0,
+    };
+
+    return marketing;
+  } catch (error) {
+    console.log("Error:", error.message);
+    throw error;
+  }
+};
+
+module.exports = {
+  formatCurrency,
+  formatDateToAEDT,
+  getVendorSignatureUrl,
+  getMarketingPrices,
+};

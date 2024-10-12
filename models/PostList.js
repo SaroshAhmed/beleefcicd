@@ -4,6 +4,11 @@ const { Schema } = mongoose;
 const postListSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    propertyId: {
+      type: Schema.Types.ObjectId,
+      ref: "UserProperty",
+      required: true,
+    },
     address: { type: String, required: true },
     suburb: { type: String, required: true },
     ownerSituation: { type: String, required: true },

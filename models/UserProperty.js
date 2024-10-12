@@ -102,6 +102,9 @@ const userPropertySchema = new Schema(
     dateListed: { type: Date, default: null },
     daysListed: { type: Number, default: null },
     vendorDetails: [vendorDetailsSchema],
+    followers: {
+      type: [Schema.Types.Mixed],
+    },
     finishes: {
       type: String,
       enum: ["High-end finishes", "Updated", "Original"],

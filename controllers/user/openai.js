@@ -14,7 +14,7 @@ exports.text = async (req, res) => {
 
     // Find the prompt in the database
     const prompt = await Prompt.findOne({ name: systemPrompt });
-    console.log(prompt);
+   
     // Check if the prompt exists
     if (!prompt) {
       return res

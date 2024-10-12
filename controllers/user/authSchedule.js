@@ -6173,57 +6173,6 @@ exports.deleteAuthSchedule = async (req, res) => {
   }
 };
 
-// exports.fileUpload = async (req, res) => {
-//   const mimeToExtension = {
-//     "application/pdf": "pdf",
-//     "application/msword": "doc",
-//     "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-//       "docx",
-//   };
-
-//   const { fileName, fileType, path, propertyId } = req.body;
-
-//   const authSchedule = await AuthSchedule.findOne({
-//     propertyId: new mongoose.Types.ObjectId(propertyId),
-//   }).populate("userId");
-//   const { solicitor, address } = authSchedule;
-//   const { name, email } = authSchedule.userId;
-
-//   const fileExtension = mimeToExtension[fileType];
-//   if (!fileExtension) {
-//     return res
-//       .status(400)
-//       .json({ success: false, message: "Unsupported file type" });
-//   }
-
-//   const params = {
-//     Bucket: process.env.S3_BUCKET_NAME,
-//     Key: `${path}/${propertyId}.${fileExtension}`,
-//     ContentType: fileType,
-//     Expires: 300, // URL valid for 5 minutes
-//   };
-
-//   s3.getSignedUrl("putObject", params, async (err, url) => {
-//     if (err) {
-//       return res.status(500).json({
-//         success: false,
-//         message: "Error generating presigned URL",
-//         error: err,
-//       });
-//     }
-//     if (path === "solicitor") {
-//       await sendConciergeEmail(
-//         email, // Recipient email
-//         `${solicitor.name} has just uploaded the contract of Sale for ${address}`, // Subject
-//         `Hi ${name}, ${solicitor.name} has just uploaded the contract of Sale for ${address}`
-//       );
-//       authSchedule.solicitor.contract=`https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${params.Key}`
-//       await authSchedule.save()
-//     }
-//     res.status(200).json({ success: true, url, key: params.Key });
-//   });
-// };
-
 exports.fileUpload = async (req, res) => {
   try {
     const mimeToExtension = {
@@ -6273,7 +6222,7 @@ exports.fileUpload = async (req, res) => {
       await sendConciergeEmail(
         email, // Recipient email
         `${solicitor.name} has just uploaded the contract of Sale for ${address}`, // Subject
-        `Hi ${name}, ${solicitor.name} has just uploaded the contract of Sale for ${address}`
+        `Hi ${name},<br> ${solicitor.name} has just uploaded the contract of Sale for ${address}.<br>Thank you`
       );
 
       // Update solicitor contract URL in AuthSchedule document

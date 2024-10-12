@@ -1,11 +1,14 @@
 const _ = require("lodash");
 const PostList = require("../../models/PostList");
+const UserProperty = require("../../models/UserProperty");
 const { v4: uuidv4 } = require("uuid");
+const { getMarketingPrices } = require("../../utils/helperFunctions");
+const mongoose = require("mongoose");
 
 // Create a new PostList
 exports.createPostList = async (req, res) => {
   try {
-    const { id } = req.user;
+    const { id, company } = req.user;
 
     // Create a unique identifier for the property (could also be a slug or hash)
     const uniqueId = uuidv4();
@@ -24,6 +27,7 @@ exports.createPostList = async (req, res) => {
       engagedPurchaser,
       vendors,
       recommendedSaleProcess,
+      propertyId,
     } = req.body;
 
     // Check if a UserProperty with the same userId and address already exists
@@ -64,6 +68,7 @@ exports.createPostList = async (req, res) => {
     // Use default vendors if vendors is null or undefined
     const finalVendors = vendors && vendors.length ? vendors : defaultVendors;
 
+    const marketing = await getMarketingPrices(company, logicalPrice, suburb);
     const newPostList = new PostList({
       userId: id,
       address,
@@ -79,27 +84,17 @@ exports.createPostList = async (req, res) => {
       processChain,
       engagedPurchaser,
       vendors: finalVendors,
-      marketingPrice: "$5000-8000",
-      marketingItems: [
-        "Photography",
-        "Floorplan",
-        "Video",
-        "Copywriting",
-        "Styling",
-        "Brochures",
-        "Signboard",
-        "Mailcards",
-        "Social media",
-        "Realestate.com.au",
-        "Domain.com.au",
-        "Ausrealty.com.au",
-        "Auctioneer",
-      ],
-
       recommendedSaleProcess,
+      propertyId,
     });
 
     const savedPostList = await newPostList.save();
+
+    await UserProperty.updateOne(
+      { _id: new mongoose.Types.ObjectId(propertyId) },
+      { $set: { marketing } }
+    );
+
     return res.status(201).json({ success: true, data: savedPostList });
   } catch (error) {
     console.error("Error creating PostList: ", error.message);
@@ -268,8 +263,11 @@ exports.getPostListByAddress = async (req, res) => {
     const postList = await PostList.findOne({
       userId: id,
       address,
-      isDeleted: false,
-    });
+    }).populate("propertyId").populate("userId");
+
+    const agent=postList.userId
+    const followers = postList.propertyId.followers;
+    const marketing = postList.propertyId.marketing;
 
     if (!postList) {
       return res
@@ -277,7 +275,14 @@ exports.getPostListByAddress = async (req, res) => {
         .json({ success: false, message: "PostList not found" });
     }
 
-    return res.status(200).json({ success: true, data: postList });
+    const result = {
+      ...postList._doc,
+      followers,
+      marketing,
+      agent
+    };
+
+    return res.status(200).json({ success: true, data: result });
   } catch (error) {
     console.error("Error fetching PostList: ", error.message);
     return res.status(500).json({ success: false, message: error.message });
@@ -288,10 +293,12 @@ exports.getPostListByAddress = async (req, res) => {
 exports.getPostListByShareableLink = async (req, res) => {
   try {
     const { shareableLink } = req.params;
+
     const postList = await PostList.findOne({
       shareableLink,
-      isDeleted: false,
-    });
+    }).populate("propertyId").populate("userId");
+
+
 
     if (!postList) {
       return res
@@ -299,7 +306,18 @@ exports.getPostListByShareableLink = async (req, res) => {
         .json({ success: false, message: "PostList not found" });
     }
 
-    return res.status(200).json({ success: true, data: postList });
+    const agent=postList.userId
+    const followers = postList.propertyId.followers;
+    const marketing = postList.propertyId.marketing;
+
+    const result = {
+      ...postList._doc,
+      followers,
+      marketing,
+      agent
+    };
+
+    return res.status(200).json({ success: true, data: result });
   } catch (error) {
     console.error("Error fetching PostList by Shareable Link: ", error.message);
     return res.status(500).json({ success: false, message: error.message });
