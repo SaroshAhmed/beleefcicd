@@ -5,34 +5,22 @@ require("dotenv").config();
 const sendEmail  = require("../../utils/emailService");
 const crypto = require("crypto");
 
-
-
-exports.signup = async (req, res) => {
+exports.register = async (req, res) => {
 	try {
 		const {
 			name,
 			email,
 			password,
-			confirmPassword,
-			role,
+            role
 		} = req.body;
 		if (
 			!name ||
 			!email ||
-			!password ||
-			!confirmPassword ||
-			!role
+			!password
 		) {
 			return res.status(403).send({
 				success: false,
-				message: "All Fields are required",
-			});
-		}
-		if (password !== confirmPassword) {
-			return res.status(400).json({
-				success: false,
-				message:
-					"Password and Confirm Password do not match. Please try again.",
+				message: "All fields are required",
 			});
 		}
 
@@ -50,8 +38,7 @@ exports.signup = async (req, res) => {
 			name,
 			email,
 			password: hashedPassword,
-			role,
-			
+			role,	
 		});
 
 		return res.status(200).json({
@@ -79,7 +66,7 @@ exports.login = async (req, res) => {
         if( !email || !password ){
             return res.status(403).json({
                 success:false,
-                message:"ALL FIELDS ARE REQUIRED",
+                message:"All fields are required",
             });
         }
 
@@ -87,12 +74,12 @@ exports.login = async (req, res) => {
         if(!user){
             return res.status(401).json({
                 success:false,
-                message:"user is not registered !!",
+                message:"User is not registered !!",
             });
         }
 
        
-        if(await bcrypt.compare(password, user.password)) {
+        if(bcrypt.compare(password, user.password)) {
             const payload = {
                 id: user._id,
                 role:user.role,
@@ -112,14 +99,13 @@ exports.login = async (req, res) => {
                 success:true,
                 token,
                 user,
-                message:"LOGGED IN SUCCESSFULLY",
+                message:"LoggedIn Successfully",
             });
-        
         }
         else{
             return res.status(401).json({
                 success:false,
-                message:"password doesnt matched !!",
+                message:"Email or Password is wrong",
             });
         }
 
@@ -127,7 +113,7 @@ exports.login = async (req, res) => {
         console.log(error);
         return res.status(500).json({
             success:false,
-            message:"user cannot LOGGED in, try again ",
+            message:error.message,
         }) 
     }
 } 

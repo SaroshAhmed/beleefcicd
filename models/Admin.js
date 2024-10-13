@@ -3,9 +3,12 @@ const mongoose = require('mongoose');
 const adminSchema = new mongoose.Schema({
   name: String,
   email: String,
-  role: { type: String},
   password: String,
-  confirmPassword: String,
+  role: {
+    type: String,
+    enum: ["superAdmin", "admin"],
+    default: "admin",
+  },
   resetPasswordToken :{
     type:String,
   },
@@ -17,5 +20,5 @@ const adminSchema = new mongoose.Schema({
   timestamps: true
 });
 
-const User = mongoose.model('Admin', adminSchema);
-module.exports = User;
+const Admin = mongoose.model('Admin', adminSchema);
+module.exports = Admin;

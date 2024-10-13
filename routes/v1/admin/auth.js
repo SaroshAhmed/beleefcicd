@@ -3,7 +3,7 @@ const router = express.Router();
 
 const {
     login,
-    signup,
+    register,
     logout,
     logoutFromAllDevices,
     resetPasswordToken,
@@ -15,7 +15,7 @@ const { auth } = require("../../../middleware/auth");
 router.post("/login", login)
 router.get("/logout", logout)
 router.get("/logoutfromalldevices",auth,logoutFromAllDevices)
-router.post("/signup", signup)
+router.post("/register", register)
 router.post("/reset-password-token", resetPasswordToken)
 router.post("/reset-password", resetPassword)
 
