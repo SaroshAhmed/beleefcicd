@@ -6106,7 +6106,7 @@ exports.updateViewedDate = async (req, res) => {
     const vendor = vendors[index];
 
     const post = {
-      msg: `Hi ${name}, ${vendor.firstName} ${vendor.lastName} has viewed the agreement for the property ${address}`,
+      msg: `Hi ${name}, ${vendor.firstName || 'Vendor'} ${vendor.lastName} has viewed the agreement for the property ${address}`,
     };
 
     const text = ` <html>
@@ -6186,7 +6186,7 @@ exports.updateViewedDate = async (req, res) => {
 
     await sendEmail(
       email, // Use agent's email
-      `${vendor.firstName} ${vendor.lastName} has viewed the agreement for the property ${address}`, // Subject
+      `${vendor.firstName || 'Vendor'} ${vendor.lastName} has viewed the agreement for the property ${address}`, // Subject
       text
     );
 

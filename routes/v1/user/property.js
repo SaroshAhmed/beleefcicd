@@ -8,6 +8,8 @@ const {
   getAreaDynamics,
   getBeleefSaleProcess,
   regenerateLogicalPrice,
+  getRecentAreaSoldProcess,
+  getSuburbsName,
 } = require("../../../controllers/user/property");
 const { isAuthenticated } = require("../../../middleware/auth");
 
@@ -21,5 +23,12 @@ router.post("/regenerateLogicalPrice", regenerateLogicalPrice);
 
 // Catch-all dynamic route should be last
 router.get("/address/:address", isAuthenticated, getPropertyByAddress); // <-- Dynamic route last
+
+router.get("/suburb/name", getSuburbsName); // Specific dynamic route
+
+router.get(
+  "/recentAreaSoldProcess/:suburb/:propertyType",
+  getRecentAreaSoldProcess
+); // Specific dynamic route
 
 module.exports = router;

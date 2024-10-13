@@ -782,28 +782,14 @@ Suburb: ${property.suburb}`,
     const parseDate = (dateString) => new Date(dateString);
 
     // MongoDB Query
-    const currentAreaProcessQuery = {
-      suburb: property.suburb, // Matching the suburb field of the property
-      _id: { $ne: property._id }, // Ensures the property is not the same as the one being processed
-      beleefSaleProcess: {
-        $in: ["Private treaty adjustment", "Not sold at auction", "Withdrawn"], // Filters by specific sale processes
-      },
-      listingType: "Sale", // Filters for sold listings
-      // "saleHistory.sales.0.saleDate.value": { $gte: twelveMonthsAgo }, // Directly access the first element
-      "listingHistory.listings": { $exists: true, $ne: [] },
-      propertyType:property.propertyType
-    };
-
     const recentAreaSoldProcessQuery = {
       suburb: property.suburb, // Matching the suburb field of the property
       _id: { $ne: property._id }, // Ensures the property is not the same as the one being processed
       beleefSaleProcess: {
         $in: ["Private treaty adjustment", "Not sold at auction", "Withdrawn"], // Filters by specific sale processes
       },
-      listingType: "Sold", // Filters for sold listings
-      // "saleHistory.sales.0.saleDate.value": { $gte: twelveMonthsAgo }, // Directly access the first element
       "listingHistory.listings": { $exists: true, $ne: [] },
-      propertyType:property.propertyType
+      propertyType: property.propertyType,
     };
 
     const duplexPropertiesQuery = {
@@ -816,21 +802,10 @@ Suburb: ${property.suburb}`,
 
     const recentAreaSoldProcess = await Property.find(
       recentAreaSoldProcessQuery
-    ).select('address beleefSaleProcess saleHistory listingHistory');
-
-    const currentAreaProcess = await Property.find(currentAreaProcessQuery).select('address beleefSaleProcess saleHistory listingHistory');
+    ).select("address beleefSaleProcess saleHistory listingHistory");
 
     // Filter the properties based on the converted saleDate.value
-    const filteredRProperties = recentAreaSoldProcess.filter((property) => {
-      const saleDateValue = property?.saleHistory?.sales?.[0]?.saleDate?.value;
-      if (saleDateValue) {
-        const saleDate = parseDate(saleDateValue); // Convert string to Date object
-        return saleDate >= twelveMonthsAgo; // Perform the comparison
-      }
-      return false; // Exclude properties without a valid saleDate.value
-    });
-
-    const filteredCProperties = currentAreaProcess.filter((property) => {
+    const filteredProperties = recentAreaSoldProcess.filter((property) => {
       const saleDateValue = property?.saleHistory?.sales?.[0]?.saleDate?.value;
       if (saleDateValue) {
         const saleDate = parseDate(saleDateValue); // Convert string to Date object
@@ -911,8 +886,7 @@ Suburb: ${property.suburb}`,
       logicalReasoning: logical.logicalReasoning,
       recommendedSales,
       recommendedSold,
-      recentAreaSoldProcess: filteredRProperties,
-      currentAreaProcess: filteredCProperties,
+      recentAreaSoldProcess: filteredProperties,
       duplexProperties,
       engagedPurchaser,
       recommendedSaleProcess,
@@ -942,8 +916,7 @@ Suburb: ${property.suburb}`,
         logical,
         recommendedSales,
         recommendedSold,
-        recentAreaSoldProcess: filteredRProperties,
-        currentAreaProcess: filteredCProperties,
+        recentAreaSoldProcess: filteredProperties,
         duplexProperties,
         recommendedSaleProcess,
         highEndProperties,
@@ -1137,5 +1110,71 @@ exports.regenerateLogicalPrice = async (req, res) => {
   } catch (error) {
     console.error("Error in regenerateLogicalPrice API: ", error.message);
     return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.getSuburbsName = async (req, res) => {
+  try {
+    // Fetch suburbs and select only the 'name' field
+    const suburbs = await Suburb.find({}).select("suburb");
+
+    // Convert each suburb name to uppercase
+    const uppercasedSuburbs = suburbs.map(suburb => ({
+      ...suburb.toObject(), // Ensure it's a plain object (if needed)
+      suburb: suburb.suburb.toUpperCase(), // Convert the name to uppercase
+    }));
+
+    // Send the response with the modified data
+    res.status(200).json({
+      success: true,
+      data: uppercasedSuburbs,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
+exports.getRecentAreaSoldProcess = async (req, res) => {
+  try {
+    const { suburb, propertyType } = req.params; // Suburb comes from the request params
+
+    const recentAreaSoldProcessQuery = {
+      suburb, // Matching the suburb field of the property
+      beleefSaleProcess: {
+        $in: ["Private treaty adjustment", "Not sold at auction", "Withdrawn"], // Filters by specific sale processes
+      },
+      "listingHistory.listings": { $exists: true, $ne: [] },
+      propertyType,
+    };
+
+    const recentAreaSoldProcess = await Property.find(
+      recentAreaSoldProcessQuery
+    ).select("address beleefSaleProcess saleHistory listingHistory");
+
+    const filteredProperties = recentAreaSoldProcess.filter((property) => {
+      const saleDateValue = property?.saleHistory?.sales?.[0]?.saleDate?.value;
+      if (saleDateValue) {
+        const saleDate = parseDate(saleDateValue); // Convert string to Date object
+        return saleDate >= twelveMonthsAgo; // Perform the comparison
+      }
+      return false; // Exclude properties without a valid saleDate.value
+    });
+
+    // Send the response
+    res.status(200).json({
+      success: true,
+      data: filteredProperties,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
