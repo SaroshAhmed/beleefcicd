@@ -5386,7 +5386,7 @@ exports.updateAuthSchedule = async (req, res) => {
       }
     });
 
-    if (!req.body.vendor.licence.startsWith("https://")) {
+    if (req.body.vendor?.licence && !req.body.vendor?.licence?.startsWith("https://")) {
       // Generate URL for vendor license
       const licenceResult = await generatePresignedUrl(
         `vendor-licences`,
