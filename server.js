@@ -23,6 +23,8 @@ const allowedOrigins = [
   "http://localhost:8080",
   "https://beleef.com.au",
   "https://www.beleef.com.au",
+  "https://admin.beleef.com.au",
+  "https://www.admin.beleef.com.au",
 ];
 
 app.use(
