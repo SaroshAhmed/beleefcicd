@@ -112,9 +112,7 @@ const getMarketingPrices = async (company, price, suburb) => {
       suburb: new RegExp(`^${suburb}$`, "i"), // Case-insensitive match
     });
     if (!suburbData) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Suburb not found" });
+      throw new Error( "Suburb not found")
     }
 
     const { reaPrice, domainPrice } = suburbData;
@@ -125,9 +123,7 @@ const getMarketingPrices = async (company, price, suburb) => {
     });
 
     if (!matchedPriceRange) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No matching price range found" });
+      throw new Error( "No matching price range found")
     }
 
     const domainFee = matchedPriceRange.fee;
@@ -183,7 +179,7 @@ const getMarketingPrices = async (company, price, suburb) => {
         amount: "$0",
         isChecked: false,
       },
-      total: 0,
+      total: parseFloat(reaPrice)+parseFloat(domainFee),
     };
 
     return marketing;

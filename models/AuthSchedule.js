@@ -52,6 +52,8 @@ const authScheduleSchema = new Schema(
   }
 );
 
+authScheduleSchema.index({ userId: 1, address: 1 }, { unique: true });
+
 const AuthSchedule = mongoose.model("AuthSchedule", authScheduleSchema);
 
 module.exports = AuthSchedule;

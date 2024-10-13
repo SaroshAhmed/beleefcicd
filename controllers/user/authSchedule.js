@@ -13,6 +13,7 @@ const {
 const { REACT_APP_FRONTEND_URL } = require("../../config");
 
 const mongoose = require("mongoose");
+const { sendSms } = require("../../utils/smsService");
 
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -57,7 +58,7 @@ exports.generatePdf = async (req, res) => {
       gst,
       abn,
       signature,
-      conjunctionAgent
+      conjunctionAgent,
     } = req.user ? req.user : agent;
 
     let agentSignature = req.body.content.agentSignature;
@@ -116,7 +117,9 @@ exports.generatePdf = async (req, res) => {
       .join("")}
     <br>
 
-    ${conjunctionAgent === "Yes" ? `
+    ${
+      conjunctionAgent === "Yes"
+        ? `
       <div>
           <h3>LICENSEE</h3>
           <div><strong>BUSINESS NAME:</strong> Ausrealty (Riverwood) Pty Ltd (Licenced user of Ausrealty) <strong>ABN:</strong> 97 610 838 643 <strong>Registered for
@@ -136,9 +139,8 @@ exports.generatePdf = async (req, res) => {
           <div><strong>PHONE:</strong> ${mobile}</div>
           <div><strong>EMAIL:</strong> ${email}</div>
           <div><strong>LICENCE NUMBER:</strong> ${licenseNumber}</div>
-      </div>` 
-  : 
-  `
+      </div>`
+        : `
       <div>
           <h3>LICENSEE</h3>
           <div><strong>BUSINESS NAME:</strong> ${company} <strong>ABN:</strong> ${abn} <strong>Registered for GST:</strong> ${gst}</div>
@@ -148,7 +150,8 @@ exports.generatePdf = async (req, res) => {
           <div><strong>EMAIL:</strong> ${email}</div>
           <div><strong>LICENCE NUMBER:</strong> ${licenseNumber}</div>
       </div>
-  `}
+  `
+    }
 
     <br>
     <div>
@@ -1404,11 +1407,12 @@ exports.generatePdf = async (req, res) => {
           ?.map(
             (item) => `
             <tr key="${item._id}">
-              <td class="border px-4 py-2">${item.name || 'N/A'}</td>
-              <td class="border px-4 py-2">$${item.price || '0'}</td>
+              <td class="border px-4 py-2">${item.name || "N/A"}</td>
+              <td class="border px-4 py-2">$${item.price || "0"}</td>
             </tr>`
           )
-          .join('') || `
+          .join("") ||
+        `
           <tr>
             <td class="border px-4 py-2" colspan="2">No items selected</td>
           </tr>`
@@ -1419,15 +1423,17 @@ exports.generatePdf = async (req, res) => {
           ? `
           <tr>
             <td class="border px-4 py-2">Agent Contribution</td>
-            <td class="border px-4 py-2">${marketing.agentContribution.amount || 'N/A'}</td>
+            <td class="border px-4 py-2">- ${
+              marketing.agentContribution.amount || "N/A"
+            }</td>
           </tr>`
-          : ''
+          : ""
       }
 
       <tr>
         <td class="border px-4 py-2 font-bold">TOTAL</td>
         <td class="border px-4 py-2">
-          $${marketing?.total || '0'}
+          $${marketing?.total || "0"}
         </td>
       </tr>
     </tbody>
@@ -1686,7 +1692,7 @@ const generateAgreement = async (agent, content, propertyId) => {
       gst,
       abn,
       signature,
-      conjunctionAgent
+      conjunctionAgent,
     } = agent;
     // Create a deep copy of content
     const contentCopy = structuredClone(
@@ -1708,8 +1714,12 @@ const generateAgreement = async (agent, content, propertyId) => {
       address,
       recommendedSold,
       recommendedSales,
-      agreementDate,
     } = contentCopy;
+
+    let { agreementDate } = contentCopy;
+    if (!agreementDate) {
+      agreementDate = formatDateToAEDT(null);
+    }
 
     let agentSignature = contentCopy.agentSignature;
 
@@ -1769,7 +1779,9 @@ const generateAgreement = async (agent, content, propertyId) => {
         .join("")}
       <br>
      
-       ${conjunctionAgent === "Yes" ? `
+       ${
+         conjunctionAgent === "Yes"
+           ? `
       <div>
           <h3>LICENSEE</h3>
           <div><strong>BUSINESS NAME:</strong> Ausrealty (Riverwood) Pty Ltd (Licenced user of Ausrealty) <strong>ABN:</strong> 97 610 838 643 <strong>Registered for
@@ -1789,9 +1801,8 @@ const generateAgreement = async (agent, content, propertyId) => {
           <div><strong>PHONE:</strong> ${mobile}</div>
           <div><strong>EMAIL:</strong> ${email}</div>
           <div><strong>LICENCE NUMBER:</strong> ${licenseNumber}</div>
-      </div>` 
-  : 
-  `
+      </div>`
+           : `
       <div>
           <h3>LICENSEE</h3>
           <div><strong>BUSINESS NAME:</strong> ${company} <strong>ABN:</strong> ${abn} <strong>Registered for GST:</strong> ${gst}</div>
@@ -1801,7 +1812,8 @@ const generateAgreement = async (agent, content, propertyId) => {
           <div><strong>EMAIL:</strong> ${email}</div>
           <div><strong>LICENCE NUMBER:</strong> ${licenseNumber}</div>
       </div>
-  `}
+  `
+       }
 
       <br>
       <div>
@@ -3057,11 +3069,12 @@ const generateAgreement = async (agent, content, propertyId) => {
           ?.map(
             (item) => `
             <tr key="${item._id}">
-              <td class="border px-4 py-2">${item.name || 'N/A'}</td>
-              <td class="border px-4 py-2">$${item.price || '0'}</td>
+              <td class="border px-4 py-2">${item.name || "N/A"}</td>
+              <td class="border px-4 py-2">$${item.price || "0"}</td>
             </tr>`
           )
-          .join('') || `
+          .join("") ||
+        `
           <tr>
             <td class="border px-4 py-2" colspan="2">No items selected</td>
           </tr>`
@@ -3072,15 +3085,17 @@ const generateAgreement = async (agent, content, propertyId) => {
           ? `
           <tr>
             <td class="border px-4 py-2">Agent Contribution</td>
-            <td class="border px-4 py-2">${marketing.agentContribution.amount || 'N/A'}</td>
+            <td class="border px-4 py-2">- ${
+              marketing.agentContribution.amount || "N/A"
+            }</td>
           </tr>`
-          : ''
+          : ""
       }
 
       <tr>
         <td class="border px-4 py-2 font-bold">TOTAL</td>
         <td class="border px-4 py-2">
-          $${marketing?.total || '0'}
+          $${marketing?.total || "0"}
         </td>
       </tr>
     </tbody>
@@ -3586,7 +3601,7 @@ const generateProof = async (agent, content, propertyId) => {
       content.toObject ? content.toObject() : content
     );
 
-    const { vendors, propertyAddress,address } = contentCopy;
+    const { vendors, propertyAddress, address } = contentCopy;
 
     let agentSignature = contentCopy.agentSignature;
 
@@ -4731,20 +4746,20 @@ exports.getAllSignatureUrl = async (req, res) => {
     //
     let solicitorSignedUrl;
     const solicitorUrl = authSchedule.solicitor?.contract;
-    if(solicitorUrl){
-    const solicitorUrlObj = new URL(solicitorUrl);
-    const solicitorKey = solicitorUrlObj.pathname.startsWith("/")
-      ? solicitorUrlObj.pathname.substring(1)
-      : solicitorUrlObj.pathname;
+    if (solicitorUrl) {
+      const solicitorUrlObj = new URL(solicitorUrl);
+      const solicitorKey = solicitorUrlObj.pathname.startsWith("/")
+        ? solicitorUrlObj.pathname.substring(1)
+        : solicitorUrlObj.pathname;
 
-    const solicitorParams = {
-      Bucket: process.env.S3_BUCKET_NAME,
-      Key: solicitorKey,
-      Expires: 3600, // URL expires in 1 hour
-    };
+      const solicitorParams = {
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: solicitorKey,
+        Expires: 3600, // URL expires in 1 hour
+      };
 
-    solicitorSignedUrl = s3.getSignedUrl("getObject", solicitorParams);
-  }
+      solicitorSignedUrl = s3.getSignedUrl("getObject", solicitorParams);
+    }
     //
 
     // Service Building URL generation
@@ -5097,10 +5112,35 @@ exports.sendToSign = async (req, res) => {
       </html>`;
 
         // Send the email to the vendor
-        await sendEmail(
-          vendors[index].email, // Recipient email
-          `Ausrealty eSign: ${propertyAddress}`, // Subject
-          text // Email content
+        if (vendors[index].email) {
+          await sendEmail(
+            vendors[index].email, // Recipient email
+            `Ausrealty eSign: ${propertyAddress}`, // Subject
+            text // Email content
+          );
+        }
+
+        const recipient = {
+          mobile: vendors[index].mobile, // Assuming mobile number is in vendor object
+        };
+
+        const nameArray = name.toString().split(" ");
+        const firstName = nameArray[0];
+        const lastName = nameArray.length > 1 ? nameArray[1] : "";
+
+        const agent = {
+          firstName,
+          lastName,
+          mobile: req.user.mobile,
+        };
+
+        await sendSms(
+          "authSchedule",
+          recipient,
+          agent,
+          "",
+          post.link,
+          propertyAddress
         );
 
         // Update the vendor's sent date
@@ -5119,13 +5159,15 @@ exports.sendToSign = async (req, res) => {
           vendor.signature = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${signatureResult.key}`;
         }
 
-        // Generate URL for vendor license
-        const licenceResult = await generatePresignedUrl(
-          `vendor-licences`,
-          `${propertyId}-vendor-${i}`,
-          base64ToBuffer(vendor.licence)
-        );
-        vendor.licence = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${licenceResult.key}`;
+        if (vendor.licence) {
+          // Generate URL for vendor license
+          const licenceResult = await generatePresignedUrl(
+            `vendor-licences`,
+            `${propertyId}-vendor-${i}`,
+            base64ToBuffer(vendor.licence)
+          );
+          vendor.licence = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${licenceResult.key}`;
+        }
       }
 
       // Create the AuthSchedule with the updated filtered vendors array
@@ -5326,9 +5368,37 @@ exports.updateAuthSchedule = async (req, res) => {
     vendor.signedDate = signedDate;
     vendor.isSigned = isSigned;
 
-    if(!vendor.sentDate){
-      vendor.sentDate=formatDateToAEDT(null)
-      vendor.viewedDate=formatDateToAEDT(null)
+    const fieldsToUpdate = [
+      "firstName",
+      "lastName",
+      "email",
+      "address",
+      "isCompany",
+      "company",
+      "abn",
+      "gst",
+    ];
+
+    fieldsToUpdate.forEach((field) => {
+      if (req.body.vendor[field] !== undefined) {
+        // Ensure to check for undefined so that null values are allowed
+        vendor[field] = req.body.vendor[field];
+      }
+    });
+
+    if (!req.body.vendor.licence.startsWith("https://")) {
+      // Generate URL for vendor license
+      const licenceResult = await generatePresignedUrl(
+        `vendor-licences`,
+        `${propertyId}-vendor-${index}`,
+        base64ToBuffer(req.body.vendor.licence)
+      );
+      vendor.licence = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${licenceResult.key}`;
+    }
+
+    if (!vendor.sentDate) {
+      vendor.sentDate = formatDateToAEDT(null);
+      vendor.viewedDate = formatDateToAEDT(null);
     }
 
     if (isSigned) {

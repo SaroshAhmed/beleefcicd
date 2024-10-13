@@ -68,6 +68,10 @@ const getSmsTemplate = (
   let msg;
 
   switch (event) {
+    case "authSchedule":
+      msg = `${sender.firstName} ${sender.lastName} has sent you a document to review and sign for the property ${property_addr}.\n Document Link ${formattedLink} \n Thank you.\nRegards, \n${sender.firstName} ${sender.lastName}`;
+      break;
+
     case "cancel":
       msg = `Hi ${recipient.firstName} ${recipient.lastName}, our meeting on ${date} for the property ${property_addr} has been cancelled. Thank you.\nRegards, \n${sender.firstName} ${sender.lastName}`;
       break;

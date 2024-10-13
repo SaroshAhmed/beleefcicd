@@ -8,6 +8,6 @@ const storage = multer.memoryStorage(); // Store files in memory (you can config
 const upload = multer({ storage });
 
 router.post("/text", isAuthenticated, text);
-router.post("/image", upload.array("files"), isAuthenticated, image);
+router.post("/image", upload.array("files"), image);
 
 module.exports = router;
