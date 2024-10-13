@@ -22,7 +22,7 @@ module.exports.isAuthenticated = (req, res, next) => {
           }
   
           try{
-              const decode = jwt.verify(token, process.env.JWT_SECRET);
+              const decode = jwt.verify(token, process.env.SECRET_KEY);
               req.user = decode;
   
           } catch (error) {
