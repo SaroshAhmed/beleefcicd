@@ -133,7 +133,8 @@ const getMarketingPrices = async (company, price, suburb) => {
     const domainFee = matchedPriceRange.fee;
 
     // Fetch marketing prices from the database
-    let data = await MarketingPrice.find();
+    let data = await MarketingPrice.find().lean();
+
 
     // Remove the "I.M Group Pty Ltd (Licenced user of Ausrealty)" category if the company matches
     if (company !== "I.M Group Pty Ltd (Licenced user of Ausrealty)") {
@@ -143,20 +144,38 @@ const getMarketingPrices = async (company, price, suburb) => {
       );
     }
 
-    // Update "Internet Portals" category with reaPrice and domainFee
     data = data.map((item) => {
       if (item.category === "Internet Portals") {
-        item.items = item.items.map((internetItem) => {
+        item.items = item.items.map((internetItem, index) => {
+          // Add reaPrice and domainFee to respective items
           if (internetItem.name === "Realestate.com.au") {
             internetItem.price = reaPrice ? parseFloat(reaPrice) : 0;
           } else if (internetItem.name === "Domain.com.au") {
             internetItem.price = domainFee ? parseFloat(domainFee) : 0;
           }
-          return internetItem;
+    
+          // Add `isChecked` key and set it to `true` for the first two items
+          const updatedItem = {
+            ...internetItem,
+            isChecked: index < 2,
+          };
+          console.log("Updated Item:", updatedItem);
+          return updatedItem;
+        });
+      } else {
+        // Add `isChecked` key and set it to `false` for all items in other categories
+        item.items = item.items.map((categoryItem) => {
+          const updatedCategoryItem = {
+            ...categoryItem,
+            isChecked: false,
+          };
+          console.log("Updated Category Item:", updatedCategoryItem);
+          return updatedCategoryItem;
         });
       }
       return item;
     });
+    
 
     const marketing = {
       categories: data,

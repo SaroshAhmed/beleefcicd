@@ -90,12 +90,14 @@ exports.createPostList = async (req, res) => {
 
     const savedPostList = await newPostList.save();
 
+    const result = { ...savedPostList.toObject(), marketing };
+
     await UserProperty.updateOne(
       { _id: new mongoose.Types.ObjectId(propertyId) },
       { $set: { marketing } }
     );
 
-    return res.status(201).json({ success: true, data: savedPostList });
+    return res.status(201).json({ success: true, data: result });
   } catch (error) {
     console.error("Error creating PostList: ", error.message);
     return res.status(500).json({ success: false, message: error.message });
