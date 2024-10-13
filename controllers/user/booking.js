@@ -236,7 +236,7 @@ ${agent.firstName} ${agent.lastName}
               // console.log(`SMS sent successfully to ${vendor.mobile}`);
             })
             .catch((error) => {
-              console.error(`Error sending SMS to ${vendor.mobile}`, error);
+              console.error(`Error sending SMS to ${follower.mobile}`, error);
             });
         });
 
@@ -247,6 +247,9 @@ ${agent.firstName} ${agent.lastName}
       console.error("Error during booking creation or SMS sending", error);
       res.status(500).json({ success: false, message: error.message });
     }
+
+
+    
 
     res.status(201).json({ success: true, data: booking });
   } catch (error) {
@@ -516,7 +519,7 @@ exports.cancelBooking = async (req, res) => {
 
           return sendSms(
             "cancel",
-            agent,
+            recipient,
             agent,
             startTime,
             booking.prelistLink,
