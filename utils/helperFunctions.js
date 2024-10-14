@@ -92,8 +92,114 @@ const getVendorSignatureUrl = async (signatureUrl) => {
   }
 };
 
+// const getMarketingPrices = async (company, price, suburb) => {
+//   try {
+//     // Handle price range (like $1.9-2.1M)
+//     let maxPrice = price.split("-")[1] || price; // Take the higher range
+//     maxPrice = maxPrice.toUpperCase().replace("$", "").trim(); // Remove $ and spaces
+
+//     // Convert the price from K/M format
+//     if (maxPrice.includes("M")) {
+//       maxPrice = parseFloat(maxPrice.replace("M", "")) * 1_000_000; // Convert 'M' to millions
+//     } else if (maxPrice.includes("K")) {
+//       maxPrice = parseFloat(maxPrice.replace("K", "")) * 1_000; // Convert 'K' to thousands
+//     } else {
+//       maxPrice = parseFloat(maxPrice); // Regular number conversion
+//     }
+
+//     // Fetch the suburb data from the database
+//     const suburbData = await Suburb.findOne({
+//       suburb: new RegExp(`^${suburb}$`, "i"), // Case-insensitive match
+//     });
+//     if (!suburbData) {
+//       throw new Error( "Suburb not found")
+//     }
+
+//     const { reaPrice, domainPrice } = suburbData;
+
+//     // Find the matching domainPrice range
+//     const matchedPriceRange = domainPrice.find((range) => {
+//       return maxPrice >= range.minPrice && maxPrice <= range.maxPrice;
+//     });
+
+//     if (!matchedPriceRange) {
+//       throw new Error( "No matching price range found")
+//     }
+
+//     const domainFee = matchedPriceRange.fee;
+
+//     // Fetch marketing prices from the database
+//     let data = await MarketingPrice.find().lean();
+
+
+//     // Remove the "I.M Group Pty Ltd (Licenced user of Ausrealty)" category if the company matches
+//     if (company !== "I.M Group Pty Ltd (Licenced user of Ausrealty)") {
+//       data = data.filter(
+//         (item) =>
+//           item.category !== "I.M Group"
+//       );
+//     }
+
+//     data = data.map((item) => {
+//       if (item.category === "Internet Portals") {
+//         item.items = item.items.map((internetItem, index) => {
+//           // Add reaPrice and domainFee to respective items
+//           if (internetItem.name === "Realestate.com.au") {
+//             internetItem.price = reaPrice ? parseFloat(reaPrice) : 0;
+//           } else if (internetItem.name === "Domain.com.au") {
+//             internetItem.price = domainFee ? parseFloat(domainFee) : 0;
+//           }
+    
+//           // Add `isChecked` key and set it to `true` for the first two items
+//           const updatedItem = {
+//             ...internetItem,
+//             isChecked: index < 2,
+//           };
+//           console.log("Updated Item:", updatedItem);
+//           return updatedItem;
+//         });
+//       } else {
+//         // Add `isChecked` key and set it to `false` for all items in other categories
+//         item.items = item.items.map((categoryItem) => {
+//           const updatedCategoryItem = {
+//             ...categoryItem,
+//             isChecked: false,
+//           };
+//           console.log("Updated Category Item:", updatedCategoryItem);
+//           return updatedCategoryItem;
+//         });
+//       }
+//       return item;
+//     });
+    
+
+//     const marketing = {
+//       categories: data,
+//       agentContribution: {
+//         amount: "$0",
+//         isChecked: false,
+//       },
+//       total: parseFloat(reaPrice)+parseFloat(domainFee),
+//     };
+
+//     return marketing;
+//   } catch (error) {
+//     console.log("Error:", error.message);
+//     throw error;
+//   }
+// };
+
 const getMarketingPrices = async (company, price, suburb) => {
   try {
+    // Set default values for reaPrice and domainPrice
+    let reaPrice = 0;
+    let domainFee = 0;
+
+    // Handle case when price is not provided
+    if (!price || price.trim() === "") {
+      price = "0"; // Set price to 0 if not provided
+    }
+
     // Handle price range (like $1.9-2.1M)
     let maxPrice = price.split("-")[1] || price; // Take the higher range
     maxPrice = maxPrice.toUpperCase().replace("$", "").trim(); // Remove $ and spaces
@@ -107,37 +213,33 @@ const getMarketingPrices = async (company, price, suburb) => {
       maxPrice = parseFloat(maxPrice); // Regular number conversion
     }
 
-    // Fetch the suburb data from the database
-    const suburbData = await Suburb.findOne({
-      suburb: new RegExp(`^${suburb}$`, "i"), // Case-insensitive match
-    });
-    if (!suburbData) {
-      throw new Error( "Suburb not found")
+    // Fetch the suburb data from the database if suburb is provided
+    if (suburb && suburb.trim() !== "") {
+      const suburbData = await Suburb.findOne({
+        suburb: new RegExp(`^${suburb}$`, "i"), // Case-insensitive match
+      });
+
+      if (suburbData) {
+        reaPrice = suburbData.reaPrice;
+        const matchedPriceRange = suburbData.domainPrice.find((range) => {
+          return maxPrice >= range.minPrice && maxPrice <= range.maxPrice;
+        });
+        if (matchedPriceRange) {
+          domainFee = matchedPriceRange.fee;
+        }
+      } else {
+        console.log("Suburb not found, defaulting reaPrice and domainFee to 0");
+      }
+    } else {
+      console.log("Suburb not provided, defaulting reaPrice and domainFee to 0");
     }
-
-    const { reaPrice, domainPrice } = suburbData;
-
-    // Find the matching domainPrice range
-    const matchedPriceRange = domainPrice.find((range) => {
-      return maxPrice >= range.minPrice && maxPrice <= range.maxPrice;
-    });
-
-    if (!matchedPriceRange) {
-      throw new Error( "No matching price range found")
-    }
-
-    const domainFee = matchedPriceRange.fee;
 
     // Fetch marketing prices from the database
     let data = await MarketingPrice.find().lean();
 
-
     // Remove the "I.M Group Pty Ltd (Licenced user of Ausrealty)" category if the company matches
     if (company !== "I.M Group Pty Ltd (Licenced user of Ausrealty)") {
-      data = data.filter(
-        (item) =>
-          item.category !== "I.M Group"
-      );
+      data = data.filter((item) => item.category !== "I.M Group");
     }
 
     data = data.map((item) => {
@@ -149,13 +251,12 @@ const getMarketingPrices = async (company, price, suburb) => {
           } else if (internetItem.name === "Domain.com.au") {
             internetItem.price = domainFee ? parseFloat(domainFee) : 0;
           }
-    
+
           // Add `isChecked` key and set it to `true` for the first two items
           const updatedItem = {
             ...internetItem,
             isChecked: index < 2,
           };
-          console.log("Updated Item:", updatedItem);
           return updatedItem;
         });
       } else {
@@ -165,13 +266,11 @@ const getMarketingPrices = async (company, price, suburb) => {
             ...categoryItem,
             isChecked: false,
           };
-          console.log("Updated Category Item:", updatedCategoryItem);
           return updatedCategoryItem;
         });
       }
       return item;
     });
-    
 
     const marketing = {
       categories: data,
@@ -179,7 +278,7 @@ const getMarketingPrices = async (company, price, suburb) => {
         amount: "$0",
         isChecked: false,
       },
-      total: parseFloat(reaPrice)+parseFloat(domainFee),
+      total: parseFloat(reaPrice) + parseFloat(domainFee),
     };
 
     return marketing;
@@ -188,6 +287,7 @@ const getMarketingPrices = async (company, price, suburb) => {
     throw error;
   }
 };
+
 
 module.exports = {
   formatCurrency,
