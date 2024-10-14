@@ -227,11 +227,7 @@ const getMarketingPrices = async (company, price, suburb) => {
         if (matchedPriceRange) {
           domainFee = matchedPriceRange.fee;
         }
-      } else {
-        console.log("Suburb not found, defaulting reaPrice and domainFee to 0");
       }
-    } else {
-      console.log("Suburb not provided, defaulting reaPrice and domainFee to 0");
     }
 
     // Fetch marketing prices from the database
