@@ -851,7 +851,6 @@ Suburb: ${property.suburb}`,
     );
 
     const checkProcess = () => {
-      console.log(sourceDevelopmentPotential);
       if (
         sourceDevelopmentPotential !== null &&
         sourceDevelopmentPotential !== ""
@@ -1115,16 +1114,13 @@ exports.regenerateLogicalPrice = async (req, res) => {
 
 exports.getSuburbsName = async (req, res) => {
   try {
-    // Fetch suburbs and select only the 'name' field
+    // Fetch suburbs and select only the 'suburb' field
     const suburbs = await Suburb.find({}).select("suburb");
 
-    // Convert each suburb name to uppercase
-    const uppercasedSuburbs = suburbs.map(suburb => ({
-      ...suburb.toObject(), // Ensure it's a plain object (if needed)
-      suburb: suburb.suburb.toUpperCase(), // Convert the name to uppercase
-    }));
+    // Convert each suburb name to uppercase and remove the '_id' field
+    const uppercasedSuburbs = suburbs.map(suburb => suburb.suburb.toUpperCase());
 
-    // Send the response with the modified data
+    // Send the response with only the suburb names
     res.status(200).json({
       success: true,
       data: uppercasedSuburbs,
@@ -1137,7 +1133,6 @@ exports.getSuburbsName = async (req, res) => {
     });
   }
 };
-
 
 exports.getRecentAreaSoldProcess = async (req, res) => {
   try {
@@ -1155,6 +1150,10 @@ exports.getRecentAreaSoldProcess = async (req, res) => {
     const recentAreaSoldProcess = await Property.find(
       recentAreaSoldProcessQuery
     ).select("address beleefSaleProcess saleHistory listingHistory");
+
+    const parseDate = (dateString) => new Date(dateString);
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
     const filteredProperties = recentAreaSoldProcess.filter((property) => {
       const saleDateValue = property?.saleHistory?.sales?.[0]?.saleDate?.value;
