@@ -133,6 +133,7 @@ exports.login = async (req, res) => {
 
 exports.logout = (req, res) => {
     try {
+        
         res.clearCookie("token");
         return res.status(200).json({
             success: true,
@@ -301,3 +302,66 @@ exports.resetPassword = async (req, res) => {
         })
     }
 }
+exports.refreshToken = async (req, res) => {
+    try {
+      const refreshToken = req.cookies.refreshToken;
+      
+      if (!refreshToken) {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied. No refresh token provided.",
+        });
+      }
+  
+      jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async (err, decoded) => {
+        if (err) {
+          return res.status(403).json({
+            success: false,
+            message: "Invalid or expired refresh token.",
+          });
+        }
+  
+        const user = await Admin.findById(decoded.id);
+        if (!user || user.tokenVersion !== decoded.tokenVersion) {
+          return res.status(403).json({
+            success: false,
+            message: "Invalid refresh token version.",
+          });
+        }
+  
+        const accessToken = jwt.sign(
+          {
+            id: user._id,
+            role: user.role,
+            tokenVersion: user.tokenVersion,
+          },
+          process.env.ACCESS_TOKEN_SECRET, 
+          { expiresIn: '15m' }
+        );
+  
+        const newRefreshToken = jwt.sign(
+          { id: user._id, tokenVersion: user.tokenVersion },
+          process.env.REFRESH_TOKEN_SECRET,
+          { expiresIn: '7d' }
+        );
+
+        res.cookie('refreshToken', newRefreshToken, {
+          httpOnly: true, 
+          secure: true,
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+  
+       
+        return res.status(200).json({
+          success: true,
+          accessToken,
+        });
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        success: false,
+        message: "An error occurred while refreshing token.",
+      });
+    }
+  };

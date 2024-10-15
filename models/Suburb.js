@@ -3,7 +3,7 @@ const { Schema } = mongoose;
 
 const suburbSchema = new mongoose.Schema(
   {
-    suburb: { type: String, unique: true, required: true },
+    suburb: { type: String, unique: true, required: true, unique: true },
     description: { type: String },
     postcode: { type: String, required: true },
     state: { type: String, required: false, default: "NSW" },
@@ -13,7 +13,6 @@ const suburbSchema = new mongoose.Schema(
           year: { type: Number, default: null },
           medianSalePrice: { type: Number, default: null },
           annualSalesVolume: { type: Number, default: null },
-          averageDaysOnMarket: { type: Number, default: null },
           suburbGrowth: { type: String, default: null },
           highDemandArea: { type: String, default: null },
         },
@@ -26,7 +25,6 @@ const suburbSchema = new mongoose.Schema(
           year: { type: Number, default: null },
           medianSalePrice: { type: Number, default: null },
           annualSalesVolume: { type: Number, default: null },
-          averageDaysOnMarket: { type: Number, default: null },
           suburbGrowth: { type: String, default: null },
           highDemandArea: { type: String, default: null },
         },

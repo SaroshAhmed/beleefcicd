@@ -24,9 +24,9 @@ router.post("/regenerateLogicalPrice", regenerateLogicalPrice);
 // Catch-all dynamic route should be last
 router.get("/address/:address", isAuthenticated, getPropertyByAddress); // <-- Dynamic route last
 
-router.get("/suburb/name", getSuburbsName); // Specific dynamic route
+router.get("/suburbName", getSuburbsName); // Specific dynamic route
 
-router.get(
+router.post(
   "/recentAreaSoldProcess/:suburb/:propertyType",
   getRecentAreaSoldProcess
 ); // Specific dynamic route
