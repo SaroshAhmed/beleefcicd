@@ -7,7 +7,7 @@ exports.getBookingsByAddress = async (req, res) => {
 
     const bookings = await Booking.find({
       userId: new mongoose.Types.ObjectId(userId),
-      address
+      address,
       status: { $ne: "Cancelled" },
     });
 
