@@ -4481,7 +4481,7 @@ exports.createAuthSchedule = async (req, res) => {
 
       if (services[0].value !== "No") {
         await sendConciergeEmail(
-          "riverwood@ausrealty.com.au", // inspect@absolutepropertyinspections.com.au
+          "inspect@absolutepropertyinspections.com.au", // inspect@absolutepropertyinspections.com.au
           `Building & Pest report: ${address}`, // Subject
           `
          <div style="text-align: center;">
@@ -4538,7 +4538,7 @@ exports.createAuthSchedule = async (req, res) => {
 
       if (services[1].value !== "No") {
         await sendConciergeEmail(
-          "riverwood@ausrealty.com.au", // inspect@absolutepropertyinspections.com.au
+          "inspect@absolutepropertyinspections.com.au", // inspect@absolutepropertyinspections.com.au
           `Strata report: ${address}`, // Subject
           `
          <div style="text-align: center;">
@@ -4611,7 +4611,7 @@ exports.createAuthSchedule = async (req, res) => {
         }
 
         await sendConciergeEmail(
-          "riverwood@ausrealty.com.au", // stylingEmail
+          stylingEmail, // stylingEmail
           `Styling: ${address}`, // Subject
           `
          <div style="text-align: center;">
@@ -5886,7 +5886,7 @@ exports.updateAuthSchedule = async (req, res) => {
 
       if (services[0].value !== "No") {
         await sendConciergeEmail(
-          "riverwood@ausrealty.com.au", // inspect@absolutepropertyinspections.com.au
+          "inspect@absolutepropertyinspections.com.au", // inspect@absolutepropertyinspections.com.au
           `Building & Pest report: ${address}`, // Subject
           `
          <div style="text-align: center;">
@@ -5943,7 +5943,7 @@ exports.updateAuthSchedule = async (req, res) => {
 
       if (services[1].value !== "No") {
         await sendConciergeEmail(
-          "riverwood@ausrealty.com.au", // inspect@absolutepropertyinspections.com.au
+          "inspect@absolutepropertyinspections.com.au", // inspect@absolutepropertyinspections.com.au
           `Strata report: ${address}`, // Subject
           `
          <div style="text-align: center;">
@@ -6016,7 +6016,7 @@ exports.updateAuthSchedule = async (req, res) => {
         }
 
         await sendConciergeEmail(
-          "riverwood@ausrealty.com.au", // stylingEmail
+          stylingEmail, // stylingEmail
           `Styling: ${address}`, // Subject
           `
          <div style="text-align: center;">
