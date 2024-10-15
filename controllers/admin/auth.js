@@ -57,69 +57,83 @@ exports.register = async (req, res) => {
 
 //login
 exports.login = async (req, res) => {
-    try{
-        const{
-            email,
-            password,
-        } = req.body;
+    try {
+      const { email, password } = req.body;
+  
+      if (!email || !password) {
+        return res.status(403).json({
+          success: false,
+          message: "All fields are required",
+        });
+      }
+  
+      const user = await Admin.findOne({ email });
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: "User is not registered !!",
+        });
+      }
+  
+      const isPasswordMatch = await bcrypt.compare(password, user.password);
+      if (!isPasswordMatch) {
+        return res.status(401).json({
+          success: false,
+          message: "Email or Password is wrong",
+        });
+      }
+      const accessToken = jwt.sign(
+        {
+          id: user._id,
+          role: user.role,
+          tokenVersion: user.tokenVersion,
+        },
+        process.env.ACCESS_TOKEN_SECRET,
+        { expiresIn: '15m' }
+      );
+  
 
-        if( !email || !password ){
-            return res.status(403).json({
-                success:false,
-                message:"All fields are required",
-            });
-        }
+      const refreshToken = jwt.sign(
+        {
+          id: user._id,
+          tokenVersion: user.tokenVersion,
+        },
+        process.env.REFRESH_TOKEN_SECRET,
+        { expiresIn: '7d' }
+      );
+  
+      user.refreshToken = refreshToken;
+      await user.save();
 
-        const user = await Admin.findOne({email})
-        if(!user){
-            return res.status(401).json({
-                success:false,
-                message:"User is not registered !!",
-            });
-        }
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,  
+        secure: true,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
 
-       
-        if(bcrypt.compare(password, user.password)) {
-            const payload = {
-                id: user._id,
-                role:user.role,
-                tokenVersion: user.tokenVersion,
-            }
-            const token = jwt.sign(payload, process.env.SECRET_KEY, {
-                expiresIn:"24h",
-            });
-            user.token = token;
-            user.password = undefined;
-
-            const options = {
-                expires: new Date(Date.now() + 3*24*60*60*1000),
-                httpOnly:true,
-            }
-            res.cookie("token", token, options).status(200).json({
-                success:true,
-                token,
-                user,
-                message:"LoggedIn Successfully",
-            });
-        }
-        else{
-            return res.status(401).json({
-                success:false,
-                message:"Email or Password is wrong",
-            });
-        }
-
-    } catch(error){
-        console.log(error);
-        return res.status(500).json({
-            success:false,
-            message:error.message,
-        }) 
+      return res.status(200).json({
+        success: true,
+        token:accessToken,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+        message: "Logged in successfully",
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        success: false,
+        message: error.message,
+      });
     }
-} 
+};
 
 exports.logout = (req, res) => {
     try {
+        
         res.clearCookie("token");
         return res.status(200).json({
             success: true,
@@ -288,3 +302,66 @@ exports.resetPassword = async (req, res) => {
         })
     }
 }
+exports.refreshToken = async (req, res) => {
+    try {
+      const refreshToken = req.cookies.refreshToken;
+      
+      if (!refreshToken) {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied. No refresh token provided.",
+        });
+      }
+  
+      jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async (err, decoded) => {
+        if (err) {
+          return res.status(403).json({
+            success: false,
+            message: "Invalid or expired refresh token.",
+          });
+        }
+  
+        const user = await Admin.findById(decoded.id);
+        if (!user || user.tokenVersion !== decoded.tokenVersion) {
+          return res.status(403).json({
+            success: false,
+            message: "Invalid refresh token version.",
+          });
+        }
+  
+        const accessToken = jwt.sign(
+          {
+            id: user._id,
+            role: user.role,
+            tokenVersion: user.tokenVersion,
+          },
+          process.env.ACCESS_TOKEN_SECRET, 
+          { expiresIn: '15m' }
+        );
+  
+        const newRefreshToken = jwt.sign(
+          { id: user._id, tokenVersion: user.tokenVersion },
+          process.env.REFRESH_TOKEN_SECRET,
+          { expiresIn: '7d' }
+        );
+
+        res.cookie('refreshToken', newRefreshToken, {
+          httpOnly: true, 
+          secure: true,
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+  
+       
+        return res.status(200).json({
+          success: true,
+          accessToken,
+        });
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        success: false,
+        message: "An error occurred while refreshing token.",
+      });
+    }
+  };
