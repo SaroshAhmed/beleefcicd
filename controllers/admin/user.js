@@ -107,7 +107,6 @@ exports.updateUser = async (req, res) => {
           return companies.find((item) => item.name === company);
         }
         const data = getCompanyData(company);
-        console.log(data)
         user.name = name;
         user.mobile = mobile;
         user.gst=data?.gst;
