@@ -7,16 +7,18 @@ const {
     logout,
     logoutFromAllDevices,
     resetPasswordToken,
-    resetPassword
+    resetPassword,
+    refreshToken
   } = require("../../../controllers/admin/auth")
-const { auth } = require("../../../middleware/auth");
+const { auth,isAdmin } = require("../../../middleware/auth");
 
 
 router.post("/login", login)
-router.get("/logout", logout)
-router.get("/logoutfromalldevices",auth,logoutFromAllDevices)
+router.get("/logout",isAdmin, logout)
+router.get("/logoutfromalldevices",isAdmin,logoutFromAllDevices)
 router.post("/register", register)
 router.post("/reset-password-token", resetPasswordToken)
 router.post("/reset-password", resetPassword)
+router.post('/refresh-token', isAdmin, refreshToken);
 
 module.exports = router;
