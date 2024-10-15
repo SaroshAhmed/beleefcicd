@@ -113,7 +113,7 @@ exports.login = async (req, res) => {
 
       return res.status(200).json({
         success: true,
-        accessToken,
+        token:accessToken,
         user: {
           id: user._id,
           name: user.name,
