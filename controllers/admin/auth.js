@@ -33,7 +33,7 @@ exports.register = async (req, res) => {
   const token = jwt.sign({ id: user._id }, process.env.ACCESS_TOKEN_SECRET,{
     expiresIn: '30m',
   });
-		sendEmail.sendEmail(email, "Welcome to our platform", `Please click on the link to set your password: ${process.env.CLIENT_URL}/password/${token}`);
+		sendEmail.sendEmail(email, "Welcome to our platform", `Please click on the link to set your password: ${process.env.REACT_APP_FRONTEND_URL}/password/${token}`);
 		return res.status(200).json({
 			success: true,
 			user,
@@ -92,7 +92,7 @@ exports.resendEmail = async (req, res) => {
     const token = jwt.sign({ id: user._id }, process.env.ACCESS_TOKEN_SECRET,{
       expiresIn: '30m',
     });
-    sendEmail.sendEmail(email, "Welcome to our platform", `Please click on the link to set your password: ${process.env.CLIENT_URL}/password/${token}`);
+    sendEmail.sendEmail(email, "Welcome to our platform", `Please click on the link to set your password: ${process.env.REACT_APP_FRONTEND_URL}/password/${token}`);
     return res.status(200).json({
       success: true,
       message: "Email sent successfully",
@@ -120,7 +120,7 @@ exports.forgotPassword = async (req, res) => {
     const token = jwt.sign({ id: user._id }, process.env.ACCESS_TOKEN_SECRET,{
       expiresIn: '30m',
     });
-    sendEmail.sendEmail(email, "Reset your password", `Please click on the link to reset your password: ${process.env.CLIENT_URL}/reset-password/${token}`);
+    sendEmail.sendEmail(email, "Reset your password", `Please click on the link to reset your password: ${process.env.REACT_APP_FRONTEND_URL}/reset-password/${token}`);
     return res.status(200).json({
       success: true,
       message: "Email sent successfully",
@@ -147,7 +147,7 @@ exports.resendforgotPassword = async (req, res) => {
     const token = jwt.sign({ id: user._id }, process.env.ACCESS_TOKEN_SECRET,{
       expiresIn: '30m',
     });
-    sendEmail.sendEmail(email, "Reset your password", `Please click on the link to reset your password: ${process.env.CLIENT_URL}/reset-password/${token}`);
+    sendEmail.sendEmail(email, "Reset your password", `Please click on the link to reset your password: ${process.env.REACT_APP_FRONTEND_URL}/reset-password/${token}`);
     return res.status(200).json({
       success: true,
       message: "Email sent successfully",
