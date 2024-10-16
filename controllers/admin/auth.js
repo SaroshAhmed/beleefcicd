@@ -6,46 +6,198 @@ const sendEmail = require("../../utils/emailService");
 const crypto = require("crypto");
 
 exports.register = async (req, res) => {
+	try {
+		const {
+			email,
+		} = req.body;
+		if (
+			!email
+		) {
+			return res.status(403).send({
+				success: false,
+				message: "All fields are required",
+			});
+		}
+
+		const existingUser = await Admin.findOne({ email });
+		if (existingUser) {
+			return res.status(400).json({
+				success: false,
+				message: "User already exists with the same email",
+			});
+		}
+		const user = await Admin.create({
+			email,
+		});
+  // generate a token and combined with a page link where user will add the password
+  const token = jwt.sign({ id: user._id }, process.env.ACCESS_TOKEN_SECRET,{
+    expiresIn: '30m',
+  });
+		sendEmail.sendEmail(email, "Welcome to our platform", `Please click on the link to set your password: ${process.env.REACT_APP_FRONTEND_URL}/password/${token}`);
+		return res.status(200).json({
+			success: true,
+			user,
+			message: "User registered successfully",
+		});
+	} catch (error) {
+		console.error(error);
+		return res.status(500).json({
+			success: false,
+			message: "User cannot be registered. Please try again.",
+		});
+	}
+};
+exports.setPassword= async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
-    if (!name || !email || !password) {
-      return res.status(403).send({
+    const { password, confirmPassword } = req.body;
+    const token = req.params.token;
+    if (password !== confirmPassword) {
+      return res.status(403).json({
         success: false,
-        message: "All fields are required",
+        message: "Password does not match",
       });
     }
-
-    const existingUser = await Admin.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    const user = await Admin.findById(decoded.id);
+    if (!user) {
+      return res.status(404).json({
         success: false,
-        message: "User already exists with the same email",
+        message: "User not found",
       });
     }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = await Admin.create({
-      name,
-      email,
-      password: hashedPassword,
-      role,
-    });
-
+    user.password = await bcrypt.hash(password, 10);
+    await user.save();
     return res.status(200).json({
       success: true,
-      user,
-      message: "User registered successfully",
+      message: "Password set successfully",
     });
   } catch (error) {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "User cannot be registered. Please try again.",
+      message: "Password cannot be set. Please try again.",
     });
   }
-};
+}
+exports.resendEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await Admin.findOne ({ email });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+    const token = jwt.sign({ id: user._id }, process.env.ACCESS_TOKEN_SECRET,{
+      expiresIn: '30m',
+    });
+    sendEmail.sendEmail(email, "Welcome to our platform", `Please click on the link to set your password: ${process.env.REACT_APP_FRONTEND_URL}/password/${token}`);
+    return res.status(200).json({
+      success: true,
+      message: "Email sent successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Email cannot be sent. Please try again.",
+    });
+  }
+}
+exports.forgotPassword = async (req, res) => {
 
+  try {
+    const { email } = req.body;
+    const user = await Admin.findOne
+    ({ email });
+    if (!user) {
+      return res.status(404).json({
+        success: false, 
+        message: "User not found",
+      });
+    }
+    const token = jwt.sign({ id: user._id }, process.env.ACCESS_TOKEN_SECRET,{
+      expiresIn: '30m',
+    });
+    sendEmail.sendEmail(email, "Reset your password", `Please click on the link to reset your password: ${process.env.REACT_APP_FRONTEND_URL}/reset-password/${token}`);
+    return res.status(200).json({
+      success: true,
+      message: "Email sent successfully",
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Email cannot be sent. Please try again.",
+    });
+  }
+}
+exports.resendforgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await  Admin.findOne ({ email });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+    const token = jwt.sign({ id: user._id }, process.env.ACCESS_TOKEN_SECRET,{
+      expiresIn: '30m',
+    });
+    sendEmail.sendEmail(email, "Reset your password", `Please click on the link to reset your password: ${process.env.REACT_APP_FRONTEND_URL}/reset-password/${token}`);
+    return res.status(200).json({
+      success: true,
+      message: "Email sent successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Email cannot be sent. Please try again.",
+    });
+  }
+}
+exports.changePassword = async (req, res) => {
+  try {
+    const { oldPassword, password, confirmPassword } = req.body;
+    const user = await Admin.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+    const isPasswordMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isPasswordMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Old password is wrong",
+      });
+    }
+    if (newPassword !== confirmPassword) {
+      return res.status(403).json({
+        success: false,
+        message: "Password does not match",
+      });
+    }
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+    return res.status(200).json({
+      success: true,
+      message: "Password changed successfully",
+    });
+  }
+  catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Password cannot be changed. Please try again.",
+    });
+  }
+}
 //login
 exports.login = async (req, res) => {
   try {

@@ -3,9 +3,9 @@ const router = express.Router();
 const { getAllUsers, getUser, updateUser} = require("../../../controllers/admin/user");
 const { isAdmin } = require("../../../middleware/auth");
 
-router.get("/", getAllUsers);
+router.get("/",isAdmin, getAllUsers);
 
-router.get("/:id", getUser);
-router.put("/", updateUser);
+router.get("/:id", isAdmin,getUser);
+router.put("/", isAdmin,updateUser);
 
 module.exports = router;
