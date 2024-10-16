@@ -6,6 +6,7 @@ const { sendSms } = require("../../utils/smsService");
 const { v4: uuidv4 } = require("uuid");
 const { REACT_APP_FRONTEND_URL } = require("../../config");
 const moment = require("moment-timezone");
+const mongoose = require("mongoose");
 
 // // Initialize the Google API client with the service account for sending emails as keyevents@ausrealty.com.au
 // const initializeServiceAccountClient = () => {
@@ -601,6 +602,29 @@ exports.getBookingsByAddress = async (req, res) => {
     });
 
     res.status(200).json({ success: true, data: bookings });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Update booking by bookingId
+exports.updateBooking = async (req, res) => {
+  try {
+    const { id } = req.params; // Get the booking ID from the request parameters
+    console.log(id)
+    const updateFields = req.body; // Fields to update sent in the request body
+
+    // Find the booking by its ID and update the fields
+    const updatedBooking = await Booking.findOneAndUpdate(
+      { _id:  new mongoose.Types.ObjectId(id) },
+      { $set: updateFields }
+    )
+
+    if (!updatedBooking) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
+
+    return res.status(200).json({ success: true, data: updatedBooking });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
