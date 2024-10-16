@@ -40,7 +40,7 @@ exports.singlePrompt = async (req, res) => {
 exports.updatePrompt = async (req, res) => {
   const { id } = req.params;
   const { name, description } = req.body;
-
+  console.log(req.body, id);
   try {
     const updatedPrompt = await Prompt.findByIdAndUpdate(
       id,

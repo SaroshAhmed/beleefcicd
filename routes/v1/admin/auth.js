@@ -19,6 +19,9 @@ router.get("/logoutfromalldevices",isAdmin,logoutFromAllDevices)
 router.post("/register", register)
 router.post("/reset-password-token", resetPasswordToken)
 router.post("/reset-password", resetPassword)
-router.post('/refresh-token', isAdmin, refreshToken);
+router.post('/refresh-token',refreshToken);
+router.get('/me',isAdmin,(req,res)=>{
+    res.status(200).json({success:true,data:req.user})
+})
 
 module.exports = router;

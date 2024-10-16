@@ -7,17 +7,17 @@ const {
     updatePrompt,
     deletePrompt,
 } = require("../../../controllers/admin/prompt");
-const { isAuthenticated } = require("../../../middleware/auth");
+const { isAdmin } = require("../../../middleware/auth");
 
-router.post("/", createPrompt);
+router.post("/", isAdmin,createPrompt);
 
-router.get("/", getAllPrompt);
+router.get("/",isAdmin, getAllPrompt);
 
-router.get("/:id", singlePrompt);
+router.get("/:id",isAdmin, singlePrompt);
 
-router.put("/:id", updatePrompt);
+router.put("/:id",isAdmin, updatePrompt);
 
-router.delete("/:id", deletePrompt);
+router.delete("/:id",isAdmin, deletePrompt);
 
 module.exports = router;
 

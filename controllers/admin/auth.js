@@ -8,15 +8,10 @@ const crypto = require("crypto");
 exports.register = async (req, res) => {
 	try {
 		const {
-			name,
 			email,
-			password,
-            role
 		} = req.body;
 		if (
-			!name ||
-			!email ||
-			!password
+			!email
 		) {
 			return res.status(403).send({
 				success: false,
@@ -31,16 +26,14 @@ exports.register = async (req, res) => {
 				message: "User already exists with the same email",
 			});
 		}
-
-		const hashedPassword = await bcrypt.hash(password, 10);
-
 		const user = await Admin.create({
-			name,
 			email,
-			password: hashedPassword,
-			role,	
 		});
-
+  // generate a token and combined with a page link where user will add the password
+  const token = jwt.sign({ id: user._id }, process.env.ACCESS_TOKEN_SECRET,{
+    expiresIn: '15m',
+  });
+		sendEmail.sendEmail(email, "Welcome to our platform", `Please click on the link to set your password: ${process.env.CLIENT_URL}/password/${token}`);
 		return res.status(200).json({
 			success: true,
 			user,
@@ -54,7 +47,38 @@ exports.register = async (req, res) => {
 		});
 	}
 };
-
+exports.setPassword= async (req, res) => {
+  try {
+    const { password, confirmPassword } = req.body;
+    const token = req.params.token;
+    if (password !== confirmPassword) {
+      return res.status(403).json({
+        success: false,
+        message: "Password does not match",
+      });
+    }
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    const user = await Admin.findById(decoded.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+    user.password = await bcrypt.hash(password, 10);
+    await user.save();
+    return res.status(200).json({
+      success: true,
+      message: "Password set successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Password cannot be set. Please try again.",
+    });
+  }
+}
 //login
 exports.login = async (req, res) => {
     try {

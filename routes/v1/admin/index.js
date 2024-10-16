@@ -10,7 +10,7 @@ const bookingRoutes = require("./booking");
 const userPropertyRoutes = require("./userProperty");
 const postListRoutes = require("./postList");
 const authScheduleRoutes = require("./authSchedule");
-
+const listingAppointmentRoutes = require("./listing-appointment");
 router.use("/property", propertyRoutes);
 router.use("/user", userRoutes);
 router.use("/auth", authRoutes);
@@ -20,4 +20,5 @@ router.use("/conjunctionAgent", conjunctionAgentRoutes);
 router.use("/userProperty", userPropertyRoutes);
 router.use("/postList", postListRoutes);
 router.use("/authSchedule", authScheduleRoutes);
+router.use("/listingAppointment", listingAppointmentRoutes);
 module.exports = router;
