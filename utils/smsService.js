@@ -82,7 +82,7 @@ const getSmsTemplate = (
       break;
 
     case "cancel":
-      msg = `Hi ${recipient.firstName} ${recipient.lastName}, our meeting on ${date} for the property ${property_addr} has been cancelled. Thank you.\nRegards, \n${sender.firstName} ${sender.lastName}`;
+      msg = `Hi ${recipient.firstName}, our meeting on ${date} for the property ${property_addr} has been cancelled. Thank you.\nRegards, \n${sender.firstName} ${sender.lastName}`;
       break;
 
     case "update":
@@ -94,7 +94,7 @@ const getSmsTemplate = (
       break;
 
     case "create":
-      msg = `Hi ${recipient.firstName} ${recipient.lastName}, appreciate your time, looking forward to meeting you on ${date} for the property at ${property_addr}.\nMeeting at :${meetingLocation}. \nFurther details can be found here: ${formattedLink} \nRegards, \n${sender.firstName} ${sender.lastName}`;
+      msg = `Hi ${recipient.firstName}, appreciate your time, looking forward to meeting you on ${date} for the property at ${property_addr}.\nMeeting at :${meetingLocation}. \nFurther details can be found here: ${formattedLink} \nRegards, \n${sender.firstName} ${sender.lastName}`;
       break;
 
     default:
