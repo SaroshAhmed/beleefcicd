@@ -6540,65 +6540,75 @@ exports.calculateEvents = async (req, res) => {
         const eventEndSydney = eventStartSydney.clone().add(durationHours, 'hours');
         return {
           summary,
-          start: eventStartSydney.toISOString(), // Convert to UTC ISO string
+          start: eventStartSydney.toISOString(),
           end: eventEndSydney.toISOString(),
         };
       };
 
+      // Phase 1: Pre-launch events
       // Events: Photoshoot, Floorplan, and Video - Flexible Scheduling on Weekdays Only
       const scheduleFlexibleEvent = (eventName, gapDays) => {
-        currentDate = getNextWeekday(currentDate.clone().add(gapDays, 'days')); // Move to the next weekday
+        currentDate = getNextWeekday(currentDate.clone().add(gapDays, 'days'));
         events.push(createEventInSydneyTime(eventName, currentDate, 10, 1));
       };
 
-      // Assume any of these three events can occur in any order, but we take the maximum gap if they all happen
-      const maxGapDays = 3; // Maximum gap between events if all happen on the same day
-      scheduleFlexibleEvent("Photoshoot", 2); // Photoshoot has a 2-day gap
-      scheduleFlexibleEvent("Floorplan", 1); // Floorplan has a 1-day gap
-      scheduleFlexibleEvent("Video", maxGapDays); // Video has a 3-day gap
+      scheduleFlexibleEvent("Photoshoot", 2);
+      scheduleFlexibleEvent("Floorplan", 1);
+      scheduleFlexibleEvent("Video", 3);
 
-    // Meeting: Launch to Market happens 2 days after the last media event (max gap)
-const launchToMarketMeetingDate = getNextMondayToThursday(currentDate.clone().add(2, 'days'));
-events.push(createEventInSydneyTime("Meeting: Launch to Market", launchToMarketMeetingDate, 10, 0.5));
+      // Phase 2: Launch to Market
+      // Meeting: Launch to Market happens 2 days after the last media event
+      const launchToMarketMeetingDate = getNextMondayToThursday(currentDate.clone().add(2, 'days'));
+      events.push(createEventInSydneyTime("Meeting: Launch to Market", launchToMarketMeetingDate, 10, 0.5));
 
-// Launch to Market happens 1 hour after the meeting (only Monday - Thursday before 6pm)
-const launchToMarketDate = launchToMarketMeetingDate.clone().add(1, 'hour'); // Fix: Set it after the meeting
-if (launchToMarketDate.day() === 4 && launchToMarketDate.hour() > 13) { // Thursday before 1pm
-  launchToMarketDate.hour(12); // Adjust to 12pm on Thursday
-}
-events.push(createEventInSydneyTime("Launch to Market", launchToMarketDate, 11, 1)); // Ensure it's after the meeting
+      // Launch to Market happens 1 hour after the meeting
+      const launchToMarketDate = launchToMarketMeetingDate.clone();
+      if (launchToMarketDate.day() === 4 && launchToMarketDate.hour() > 13) {
+        launchToMarketDate.hour(12);
+      }
+      events.push(createEventInSydneyTime("Launch to Market", launchToMarketDate, 11, 1));
 
-      // Generate recurring weekly events: Open home (Saturday), Weekly Report (Tuesday), Mid-week Open Home (Wednesday)
+      // Phase 3: Post-launch recurring events
+      // Start scheduling recurring events from the launch date
+      currentDate = launchToMarketDate.clone();
+
+      // Generate recurring weekly events starting after launch to market
       while (currentDate.isBefore(closingDate)) {
-        // Open home: Only on Saturdays
-        const openHome = getNextSaturday(currentDate);
-        if (openHome.isBefore(closingDate)) {
-          events.push(createEventInSydneyTime("Open home", openHome, 12, 0.5));
-        }
-
-        // Weekly report: every Tuesday
+        // Weekly report: First Tuesday after launch, then every Tuesday
         const weeklyReport = getNextTuesday(currentDate);
-        if (weeklyReport.isBefore(closingDate)) {
+        if (weeklyReport.isAfter(launchToMarketDate) && weeklyReport.isBefore(closingDate)) {
           events.push(createEventInSydneyTime("Weekly Report", weeklyReport, 10, 1));
         }
 
-// Mid-week open home: every Wednesday
-const midWeekOpenHome = getNextWednesday(currentDate);
-if (midWeekOpenHome.isBefore(closingDate)) {
-  const midWeekOpenHomeStart = midWeekOpenHome.clone().set('hour', 11); // Set start time for Mid-week open home
-  const midWeekOpenHomeEnd = midWeekOpenHomeStart.clone().add(0.5, 'hours'); // Mid-week open home duration is 30 minutes
-  
-  // Schedule Mid-week open home
-  events.push(createEventInSydneyTime("Mid-week open home", midWeekOpenHomeStart, 11, 0.5));
+        // Open home: First Saturday after launch, then every Saturday
+        const openHome = getNextSaturday(currentDate);
+        if (openHome.isAfter(launchToMarketDate) && openHome.isBefore(closingDate)) {
+          events.push(createEventInSydneyTime("Open home", openHome, 12, 0.5));
+        }
 
-  // Mid-campaign meeting happens exactly after Mid-week open home finishes
-  events.push(createEventInSydneyTime("Mid-campaign meeting", midWeekOpenHomeEnd, midWeekOpenHomeEnd.hour(), 0.5)); // Mid-campaign meeting duration is 30 minutes
-}
+        // Mid-week open home and meeting: First Wednesday after launch, then every Wednesday
+        const midWeekOpenHome = getNextWednesday(currentDate);
+        if (midWeekOpenHome.isAfter(launchToMarketDate) && midWeekOpenHome.isBefore(closingDate)) {
+          // Schedule Mid-week open home (30 minutes)
+          events.push({
+            summary: "Mid-week open home",
+            start: midWeekOpenHome.clone().set('hour', 11).startOf('hour').toISOString(),
+            end: midWeekOpenHome.clone().set('hour', 11).startOf('hour').add(30, 'minutes').toISOString()
+          });
+
+          // Schedule Mid-campaign meeting immediately after (30 minutes)
+          events.push({
+            summary: "Mid-campaign meeting",
+            start: midWeekOpenHome.clone().set('hour', 11).startOf('hour').add(30, 'minutes').toISOString(),
+            end: midWeekOpenHome.clone().set('hour', 11).startOf('hour').add(60, 'minutes').toISOString()
+          });
+        }
 
         // Move to the next week
         currentDate.add(7, 'days');
       }
 
+      // Phase 4: Closing events
       // Meeting: Pre-closing date: 24 hours before closing date
       const preClosingMeeting = closingDate.clone().subtract(1, 'day');
       events.push(createEventInSydneyTime("Meeting: Pre Closing Date", preClosingMeeting, 14, 1));
