@@ -3,10 +3,7 @@ const ListingAppointment = require("../../models/ListingAppointment");
 exports.createListingAppointment=async(req,res)=>{
     try {
         const {weeks}=req.body;
-        const anyListingAppointment = await ListingAppointment.find();
-        if(anyListingAppointment.length>0){
-            await ListingAppointment.findByIdAndDelete(anyListingAppointment[0]._id);
-        }
+        const deleteListingAppointment = await ListingAppointment.deleteMany();
         const listingAppointment = new ListingAppointment({
             priceProcess:weeks
         });
