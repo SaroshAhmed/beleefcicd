@@ -20,15 +20,8 @@ const moment = require('moment-timezone');
 
 // Timezone for Sydney
 const SYDNEY_TZ = 'Australia/Sydney';
-// Utility function to get the next day that falls on Monday - Thursday
-const getNextMondayToThursday = (date) => {
-  while (date.day() === 0 || date.day() === 5 || date.day() === 6) {
-    date.add(1, 'day');
-  }
-  return date;
-};
 
-// Utility function to get the next day that isn't a weekend (Monday - Friday)
+// Utility function to get the next available weekday (Monday - Friday)
 const getNextWeekday = (date) => {
   while (date.day() === 0 || date.day() === 6) { // Skip Sunday (0) and Saturday (6)
     date.add(1, 'day');
@@ -51,6 +44,13 @@ const getNextWednesday = (date) => {
   return date.clone().day(3);
 };
 
+// Utility function to get the next Monday-Thursday for "Launch to Market" meeting
+const getNextMondayToThursday = (date) => {
+  while (date.day() === 0 || date.day() === 5 || date.day() === 6) {
+    date.add(1, 'day');
+  }
+  return date;
+};
 
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -4491,7 +4491,7 @@ exports.createAuthSchedule = async (req, res) => {
       );
 
       await sendConciergeEmail(
-        "moussa.c@themarketrun.com.au", // Recipient Email
+        "Anabel.m@ausrealty.com.au", // Recipient Email moussa.c@themarketrun.com.au
         `Fruit Box Request: ${address}`, // Subject
         `
         <div style="text-align: center;">
@@ -5917,7 +5917,7 @@ exports.updateAuthSchedule = async (req, res) => {
       );
 
       await sendConciergeEmail(
-        "moussa.c@themarketrun.com.au", // Recipient Email
+        "Anabel.m@ausrealty.com.au", // Recipient Email moussa.c@themarketrun.com.au
         `Fruit Box Request: ${address}`, // Subject
         `
         <div style="text-align: center;">
@@ -6532,6 +6532,7 @@ exports.calculateEvents = async (req, res) => {
     // Function to map events in Sydney timezone
     const calculateEventDates = (closingDate, marketingStartDate) => {
       const events = [];
+      let currentDate = marketingStartDate.clone();
 
       // Helper to create event in Sydney time
       const createEventInSydneyTime = (summary, eventDate, startHour, durationHours) => {
@@ -6544,32 +6545,30 @@ exports.calculateEvents = async (req, res) => {
         };
       };
 
-      // Photoshoot: 2 days after marketing start, skip weekends
-      const photoshootDate = marketingStartDate.clone().add(2, 'days');
-      events.push(createEventInSydneyTime("Photoshoot", photoshootDate, 10, 1));
+      // Events: Photoshoot, Floorplan, and Video - Flexible Scheduling on Weekdays Only
+      const scheduleFlexibleEvent = (eventName, gapDays) => {
+        currentDate = getNextWeekday(currentDate.clone().add(gapDays, 'days')); // Move to the next weekday
+        events.push(createEventInSydneyTime(eventName, currentDate, 10, 1));
+      };
 
-      // Floorplan: 1 day after Photoshoot
-      const floorplanDate = photoshootDate.clone().add(1, 'day');
-      events.push(createEventInSydneyTime("Floorplan", floorplanDate, 10, 1));
+      // Assume any of these three events can occur in any order, but we take the maximum gap if they all happen
+      const maxGapDays = 3; // Maximum gap between events if all happen on the same day
+      scheduleFlexibleEvent("Photoshoot", 2); // Photoshoot has a 2-day gap
+      scheduleFlexibleEvent("Floorplan", 1); // Floorplan has a 1-day gap
+      scheduleFlexibleEvent("Video", maxGapDays); // Video has a 3-day gap
 
-      // Video: 3 days after Photoshoot
-      const videoDate = photoshootDate.clone().add(3, 'days');
-      events.push(createEventInSydneyTime("Video", videoDate, 10, 2));
+    // Meeting: Launch to Market happens 2 days after the last media event (max gap)
+const launchToMarketMeetingDate = getNextMondayToThursday(currentDate.clone().add(2, 'days'));
+events.push(createEventInSydneyTime("Meeting: Launch to Market", launchToMarketMeetingDate, 10, 0.5));
 
-      // Meeting: Launch to Market happens 2 days after Video, on Monday - Thursday
-      const launchToMarketMeetingDate = getNextMondayToThursday(videoDate.clone().add(2, 'days'));
-      events.push(createEventInSydneyTime("Meeting: Launch to Market", launchToMarketMeetingDate, 10, 0.5));
-
-      // Launch to Market happens 1 hour after the meeting (only Monday - Thursday before 6pm)
-      const launchToMarketDate = launchToMarketMeetingDate.clone().add(1, 'hour');
-      if (launchToMarketDate.day() === 4 && launchToMarketDate.hour() > 13) { // Thursday before 1pm
-        launchToMarketDate.hour(12); // Adjust to 12pm on Thursday
-      }
-      events.push(createEventInSydneyTime("Launch to Market", launchToMarketDate, launchToMarketDate.hour(), 1));
+// Launch to Market happens 1 hour after the meeting (only Monday - Thursday before 6pm)
+const launchToMarketDate = launchToMarketMeetingDate.clone().add(1, 'hour'); // Fix: Set it after the meeting
+if (launchToMarketDate.day() === 4 && launchToMarketDate.hour() > 13) { // Thursday before 1pm
+  launchToMarketDate.hour(12); // Adjust to 12pm on Thursday
+}
+events.push(createEventInSydneyTime("Launch to Market", launchToMarketDate, 11, 1)); // Ensure it's after the meeting
 
       // Generate recurring weekly events: Open home (Saturday), Weekly Report (Tuesday), Mid-week Open Home (Wednesday)
-      let currentDate = launchToMarketDate.clone();
-      
       while (currentDate.isBefore(closingDate)) {
         // Open home: Only on Saturdays
         const openHome = getNextSaturday(currentDate);
@@ -6583,12 +6582,18 @@ exports.calculateEvents = async (req, res) => {
           events.push(createEventInSydneyTime("Weekly Report", weeklyReport, 10, 1));
         }
 
-        // Mid-week open home & Mid-campaign meeting: every Wednesday
-        const midWeekOpenHome = getNextWednesday(currentDate);
-        if (midWeekOpenHome.isBefore(closingDate)) {
-          events.push(createEventInSydneyTime("Mid-week open home", midWeekOpenHome, 11, 0.5));
-          events.push(createEventInSydneyTime("Mid-campaign meeting", midWeekOpenHome, 11.5, 0.5));
-        }
+// Mid-week open home: every Wednesday
+const midWeekOpenHome = getNextWednesday(currentDate);
+if (midWeekOpenHome.isBefore(closingDate)) {
+  const midWeekOpenHomeStart = midWeekOpenHome.clone().set('hour', 11); // Set start time for Mid-week open home
+  const midWeekOpenHomeEnd = midWeekOpenHomeStart.clone().add(0.5, 'hours'); // Mid-week open home duration is 30 minutes
+  
+  // Schedule Mid-week open home
+  events.push(createEventInSydneyTime("Mid-week open home", midWeekOpenHomeStart, 11, 0.5));
+
+  // Mid-campaign meeting happens exactly after Mid-week open home finishes
+  events.push(createEventInSydneyTime("Mid-campaign meeting", midWeekOpenHomeEnd, midWeekOpenHomeEnd.hour(), 0.5)); // Mid-campaign meeting duration is 30 minutes
+}
 
         // Move to the next week
         currentDate.add(7, 'days');
