@@ -86,15 +86,31 @@ const getSmsTemplate = (
       break;
 
     case "update":
-      msg = `Hi ${recipient.firstName}, your meeting has been updated to ${date} for the property ${property_addr}.\nMeeting at :${meetingLocation}. \nFurther details can be found here: ${formattedLink} \n${sender.firstName} ${sender.lastName}`;
+      msg = `Hi ${
+        recipient.firstName
+      }, your meeting has been updated to ${date} for the property ${property_addr}. We'll meet at :${
+        meetingLocation === "Property"
+          ? "the " + meetingLocation
+          : meetingLocation
+      }. \nFurther details can be found here: ${formattedLink} \n${
+        sender.firstName
+      } ${sender.lastName}`;
       break;
 
     case "reminder":
-      msg = `Hi ${recipient.firstName}, this is a reminder for your meeting on ${date} for the property at ${property_addr}.\nMeeting at :${meetingLocation}. \nFurther details can be found here: ${formattedLink} \nRegards, \n${sender.firstName} ${sender.lastName}`;
+      msg = `Hi ${recipient.firstName}, this is a reminder for your meeting on ${date} for the property at ${property_addr}. We'll meet at ${
+        meetingLocation === "Property"
+          ? "the " + meetingLocation
+          : meetingLocation
+      }. \nFurther details can be found here: ${formattedLink} \nRegards, \n${sender.firstName} ${sender.lastName}`;
       break;
 
     case "create":
-      msg = `Hi ${recipient.firstName}, appreciate your time, looking forward to meeting you on ${date} for the property at ${property_addr}.\nMeeting at :${meetingLocation}. \nFurther details can be found here: ${formattedLink} \nRegards, \n${sender.firstName} ${sender.lastName}`;
+      msg = `Hi ${recipient.firstName}, thanks so much for your time. I'm looking forward to meeting you on ${date} to discuss your property at ${property_addr}.   We'll meet at ${
+        meetingLocation === "Property"
+          ? "the " + meetingLocation
+          : meetingLocation
+      }. \nFurther details can be found here: ${formattedLink} \nRegards, \n${sender.firstName} ${sender.lastName}`;
       break;
 
     default:

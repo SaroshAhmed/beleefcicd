@@ -74,8 +74,15 @@ exports.createBooking = async (req, res) => {
   const firstName = nameArray[0];
   const lastName = nameArray.length > 1 ? nameArray[1] : "";
 
-  const { vendors, startTime, endTime, address, property, followers,meetingLocation } =
-    req.body;
+  const {
+    vendors,
+    startTime,
+    endTime,
+    address,
+    property,
+    followers,
+    meetingLocation,
+  } = req.body;
 
   const agent = {
     firstName,
@@ -121,7 +128,11 @@ exports.createBooking = async (req, res) => {
       summary: address,
       description: `Appreciate your time, looking forward to meeting you.
 
-Meeting at: ${meetingLocation}
+We'll meet at ${
+        meetingLocation === "Property"
+          ? "the " + meetingLocation
+          : meetingLocation
+      }
 
 Further details in preparation for our meeting; ${prelistLink}. 
       
@@ -180,14 +191,22 @@ ${agent.firstName} ${agent.lastName}
       prelistLink,
       status: "Active",
       property,
-      meetingLocation 
+      meetingLocation,
     });
 
     await booking.save();
 
     try {
       // Sending SMS to the agent/sender
-      await sendSms("create", agent, agent, startTime, prelistLink, address,meetingLocation );
+      await sendSms(
+        "create",
+        agent,
+        agent,
+        startTime,
+        prelistLink,
+        address,
+        meetingLocation
+      );
 
       // Sending SMS to each vendor
       const smsPromises = vendors.map((vendor) => {
@@ -204,7 +223,7 @@ ${agent.firstName} ${agent.lastName}
           startTime,
           prelistLink,
           address,
-          meetingLocation 
+          meetingLocation
         )
           .then(() => {
             // console.log(`SMS sent successfully to ${vendor.mobile}`);
@@ -236,7 +255,7 @@ ${agent.firstName} ${agent.lastName}
             startTime,
             prelistLink,
             address,
-            meetingLocation 
+            meetingLocation
           )
             .then(() => {
               // console.log(`SMS sent successfully to ${vendor.mobile}`);
@@ -253,9 +272,6 @@ ${agent.firstName} ${agent.lastName}
       console.error("Error during booking creation or SMS sending", error);
       res.status(500).json({ success: false, message: error.message });
     }
-
-
-    
 
     res.status(201).json({ success: true, data: booking });
   } catch (error) {
@@ -281,7 +297,14 @@ exports.rescheduleBooking = async (req, res) => {
       });
     }
 
-    const { googleEventId, vendors, address, agent, followers,meetingLocation  } = booking;
+    const {
+      googleEventId,
+      vendors,
+      address,
+      agent,
+      followers,
+      meetingLocation,
+    } = booking;
 
     // Use the authenticated user's OAuth2 credentials for event rescheduling
     const oauth2Client = new google.auth.OAuth2();
@@ -360,7 +383,7 @@ exports.rescheduleBooking = async (req, res) => {
           newStartTime,
           booking.prelistLink,
           address,
-          meetingLocation 
+          meetingLocation
         )
           .then(() => {})
           .catch((error) => {
@@ -379,7 +402,7 @@ exports.rescheduleBooking = async (req, res) => {
         newStartTime,
         booking.prelistLink,
         address,
-        meetingLocation 
+        meetingLocation
       );
 
       if (followers && followers.length > 0) {
@@ -401,7 +424,7 @@ exports.rescheduleBooking = async (req, res) => {
             newStartTime,
             booking.prelistLink,
             address,
-            meetingLocation 
+            meetingLocation
           )
             .then(() => {
               // console.log(`SMS sent successfully to ${vendor.mobile}`);
@@ -446,8 +469,15 @@ exports.cancelBooking = async (req, res) => {
       });
     }
 
-    const { googleEventId, vendors, agent, address, startTime, followers,meetingLocation  } =
-      booking;
+    const {
+      googleEventId,
+      vendors,
+      agent,
+      address,
+      startTime,
+      followers,
+      meetingLocation,
+    } = booking;
 
     // Use the authenticated user's OAuth2 credentials for deleting the event
     const oauth2Client = new google.auth.OAuth2();
@@ -494,7 +524,7 @@ exports.cancelBooking = async (req, res) => {
           startTime,
           booking.prelistLink,
           address,
-          meetingLocation 
+          meetingLocation
         )
           .then(() => {})
           .catch((error) => {
@@ -513,7 +543,7 @@ exports.cancelBooking = async (req, res) => {
         startTime,
         booking.prelistLink,
         address,
-        meetingLocation 
+        meetingLocation
       );
 
       if (followers && followers.length > 0) {
@@ -535,7 +565,7 @@ exports.cancelBooking = async (req, res) => {
             startTime,
             booking.prelistLink,
             address,
-            meetingLocation 
+            meetingLocation
           )
             .then(() => {
               // console.log(`SMS sent successfully to ${vendor.mobile}`);
@@ -622,17 +652,19 @@ exports.getBookingsByAddress = async (req, res) => {
 exports.updateBooking = async (req, res) => {
   try {
     const { id } = req.params; // Get the booking ID from the request parameters
-    console.log(id)
+    console.log(id);
     const updateFields = req.body; // Fields to update sent in the request body
 
     // Find the booking by its ID and update the fields
     const updatedBooking = await Booking.findOneAndUpdate(
-      { _id:  new mongoose.Types.ObjectId(id) },
+      { _id: new mongoose.Types.ObjectId(id) },
       { $set: updateFields }
-    )
+    );
 
     if (!updatedBooking) {
-      return res.status(404).json({ success: false, message: "Booking not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Booking not found" });
     }
 
     return res.status(200).json({ success: true, data: updatedBooking });
