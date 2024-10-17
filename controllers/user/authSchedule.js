@@ -4447,36 +4447,43 @@ exports.createAuthSchedule = async (req, res) => {
       );
 
       await sendConciergeEmail(
-        "moussa.c@themarketrun.com.au", // moussa.c@themarketrun.com.au
-        `Fruit box Request: ${address}`, // Subject
+        "moussa.c@themarketrun.com.au", // Recipient Email
+        `Fruit Box Request: ${address}`, // Subject
         `
-       <div style="text-align: center;">
-        <img
-          style="border: none; margin-top: 30px;margin-bottom: 30px"
-          src="https://myapp.ausrealty.com.au/img/ausrealtylogo.png"
-          alt="Ausrealty eSign"
-          width="130"
-        />
-      </div>
-      <p>Hi Team,</p>
-      <p>Could we please order a fruit box for our vendors</p>
-      ${vendors
-        .map(
-          (vendor) => `
-        <p>
-          Name: ${vendor.firstName} ${vendor.lastName} <br />
-          Address: ${vendor.address} <br />
-          Mobile: ${vendor.mobile}
-        </p>
-      `
-        )
-        .join("")}
+        <div style="text-align: center;">
+          <img
+            style="border: none; margin-top: 30px; margin-bottom: 30px"
+            src="https://myapp.ausrealty.com.au/img/ausrealtylogo.png"
+            alt="Ausrealty eSign"
+            width="130"
+          />
+        </div>
+        <p>Hi Team,</p>
+        <p>Could we please order a fruit box for our vendors:</p>
+        ${vendors
+          .map(
+            (vendor) => `
+            <p>
+              <strong>Name:</strong> ${vendor.firstName} ${vendor.lastName}<br />
+              <strong>Address:</strong> ${vendor.address}<br />
+              <strong>Mobile:</strong> <a href="tel:${vendor.mobile}">${vendor.mobile}</a>
+            </p>
+          `
+          )
+          .join("")}
         
-      <p>
-        Please feel free to contact our office should you have any further queries.
-      </p>
-      <p>Thank you</p>` // Email content
-        // ["Anabel.m@ausrealty.com.au"] // CC list
+        <p><strong>Card message:</strong></p>
+        <p>Dear ${vendors.map((vendor) => vendor.firstName).join(", ")},</p>
+      
+        <p>We look forward to achieving the maximum outcome.</p>
+      
+        <p>Best regards,<br />
+        ${name} & the Ausrealty Team</p>
+      
+        <p>Please feel free to contact our office should you have any further queries.</p>
+        <p>Thank you!</p>
+        `,
+        ["welcome@ausrealty.com.au"] // CC List
       );
 
       if (services[0].value !== "No") {
@@ -5386,7 +5393,10 @@ exports.updateAuthSchedule = async (req, res) => {
       }
     });
 
-    if (req.body.vendor?.licence && !req.body.vendor?.licence?.startsWith("https://")) {
+    if (
+      req.body.vendor?.licence &&
+      !req.body.vendor?.licence?.startsWith("https://")
+    ) {
       // Generate URL for vendor license
       const licenceResult = await generatePresignedUrl(
         `vendor-licences`,
@@ -5850,38 +5860,44 @@ exports.updateAuthSchedule = async (req, res) => {
         { $set: { "boxStatus.3.status": "complete" } }
       );
 
-      //
       await sendConciergeEmail(
-        "moussa.c@themarketrun.com.au", // moussa.c@themarketrun.com.au
-        `Fruit box Request: ${address}`, // Subject
+        "moussa.c@themarketrun.com.au", // Recipient Email
+        `Fruit Box Request: ${address}`, // Subject
         `
-       <div style="text-align: center;">
-        <img
-          style="border: none; margin-top: 30px;margin-bottom: 30px"
-          src="https://myapp.ausrealty.com.au/img/ausrealtylogo.png"
-          alt="Ausrealty eSign"
-          width="130"
-        />
-      </div>
-      <p>Hi Team,</p>
-      <p>Could we please order a fruit box for our vendors</p>
-      ${vendors
-        .map(
-          (vendor) => `
-        <p>
-          Name: ${vendor.firstName} ${vendor.lastName} <br />
-          Address: ${vendor.address} <br />
-          Mobile: ${vendor.mobile}
-        </p>
-      `
-        )
-        .join("")}
+        <div style="text-align: center;">
+          <img
+            style="border: none; margin-top: 30px; margin-bottom: 30px"
+            src="https://myapp.ausrealty.com.au/img/ausrealtylogo.png"
+            alt="Ausrealty eSign"
+            width="130"
+          />
+        </div>
+        <p>Hi Team,</p>
+        <p>Could we please order a fruit box for our vendors:</p>
+        ${vendors
+          .map(
+            (vendor) => `
+            <p>
+              <strong>Name:</strong> ${vendor.firstName} ${vendor.lastName}<br />
+              <strong>Address:</strong> ${vendor.address}<br />
+              <strong>Mobile:</strong> <a href="tel:${vendor.mobile}">${vendor.mobile}</a>
+            </p>
+          `
+          )
+          .join("")}
         
-      <p>
-        Please feel free to contact our office should you have any further queries.
-      </p>
-      <p>Thank you</p>` // Email content
-        // ["Anabel.m@ausrealty.com.au"] // CC list
+        <p><strong>Card message:</strong></p>
+        <p>Dear ${vendors.map((vendor) => vendor.firstName).join(", ")},</p>
+      
+        <p>We look forward to achieving the maximum outcome.</p>
+      
+        <p>Best regards,<br />
+        ${name} & the Ausrealty Team</p>
+      
+        <p>Please feel free to contact our office should you have any further queries.</p>
+        <p>Thank you!</p>
+        `,
+        ["welcome@ausrealty.com.au"] // CC List
       );
 
       if (services[0].value !== "No") {
@@ -6106,7 +6122,9 @@ exports.updateViewedDate = async (req, res) => {
     const vendor = vendors[index];
 
     const post = {
-      msg: `Hi ${name}, ${vendor.firstName || 'Vendor'} ${vendor.lastName} has viewed the agreement for the property ${address}`,
+      msg: `Hi ${name}, ${vendor.firstName || "Vendor"} ${
+        vendor.lastName
+      } has viewed the agreement for the property ${address}`,
     };
 
     const text = ` <html>
@@ -6186,7 +6204,9 @@ exports.updateViewedDate = async (req, res) => {
 
     await sendEmail(
       email, // Use agent's email
-      `${vendor.firstName || 'Vendor'} ${vendor.lastName} has viewed the agreement for the property ${address}`, // Subject
+      `${vendor.firstName || "Vendor"} ${
+        vendor.lastName
+      } has viewed the agreement for the property ${address}`, // Subject
       text
     );
 
