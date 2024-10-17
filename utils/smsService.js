@@ -1,11 +1,10 @@
 const axios = require("axios");
 const moment = require("moment");
 
-
 // Function to normalize mobile numbers to the format accepted by Intelli SMS
 const normalizeMobileNumber = (mobile) => {
   // Remove spaces or any non-numeric characters for consistency
-  let cleanedMobile = mobile.replace(/\D/g, '');
+  let cleanedMobile = mobile.replace(/\D/g, "");
 
   // Check if the mobile number starts with '61' (Australian country code)
   if (cleanedMobile.startsWith("61")) {
@@ -24,14 +23,23 @@ const normalizeMobileNumber = (mobile) => {
 };
 
 // Function to send SMS
-const sendSms = async (event, recipient, sender, date, link, property_addr) => {
+const sendSms = async (
+  event,
+  recipient,
+  sender,
+  date,
+  link,
+  property_addr,
+  meetingLocation = null
+) => {
   const smsTemplate = getSmsTemplate(
     event,
     recipient,
     sender,
-    moment(date).tz('Australia/Sydney').format("dddd, Do MMMM [at] h:mm A"),
+    moment(date).tz("Australia/Sydney").format("dddd, Do MMMM [at] h:mm A"),
     link,
-    property_addr
+    property_addr,
+    meetingLocation
   );
 
   const url = `https://mc5.smartmessagingservices.net/services/rest/message/sendSingle2`;
@@ -60,7 +68,8 @@ const getSmsTemplate = (
   sender,
   date,
   link,
-  property_addr
+  property_addr,
+  meetingLocation
 ) => {
   // Example HTML anchor tag for the link
   const formattedLink = link; // Just the link in plain text
@@ -77,19 +86,19 @@ const getSmsTemplate = (
       break;
 
     case "update":
-      msg = `Hi ${recipient.firstName}, your meeting has been updated to ${date} for the property ${property_addr}. \nFurther details can be found here: ${formattedLink} \n${sender.firstName} ${sender.lastName}`;
+      msg = `Hi ${recipient.firstName}, your meeting has been updated to ${date} for the property ${property_addr}.\nMeeting at :${meetingLocation}. \nFurther details can be found here: ${formattedLink} \n${sender.firstName} ${sender.lastName}`;
       break;
 
     case "reminder":
-      msg = `Hi ${recipient.firstName}, this is a reminder for your meeting on ${date} for the property at ${property_addr}. \nFurther details can be found here: ${formattedLink} \nRegards, \n${sender.firstName} ${sender.lastName}`;
+      msg = `Hi ${recipient.firstName}, this is a reminder for your meeting on ${date} for the property at ${property_addr}.\nMeeting at :${meetingLocation}. \nFurther details can be found here: ${formattedLink} \nRegards, \n${sender.firstName} ${sender.lastName}`;
       break;
 
     case "create":
-      msg = `Hi ${recipient.firstName} ${recipient.lastName}, appreciate your time, looking forward to meeting you on ${date} for the property at ${property_addr}. \nFurther details can be found here: ${formattedLink} \nRegards, \n${sender.firstName} ${sender.lastName}`;
+      msg = `Hi ${recipient.firstName} ${recipient.lastName}, appreciate your time, looking forward to meeting you on ${date} for the property at ${property_addr}.\nMeeting at :${meetingLocation}. \nFurther details can be found here: ${formattedLink} \nRegards, \n${sender.firstName} ${sender.lastName}`;
       break;
 
     default:
-      msg = `Hi ${recipient.firstName}, appreciate your time, looking forward to meeting you on ${date} for the property at ${property_addr}. \nFurther details can be found here: ${formattedLink} \nRegards, \n${sender.firstName} ${sender.lastName}`;
+      msg = `Hi ${recipient.firstName}, appreciate your time, looking forward to meeting you on ${date} for the property at ${property_addr}.\nMeeting at :${meetingLocation}. \nFurther details can be found here: ${formattedLink} \nRegards, \n${sender.firstName} ${sender.lastName}`;
       break;
   }
 

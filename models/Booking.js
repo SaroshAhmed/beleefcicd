@@ -48,6 +48,7 @@ const bookingSchema = new mongoose.Schema({
     type: Schema.Types.Mixed,
     required: true,
   },
+  meetingLocation: { type: String},
   isReminded: { type: Boolean, default: false },
   prelistViewCount: { type: Number, default: 0 },
 }, { timestamps: true });

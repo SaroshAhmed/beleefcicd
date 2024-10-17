@@ -74,7 +74,7 @@ exports.createBooking = async (req, res) => {
   const firstName = nameArray[0];
   const lastName = nameArray.length > 1 ? nameArray[1] : "";
 
-  const { vendors, startTime, endTime, address, property, followers } =
+  const { vendors, startTime, endTime, address, property, followers,meetingLocation } =
     req.body;
 
   const agent = {
@@ -120,6 +120,8 @@ exports.createBooking = async (req, res) => {
     const event = {
       summary: address,
       description: `Appreciate your time, looking forward to meeting you.
+
+Meeting at: ${meetingLocation}
 
 Further details in preparation for our meeting; ${prelistLink}. 
       
@@ -178,13 +180,14 @@ ${agent.firstName} ${agent.lastName}
       prelistLink,
       status: "Active",
       property,
+      meetingLocation 
     });
 
     await booking.save();
 
     try {
       // Sending SMS to the agent/sender
-      await sendSms("create", agent, agent, startTime, prelistLink, address);
+      await sendSms("create", agent, agent, startTime, prelistLink, address,meetingLocation );
 
       // Sending SMS to each vendor
       const smsPromises = vendors.map((vendor) => {
@@ -200,7 +203,8 @@ ${agent.firstName} ${agent.lastName}
           agent,
           startTime,
           prelistLink,
-          address
+          address,
+          meetingLocation 
         )
           .then(() => {
             // console.log(`SMS sent successfully to ${vendor.mobile}`);
@@ -231,7 +235,8 @@ ${agent.firstName} ${agent.lastName}
             agent,
             startTime,
             prelistLink,
-            address
+            address,
+            meetingLocation 
           )
             .then(() => {
               // console.log(`SMS sent successfully to ${vendor.mobile}`);
@@ -276,7 +281,7 @@ exports.rescheduleBooking = async (req, res) => {
       });
     }
 
-    const { googleEventId, vendors, address, agent, followers } = booking;
+    const { googleEventId, vendors, address, agent, followers,meetingLocation  } = booking;
 
     // Use the authenticated user's OAuth2 credentials for event rescheduling
     const oauth2Client = new google.auth.OAuth2();
@@ -354,7 +359,8 @@ exports.rescheduleBooking = async (req, res) => {
           agent,
           newStartTime,
           booking.prelistLink,
-          address
+          address,
+          meetingLocation 
         )
           .then(() => {})
           .catch((error) => {
@@ -372,7 +378,8 @@ exports.rescheduleBooking = async (req, res) => {
         agent,
         newStartTime,
         booking.prelistLink,
-        address
+        address,
+        meetingLocation 
       );
 
       if (followers && followers.length > 0) {
@@ -393,7 +400,8 @@ exports.rescheduleBooking = async (req, res) => {
             agent,
             newStartTime,
             booking.prelistLink,
-            address
+            address,
+            meetingLocation 
           )
             .then(() => {
               // console.log(`SMS sent successfully to ${vendor.mobile}`);
@@ -438,7 +446,7 @@ exports.cancelBooking = async (req, res) => {
       });
     }
 
-    const { googleEventId, vendors, agent, address, startTime, followers } =
+    const { googleEventId, vendors, agent, address, startTime, followers,meetingLocation  } =
       booking;
 
     // Use the authenticated user's OAuth2 credentials for deleting the event
@@ -485,7 +493,8 @@ exports.cancelBooking = async (req, res) => {
           agent,
           startTime,
           booking.prelistLink,
-          address
+          address,
+          meetingLocation 
         )
           .then(() => {})
           .catch((error) => {
@@ -503,7 +512,8 @@ exports.cancelBooking = async (req, res) => {
         agent,
         startTime,
         booking.prelistLink,
-        address
+        address,
+        meetingLocation 
       );
 
       if (followers && followers.length > 0) {
@@ -524,7 +534,8 @@ exports.cancelBooking = async (req, res) => {
             agent,
             startTime,
             booking.prelistLink,
-            address
+            address,
+            meetingLocation 
           )
             .then(() => {
               // console.log(`SMS sent successfully to ${vendor.mobile}`);
