@@ -267,15 +267,15 @@ exports.getPostListByAddress = async (req, res) => {
       address,
     }).populate("propertyId").populate("userId");
 
-    const agent=postList.userId
-    const followers = postList.propertyId.followers;
-    const marketing = postList.propertyId.marketing;
-
     if (!postList) {
       return res
         .status(404)
         .json({ success: false, message: "PostList not found" });
     }
+
+    const agent=postList.userId
+    const followers = postList.propertyId.followers;
+    const marketing = postList.propertyId.marketing;
 
     const result = {
       ...postList._doc,

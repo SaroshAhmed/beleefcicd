@@ -11,9 +11,46 @@ const {
   getVendorSignatureUrl,
 } = require("../../utils/helperFunctions");
 const { REACT_APP_FRONTEND_URL } = require("../../config");
-
+const { google } = require("googleapis");
 const mongoose = require("mongoose");
 const { sendSms } = require("../../utils/smsService");
+
+const { addDays, subDays, setHours, startOfDay } = require('date-fns');
+const moment = require('moment-timezone');
+
+// Timezone for Sydney
+const SYDNEY_TZ = 'Australia/Sydney';
+// Utility function to get the next day that falls on Monday - Thursday
+const getNextMondayToThursday = (date) => {
+  while (date.day() === 0 || date.day() === 5 || date.day() === 6) {
+    date.add(1, 'day');
+  }
+  return date;
+};
+
+// Utility function to get the next day that isn't a weekend (Monday - Friday)
+const getNextWeekday = (date) => {
+  while (date.day() === 0 || date.day() === 6) { // Skip Sunday (0) and Saturday (6)
+    date.add(1, 'day');
+  }
+  return date;
+};
+
+// Utility function to get the next Saturday
+const getNextSaturday = (date) => {
+  return date.clone().day(6);
+};
+
+// Utility function to get the next Tuesday
+const getNextTuesday = (date) => {
+  return date.clone().day(2);
+};
+
+// Utility function to get the next Wednesday
+const getNextWednesday = (date) => {
+  return date.clone().day(3);
+};
+
 
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -26,6 +63,12 @@ const formatDate = (dateString, options = {}) => {
   const date = new Date(dateString);
   return date.toLocaleString("en-AU", options);
 };
+
+const oauth2Client = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  process.env.GOOGLE_CALLBACK_URL
+);
 
 exports.generatePdf = async (req, res) => {
   try {
@@ -3947,6 +3990,7 @@ exports.createAuthSchedule = async (req, res) => {
     termsCondition,
     access,
     services,
+    conclusionDate
   } = req.body.formattedData;
 
   try {
@@ -4421,7 +4465,7 @@ exports.createAuthSchedule = async (req, res) => {
     </tbody>
 </table>
       <p>
-        Please feel free to contact our office should you have any further queries.
+        Please feel free to contact our office should you have any further queries. Please confirm receipt of email
       </p>
       <p>Thank you</p>`;
 
@@ -4690,6 +4734,7 @@ exports.createAuthSchedule = async (req, res) => {
       access,
       services,
       fraudPrevention,
+      conclusionDate
     });
 
     return res.status(200).json({ success: true, data: authSchedule });
@@ -4944,7 +4989,11 @@ exports.getAuthScheduleByPropertyId = async (req, res) => {
 
     const authSchedule = await AuthSchedule.findOne({
       propertyId: objectId,
-    }).populate("userId");
+    })
+      .populate("userId")
+      .populate("propertyId");
+
+    delete authSchedule.marketing;
 
     if (!authSchedule) {
       return res
@@ -4953,13 +5002,18 @@ exports.getAuthScheduleByPropertyId = async (req, res) => {
     }
 
     // Rename userId to agent
-    const authScheduleWithAgent = {
+    const authScheduleWithRenamedFields = {
       ...authSchedule._doc, // Spread all the fields from the original document
       agent: authSchedule.userId, // Rename userId to agent
+      marketing: authSchedule.propertyId.marketing, // Keep marketing from populated propertyId
+      property: authSchedule.propertyId, // Store the populated propertyId under 'property'
+      propertyId: authSchedule.propertyId._id, // Keep the original propertyId
     };
-    delete authScheduleWithAgent.userId; // Remove userId
 
-    return res.status(200).json({ success: true, data: authScheduleWithAgent });
+    delete authScheduleWithRenamedFields.userId; // Remove userId
+
+
+    return res.status(200).json({ success: true, data: authScheduleWithRenamedFields });
   } catch (error) {
     console.error("Error fetching AuthSchedule: ", error.message);
     return res.status(500).json({ success: false, message: error.message });
@@ -4993,6 +5047,7 @@ exports.sendToSign = async (req, res) => {
         termsCondition,
         access,
         services,
+        conclusionDate
       } = req.body.formattedData;
 
       // Check if a UserProperty with the same userId and propertyId already exists
@@ -5201,6 +5256,7 @@ exports.sendToSign = async (req, res) => {
         access,
         services,
         fraudPrevention,
+        conclusionDate
       });
 
       return res.status(200).json({ success: true, data: authSchedule });
@@ -5838,7 +5894,7 @@ exports.updateAuthSchedule = async (req, res) => {
     </tbody>
 </table>
       <p>
-        Please feel free to contact our office should you have any further queries.
+        Please feel free to contact our office should you have any further queries. Please confirm receipt of email
       </p>
       <p>Thank you</p>`;
 
@@ -6242,7 +6298,7 @@ exports.getAllAuthSchedule = async (req, res) => {
 exports.deleteAuthSchedule = async (req, res) => {
   try {
     const { propertyId } = req.params;
-
+console.log(propertyId)
     // Find and delete the AuthSchedule by propertyId
     const deletedAuthSchedule = await AuthSchedule.findOneAndDelete({
       propertyId,
@@ -6403,6 +6459,157 @@ exports.getSignedUrl = async (req, res) => {
       .json({ success: true, data: `data:image/jpeg;base64,${base64Image}` });
   } catch (error) {
     console.error("Error in getting signed url:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.getCalendarEvents = async (req, res) => {
+  try {
+    const token = req.user.accessToken;
+    if (!token)
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
+
+    oauth2Client.setCredentials({ access_token: token });
+    const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+    const events = await calendar.events.list({
+      calendarId: "primary",
+      timeMin: new Date().toISOString(),
+      maxResults: 100,
+      singleEvents: true,
+      orderBy: "startTime",
+    });
+
+    return res.status(200).json({ success: true, data: events.data.items });
+  } catch (error) {
+    console.error("Error in getting events:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.calculateEvents = async (req, res) => {
+  try {
+    const { propertyId } = req.params;
+    const objectId = new mongoose.Types.ObjectId(propertyId);
+
+    const authSchedule = await AuthSchedule.findOne({
+      propertyId: objectId,
+    });
+
+    if (!authSchedule) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Auth Schedule not found" });
+    }
+
+    const { prepareMarketing, conclusionDate } = authSchedule;
+
+    // Function to convert "X weeks" to days (handles floating point weeks like "2.5 weeks")
+    const weeksToDays = (weeks) => parseFloat(weeks) * 7;
+
+    // Calculate the marketing start date based on prepareMarketing value
+    const getMarketingStartDate = () => {
+      const nowInSydney = moment.tz(SYDNEY_TZ);
+
+      if (prepareMarketing === "ASAP") {
+        return nowInSydney.add(1, 'day'); // Start tomorrow
+      } else {
+        const weeks = parseFloat(prepareMarketing.split(" ")[0]);
+        return nowInSydney.add(weeksToDays(weeks), 'days');
+      }
+    };
+
+    // Calculate the conclusion date based on conclusionDate value
+    const getClosingDate = (marketingStartDate) => {
+      const weeks = parseFloat(conclusionDate.split(" ")[0]);
+      return marketingStartDate.clone().add(weeksToDays(weeks), 'days');
+    };
+
+    const marketingStartDate = getMarketingStartDate();
+    const closingDate = getClosingDate(marketingStartDate);
+
+    // Function to map events in Sydney timezone
+    const calculateEventDates = (closingDate, marketingStartDate) => {
+      const events = [];
+
+      // Helper to create event in Sydney time
+      const createEventInSydneyTime = (summary, eventDate, startHour, durationHours) => {
+        const eventStartSydney = eventDate.clone().set('hour', startHour).startOf('hour');
+        const eventEndSydney = eventStartSydney.clone().add(durationHours, 'hours');
+        return {
+          summary,
+          start: eventStartSydney.toISOString(), // Convert to UTC ISO string
+          end: eventEndSydney.toISOString(),
+        };
+      };
+
+      // Photoshoot: 2 days after marketing start, skip weekends
+      const photoshootDate = marketingStartDate.clone().add(2, 'days');
+      events.push(createEventInSydneyTime("Photoshoot", photoshootDate, 10, 1));
+
+      // Floorplan: 1 day after Photoshoot
+      const floorplanDate = photoshootDate.clone().add(1, 'day');
+      events.push(createEventInSydneyTime("Floorplan", floorplanDate, 10, 1));
+
+      // Video: 3 days after Photoshoot
+      const videoDate = photoshootDate.clone().add(3, 'days');
+      events.push(createEventInSydneyTime("Video", videoDate, 10, 2));
+
+      // Meeting: Launch to Market happens 2 days after Video, on Monday - Thursday
+      const launchToMarketMeetingDate = getNextMondayToThursday(videoDate.clone().add(2, 'days'));
+      events.push(createEventInSydneyTime("Meeting: Launch to Market", launchToMarketMeetingDate, 10, 0.5));
+
+      // Launch to Market happens 1 hour after the meeting (only Monday - Thursday before 6pm)
+      const launchToMarketDate = launchToMarketMeetingDate.clone().add(1, 'hour');
+      if (launchToMarketDate.day() === 4 && launchToMarketDate.hour() > 13) { // Thursday before 1pm
+        launchToMarketDate.hour(12); // Adjust to 12pm on Thursday
+      }
+      events.push(createEventInSydneyTime("Launch to Market", launchToMarketDate, launchToMarketDate.hour(), 1));
+
+      // Generate recurring weekly events: Open home (Saturday), Weekly Report (Tuesday), Mid-week Open Home (Wednesday)
+      let currentDate = launchToMarketDate.clone();
+      
+      while (currentDate.isBefore(closingDate)) {
+        // Open home: Only on Saturdays
+        const openHome = getNextSaturday(currentDate);
+        if (openHome.isBefore(closingDate)) {
+          events.push(createEventInSydneyTime("Open home", openHome, 12, 0.5));
+        }
+
+        // Weekly report: every Tuesday
+        const weeklyReport = getNextTuesday(currentDate);
+        if (weeklyReport.isBefore(closingDate)) {
+          events.push(createEventInSydneyTime("Weekly Report", weeklyReport, 10, 1));
+        }
+
+        // Mid-week open home & Mid-campaign meeting: every Wednesday
+        const midWeekOpenHome = getNextWednesday(currentDate);
+        if (midWeekOpenHome.isBefore(closingDate)) {
+          events.push(createEventInSydneyTime("Mid-week open home", midWeekOpenHome, 11, 0.5));
+          events.push(createEventInSydneyTime("Mid-campaign meeting", midWeekOpenHome, 11.5, 0.5));
+        }
+
+        // Move to the next week
+        currentDate.add(7, 'days');
+      }
+
+      // Meeting: Pre-closing date: 24 hours before closing date
+      const preClosingMeeting = closingDate.clone().subtract(1, 'day');
+      events.push(createEventInSydneyTime("Meeting: Pre Closing Date", preClosingMeeting, 14, 1));
+
+      // Closing Date
+      events.push(createEventInSydneyTime("Closing Date", closingDate, 10, 1));
+
+      return events;
+    };
+
+    // Calculate the events based on conclusionDate and prepareMarketing
+    const events = calculateEventDates(closingDate, marketingStartDate);
+
+    return res.status(200).json({ success: true, data: events });
+  } catch (error) {
+    console.error("Error fetching events: ", error.message);
     return res.status(500).json({ success: false, message: error.message });
   }
 };

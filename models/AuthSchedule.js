@@ -29,6 +29,7 @@ const authScheduleSchema = new Schema(
     terms: { type: String },
     marketing: { type: Schema.Types.Mixed },
     prepareMarketing: { type: String },
+    conclusionDate: { type: String },
     recommendedSales: {
       type: [Schema.Types.Mixed],
     },
