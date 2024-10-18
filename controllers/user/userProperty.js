@@ -298,6 +298,64 @@ exports.createProperty = async (req, res) => {
       { label: "7", name: "Sold", selected: null },
     ];
 
+    const fiveStepProcess=[
+      {
+        name: "OFF MARKET",
+        pricePoint: "1.8-1.9m",
+        enquiries: "82",
+        inspections1: "0",
+        priceAssessment: "Top end of the range",
+        inspections2: "0",
+        engagement: "",
+        finalise: "",
+        keyMeeting: "KEY MEETING: LISTING APPOINTMENT",
+      },
+      {
+        name: "WEEK 1",
+        pricePoint: "1.6-1.7m",
+        enquiries: "50",
+        inspections1: "15",
+        priceAssessment: "Top end of the range",
+        inspections2: "15",
+        engagement: "3",
+        finalise: "",
+        keyMeeting: "KEY MEETING: LAUNCH TO MARKET MEETING",
+      },
+      {
+        name: "WEEK 2",
+        pricePoint: "1.7-1.8m",
+        enquiries: "26",
+        inspections1: "5",
+        priceAssessment: "Top end of the range",
+        inspections2: "20",
+        engagement: "2",
+        finalise: "1.9m",
+        keyMeeting: "KEY MEETING: MID CAMPAIGN MEETING",
+      },
+      {
+        name: "WEEK 3",
+        pricePoint: "",
+        enquiries: "",
+        inspections1: "",
+        priceAssessment: "Top end of the range",
+        inspections2: "",
+        engagement: "",
+        finalise: "",
+        keyMeeting: "KEY MEETING: PRE CLOSING DATE",
+      },
+      {
+        name: "WEEK 4",
+        pricePoint: "",
+        enquiries: "",
+        inspections1: "",
+        priceAssessment: "Top end of the range",
+        inspections2: "",
+        engagement: "",
+        finalise: "",
+        keyMeeting: "KEY MEETING: POST CLOSING DATE",
+      },
+    ];
+
     if (property) {
       // Convert the property document to a plain object
       const propertyData = property.toObject();
@@ -312,6 +370,7 @@ exports.createProperty = async (req, res) => {
         ...restPropertyData,
         boxStatus,
         processChain,
+        fiveStepProcess,
         isCleaned: true,
       });
 
@@ -472,7 +531,8 @@ exports.updateProperty = async (req, res) => {
       "marketingPrice",
       "microPockets",
       "marketing",
-      "followers"
+      "followers",
+      "fiveStepProcess"
     ];
 
     // Build the update query by including only allowed fields

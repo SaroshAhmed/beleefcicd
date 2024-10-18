@@ -105,6 +105,9 @@ const userPropertySchema = new Schema(
     followers: {
       type: [Schema.Types.Mixed],
     },
+    fiveStepProcess:{
+      type: [Schema.Types.Mixed],
+    },
     finishes: {
       type: String,
       enum: ["High-end finishes", "Updated", "Original"],
