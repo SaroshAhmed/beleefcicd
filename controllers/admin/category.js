@@ -1,10 +1,9 @@
 const express = require("express");
-const Category = require("../../models/Category");
-
+const MarketingPrice = require("../../models/MarketingPrice");
 exports.createCategory = async (req, res) => {
   const { category } = req.body;
   try {
-    const categoryModel = new Category({ category });
+    const categoryModel = new MarketingPrice({ category });
     await categoryModel.save();
     res.status(201).json({ success: true, data: category });
   } catch (error) {
@@ -16,7 +15,7 @@ exports.editCategoryName = async (req, res) => {
     const { category } = req.body;
   
     try {
-      const updatedCategory = await Category.findByIdAndUpdate(
+      const updatedCategory = await MarketingPrice.findByIdAndUpdate(
         id,
         { category: category },
         { new: true }
@@ -36,7 +35,7 @@ exports.deleteCategory = async (req, res) => {
     const { id } = req.params; // Category ID from request parameters
   
     try {
-      const deletedCategory = await Category.findByIdAndDelete(id);
+      const deletedCategory = await MarketingPrice.findByIdAndDelete(id);
   
       if (!deletedCategory) {
         return res.status(404).json({ message: "Category not found" });
@@ -52,7 +51,7 @@ exports.editItem = async (req, res) => {
     const { name, price } = req.body; // New name and price from request body
   
     try {
-      const category = await Category.findById(categoryId);
+      const category = await MarketingPrice.findById(categoryId);
   
       if (!category) {
         return res.status(404).json({ message: "Category not found" });
@@ -78,7 +77,7 @@ exports.editItem = async (req, res) => {
     const { categoryId, id } = req.params; // Category ID and Item ID from request parameters
     console.log(categoryId, id);
     try {
-      let category = await Category.findById(categoryId);
+      let category = await MarketingPrice.findById(categoryId);
   
       if (!category) {
         return res.status(404).json({ message: "Category not found" });
@@ -100,7 +99,7 @@ exports.editItem = async (req, res) => {
   };
 exports.getAllCategories = async (req, res) => {
     try {
-      const categories = await Category.find(); // Fetch all categories from the database
+      const categories = await MarketingPrice.find(); // Fetch all categories from the database
   
       if (!categories.length) {
         return res.status(404).json({ message: "No categories found" });
@@ -116,7 +115,7 @@ exports.getAllCategories = async (req, res) => {
     const { name, price } = req.body; // New item's name and price from request body
   
     try {
-      const category = await Category.findById(id);
+      const category = await MarketingPrice.findById(id);
   
       if (!category) {
         return res.status(404).json({ message: "Category not found" });
