@@ -284,10 +284,43 @@ const getMarketingPrices = async (company, price, suburb) => {
   }
 };
 
+const getSignatureUrl = async (signatureUrl) => {
+  try {
+    const urlObj = new URL(signatureUrl);
+    // Remove the leading '/' from pathname to get the Key
+    const key = urlObj.pathname.startsWith("/")
+      ? urlObj.pathname.substring(1)
+      : urlObj.pathname;
+
+    const params = {
+      Bucket: process.env.S3_BUCKET_NAME,
+      Key: key,
+      Expires: 300, // URL expires in 5 minutes
+    };
+
+    // Generate signed URL to access the S3 object
+    const signedUrl = s3.getSignedUrl("getObject", params);
+
+    // Fetch the image from S3 using the signed URL
+    const response = await axios.get(signedUrl, {
+      responseType: "arraybuffer",
+    });
+
+    // Convert the image buffer to base64
+    const base64Image = Buffer.from(response.data, "binary").toString("base64");
+
+    // Return the base64 image in a data URL format
+    return `data:image/jpeg;base64,${base64Image}`;
+  } catch (error) {
+    console.error("Error generating base64 from signature URL:", error);
+    throw new Error("Could not generate base64 image");
+  }
+};
 
 module.exports = {
   formatCurrency,
   formatDateToAEDT,
   getVendorSignatureUrl,
   getMarketingPrices,
+  getSignatureUrl
 };

@@ -3,6 +3,7 @@ const { PDFDocument } = require("pdf-lib");
 const axios = require("axios");
 const AuthSchedule = require("../../models/AuthSchedule");
 const UserProperty = require("../../models/UserProperty");
+const User = require("../../models/User");
 const AWS = require("aws-sdk");
 const { sendEmail, sendConciergeEmail } = require("../../utils/emailService");
 const {
@@ -15,16 +16,17 @@ const { google } = require("googleapis");
 const mongoose = require("mongoose");
 const { sendSms } = require("../../utils/smsService");
 
-const { addDays, subDays, setHours, startOfDay } = require('date-fns');
-const moment = require('moment-timezone');
+const { addDays, subDays, setHours, startOfDay } = require("date-fns");
+const moment = require("moment-timezone");
 
 // Timezone for Sydney
-const SYDNEY_TZ = 'Australia/Sydney';
+const SYDNEY_TZ = "Australia/Sydney";
 
 // Utility function to get the next available weekday (Monday - Friday)
 const getNextWeekday = (date) => {
-  while (date.day() === 0 || date.day() === 6) { // Skip Sunday (0) and Saturday (6)
-    date.add(1, 'day');
+  while (date.day() === 0 || date.day() === 6) {
+    // Skip Sunday (0) and Saturday (6)
+    date.add(1, "day");
   }
   return date;
 };
@@ -47,7 +49,7 @@ const getNextWednesday = (date) => {
 // Utility function to get the next Monday-Thursday for "Launch to Market" meeting
 const getNextMondayToThursday = (date) => {
   while (date.day() === 0 || date.day() === 5 || date.day() === 6) {
-    date.add(1, 'day');
+    date.add(1, "day");
   }
   return date;
 };
@@ -102,9 +104,20 @@ exports.generatePdf = async (req, res) => {
       abn,
       signature,
       conjunctionAgent,
+      validLicence,
     } = req.user ? req.user : agent;
 
     let agentSignature = req.body.content.agentSignature;
+    if (!validLicence) {
+      const user = await User.findOne({
+        company,
+        validLicence: true,
+      });
+
+      if (user) {
+        agentSignature = await getVendorSignatureUrl(user.signature);
+      }
+    }
 
     for (const vendor of vendors) {
       if (vendor.signature) {
@@ -1736,6 +1749,7 @@ const generateAgreement = async (agent, content, propertyId) => {
       abn,
       signature,
       conjunctionAgent,
+      validLicence,
     } = agent;
     // Create a deep copy of content
     const contentCopy = structuredClone(
@@ -1765,6 +1779,17 @@ const generateAgreement = async (agent, content, propertyId) => {
     }
 
     let agentSignature = contentCopy.agentSignature;
+
+    if (!validLicence) {
+      const user = await User.findOne({
+        company,
+        validLicence: true,
+      });
+
+      if (user) {
+        agentSignature = await getVendorSignatureUrl(user.signature);
+      }
+    }
 
     for (const vendor of vendors) {
       if (vendor.signature) {
@@ -3990,7 +4015,7 @@ exports.createAuthSchedule = async (req, res) => {
     termsCondition,
     access,
     services,
-    conclusionDate
+    conclusionDate,
   } = req.body.formattedData;
 
   try {
@@ -4734,7 +4759,7 @@ exports.createAuthSchedule = async (req, res) => {
       access,
       services,
       fraudPrevention,
-      conclusionDate
+      conclusionDate,
     });
 
     return res.status(200).json({ success: true, data: authSchedule });
@@ -4993,13 +5018,13 @@ exports.getAuthScheduleByPropertyId = async (req, res) => {
       .populate("userId")
       .populate("propertyId");
 
-    delete authSchedule.marketing;
-
     if (!authSchedule) {
       return res
         .status(404)
         .json({ success: false, message: "Auth Schedule not found" });
     }
+
+    delete authSchedule.marketing;
 
     // Rename userId to agent
     const authScheduleWithRenamedFields = {
@@ -5012,8 +5037,9 @@ exports.getAuthScheduleByPropertyId = async (req, res) => {
 
     delete authScheduleWithRenamedFields.userId; // Remove userId
 
-
-    return res.status(200).json({ success: true, data: authScheduleWithRenamedFields });
+    return res
+      .status(200)
+      .json({ success: true, data: authScheduleWithRenamedFields });
   } catch (error) {
     console.error("Error fetching AuthSchedule: ", error.message);
     return res.status(500).json({ success: false, message: error.message });
@@ -5047,7 +5073,7 @@ exports.sendToSign = async (req, res) => {
         termsCondition,
         access,
         services,
-        conclusionDate
+        conclusionDate,
       } = req.body.formattedData;
 
       // Check if a UserProperty with the same userId and propertyId already exists
@@ -5256,7 +5282,7 @@ exports.sendToSign = async (req, res) => {
         access,
         services,
         fraudPrevention,
-        conclusionDate
+        conclusionDate,
       });
 
       return res.status(200).json({ success: true, data: authSchedule });
@@ -6298,7 +6324,7 @@ exports.getAllAuthSchedule = async (req, res) => {
 exports.deleteAuthSchedule = async (req, res) => {
   try {
     const { propertyId } = req.params;
-console.log(propertyId)
+    console.log(propertyId);
     // Find and delete the AuthSchedule by propertyId
     const deletedAuthSchedule = await AuthSchedule.findOneAndDelete({
       propertyId,
@@ -6513,17 +6539,17 @@ exports.calculateEvents = async (req, res) => {
       const nowInSydney = moment.tz(SYDNEY_TZ);
 
       if (prepareMarketing === "ASAP") {
-        return nowInSydney.add(1, 'day'); // Start tomorrow
+        return nowInSydney.add(1, "day"); // Start tomorrow
       } else {
         const weeks = parseFloat(prepareMarketing.split(" ")[0]);
-        return nowInSydney.add(weeksToDays(weeks), 'days');
+        return nowInSydney.add(weeksToDays(weeks), "days");
       }
     };
 
     // Calculate the conclusion date based on conclusionDate value
     const getClosingDate = (marketingStartDate) => {
       const weeks = parseFloat(conclusionDate.split(" ")[0]);
-      return marketingStartDate.clone().add(weeksToDays(weeks), 'days');
+      return marketingStartDate.clone().add(weeksToDays(weeks), "days");
     };
 
     const marketingStartDate = getMarketingStartDate();
@@ -6535,9 +6561,19 @@ exports.calculateEvents = async (req, res) => {
       let currentDate = marketingStartDate.clone();
 
       // Helper to create event in Sydney time
-      const createEventInSydneyTime = (summary, eventDate, startHour, durationHours) => {
-        const eventStartSydney = eventDate.clone().set('hour', startHour).startOf('hour');
-        const eventEndSydney = eventStartSydney.clone().add(durationHours, 'hours');
+      const createEventInSydneyTime = (
+        summary,
+        eventDate,
+        startHour,
+        durationHours
+      ) => {
+        const eventStartSydney = eventDate
+          .clone()
+          .set("hour", startHour)
+          .startOf("hour");
+        const eventEndSydney = eventStartSydney
+          .clone()
+          .add(durationHours, "hours");
         return {
           summary,
           start: eventStartSydney.toISOString(),
@@ -6548,7 +6584,7 @@ exports.calculateEvents = async (req, res) => {
       // Phase 1: Pre-launch events
       // Events: Photoshoot, Floorplan, and Video - Flexible Scheduling on Weekdays Only
       const scheduleFlexibleEvent = (eventName, gapDays) => {
-        currentDate = getNextWeekday(currentDate.clone().add(gapDays, 'days'));
+        currentDate = getNextWeekday(currentDate.clone().add(gapDays, "days"));
         events.push(createEventInSydneyTime(eventName, currentDate, 10, 1));
       };
 
@@ -6558,15 +6594,26 @@ exports.calculateEvents = async (req, res) => {
 
       // Phase 2: Launch to Market
       // Meeting: Launch to Market happens 2 days after the last media event
-      const launchToMarketMeetingDate = getNextMondayToThursday(currentDate.clone().add(2, 'days'));
-      events.push(createEventInSydneyTime("Meeting: Launch to Market", launchToMarketMeetingDate, 10, 0.5));
+      const launchToMarketMeetingDate = getNextMondayToThursday(
+        currentDate.clone().add(2, "days")
+      );
+      events.push(
+        createEventInSydneyTime(
+          "Meeting: Launch to Market",
+          launchToMarketMeetingDate,
+          10,
+          0.5
+        )
+      );
 
       // Launch to Market happens 1 hour after the meeting
       const launchToMarketDate = launchToMarketMeetingDate.clone();
       if (launchToMarketDate.day() === 4 && launchToMarketDate.hour() > 13) {
         launchToMarketDate.hour(12);
       }
-      events.push(createEventInSydneyTime("Launch to Market", launchToMarketDate, 11, 1));
+      events.push(
+        createEventInSydneyTime("Launch to Market", launchToMarketDate, 11, 1)
+      );
 
       // Phase 3: Post-launch recurring events
       // Start scheduling recurring events from the launch date
@@ -6576,42 +6623,79 @@ exports.calculateEvents = async (req, res) => {
       while (currentDate.isBefore(closingDate)) {
         // Weekly report: First Tuesday after launch, then every Tuesday
         const weeklyReport = getNextTuesday(currentDate);
-        if (weeklyReport.isAfter(launchToMarketDate) && weeklyReport.isBefore(closingDate)) {
-          events.push(createEventInSydneyTime("Weekly Report", weeklyReport, 10, 1));
+        if (
+          weeklyReport.isAfter(launchToMarketDate) &&
+          weeklyReport.isBefore(closingDate)
+        ) {
+          events.push(
+            createEventInSydneyTime("Weekly Report", weeklyReport, 10, 1)
+          );
         }
 
         // Open home: First Saturday after launch, then every Saturday
         const openHome = getNextSaturday(currentDate);
-        if (openHome.isAfter(launchToMarketDate) && openHome.isBefore(closingDate)) {
+        if (
+          openHome.isAfter(launchToMarketDate) &&
+          openHome.isBefore(closingDate)
+        ) {
           events.push(createEventInSydneyTime("Open home", openHome, 12, 0.5));
         }
 
         // Mid-week open home and meeting: First Wednesday after launch, then every Wednesday
         const midWeekOpenHome = getNextWednesday(currentDate);
-        if (midWeekOpenHome.isAfter(launchToMarketDate) && midWeekOpenHome.isBefore(closingDate)) {
+        if (
+          midWeekOpenHome.isAfter(launchToMarketDate) &&
+          midWeekOpenHome.isBefore(closingDate)
+        ) {
           // Schedule Mid-week open home (30 minutes)
           events.push({
             summary: "Mid-week open home",
-            start: midWeekOpenHome.clone().set('hour', 11).startOf('hour').toISOString(),
-            end: midWeekOpenHome.clone().set('hour', 11).startOf('hour').add(30, 'minutes').toISOString()
+            start: midWeekOpenHome
+              .clone()
+              .set("hour", 11)
+              .startOf("hour")
+              .toISOString(),
+            end: midWeekOpenHome
+              .clone()
+              .set("hour", 11)
+              .startOf("hour")
+              .add(30, "minutes")
+              .toISOString(),
           });
 
           // Schedule Mid-campaign meeting immediately after (30 minutes)
           events.push({
             summary: "Mid-campaign meeting",
-            start: midWeekOpenHome.clone().set('hour', 11).startOf('hour').add(30, 'minutes').toISOString(),
-            end: midWeekOpenHome.clone().set('hour', 11).startOf('hour').add(60, 'minutes').toISOString()
+            start: midWeekOpenHome
+              .clone()
+              .set("hour", 11)
+              .startOf("hour")
+              .add(30, "minutes")
+              .toISOString(),
+            end: midWeekOpenHome
+              .clone()
+              .set("hour", 11)
+              .startOf("hour")
+              .add(60, "minutes")
+              .toISOString(),
           });
         }
 
         // Move to the next week
-        currentDate.add(7, 'days');
+        currentDate.add(7, "days");
       }
 
       // Phase 4: Closing events
       // Meeting: Pre-closing date: 24 hours before closing date
-      const preClosingMeeting = closingDate.clone().subtract(1, 'day');
-      events.push(createEventInSydneyTime("Meeting: Pre Closing Date", preClosingMeeting, 14, 1));
+      const preClosingMeeting = closingDate.clone().subtract(1, "day");
+      events.push(
+        createEventInSydneyTime(
+          "Meeting: Pre Closing Date",
+          preClosingMeeting,
+          14,
+          1
+        )
+      );
 
       // Closing Date
       events.push(createEventInSydneyTime("Closing Date", closingDate, 10, 1));
