@@ -11,9 +11,9 @@ const {
     refreshToken,
     setPassword,
     resendEmail,
-    forgotPassword,
-    resendforgotPassword,
-    changePassword
+    changePassword,
+    getAllAdmins,
+    deleteAdmin
   } = require("../../../controllers/admin/auth")
 const { auth,isAdmin } = require("../../../middleware/auth");
 
@@ -24,8 +24,6 @@ router.get("/logoutfromalldevices",isAdmin,logoutFromAllDevices)
 router.post("/register", register)
 router.post("/setPassword/:token", setPassword)
 router.post("/resendEmail",resendEmail)
-router.post("/forgotPassowrd",forgotPassword)
-router.post('/resendForgotEmail',resendforgotPassword)
 router.post('/change-password',isAdmin,changePassword)
 router.post("/reset-password-token", resetPasswordToken)
 router.post("/reset-password", resetPassword)
@@ -33,5 +31,7 @@ router.post('/refresh-token',refreshToken);
 router.get('/me',isAdmin,(req,res)=>{
     res.status(200).json({success:true,data:req.user})
 })
+router.get('/',isAdmin,getAllAdmins)
+router.delete('/:id',isAdmin,deleteAdmin)
 
 module.exports = router;

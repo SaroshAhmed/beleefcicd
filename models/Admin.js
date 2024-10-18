@@ -19,6 +19,11 @@ const adminSchema = new mongoose.Schema({
   refreshToken: { 
     type: String
   },
+  status: {
+    type: String,
+    enum: ["pending", "active", "inactive"],
+    default: "pending",
+  },
 }, {
   timestamps: true
 });

@@ -9,9 +9,10 @@ exports.register = async (req, res) => {
 	try {
 		const {
 			email,
+      name
 		} = req.body;
 		if (
-			!email
+			!email || !name
 		) {
 			return res.status(403).send({
 				success: false,
@@ -28,12 +29,14 @@ exports.register = async (req, res) => {
 		}
 		const user = await Admin.create({
 			email,
+      name,
+      role: "admin"
 		});
   // generate a token and combined with a page link where user will add the password
   const token = jwt.sign({ id: user._id }, process.env.ACCESS_TOKEN_SECRET,{
     expiresIn: '30m',
   });
-		sendEmail.sendEmail(email, "Welcome to our platform", `Please click on the link to set your password: ${process.env.REACT_APP_FRONTEND_URL}/password/${token}`);
+		sendEmail.sendEmail(email, "Welcome to our platform", `Please click on the link to set your password: ${process.env.REACT_APP_FRONTEND_URL}/password?token=${token}`);
 		return res.status(200).json({
 			success: true,
 			user,
@@ -65,6 +68,7 @@ exports.setPassword= async (req, res) => {
         message: "User not found",
       });
     }
+    console.log("user", user);
     user.password = await bcrypt.hash(password, 10);
     await user.save();
     return res.status(200).json({
@@ -75,7 +79,7 @@ exports.setPassword= async (req, res) => {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Password cannot be set. Please try again.",
+      message: "Token is invalid or expired, Resent the email for new link",
     });
   }
 }
@@ -92,7 +96,7 @@ exports.resendEmail = async (req, res) => {
     const token = jwt.sign({ id: user._id }, process.env.ACCESS_TOKEN_SECRET,{
       expiresIn: '30m',
     });
-    sendEmail.sendEmail(email, "Welcome to our platform", `Please click on the link to set your password: ${process.env.REACT_APP_FRONTEND_URL}/password/${token}`);
+    sendEmail.sendEmail(email, "Welcome to our platform", `Please click on the link to set your password: ${process.env.REACT_APP_FRONTEND_URL}/password?token=${token}`);
     return res.status(200).json({
       success: true,
       message: "Email sent successfully",
@@ -105,64 +109,10 @@ exports.resendEmail = async (req, res) => {
     });
   }
 }
-exports.forgotPassword = async (req, res) => {
 
-  try {
-    const { email } = req.body;
-    const user = await Admin.findOne
-    ({ email });
-    if (!user) {
-      return res.status(404).json({
-        success: false, 
-        message: "User not found",
-      });
-    }
-    const token = jwt.sign({ id: user._id }, process.env.ACCESS_TOKEN_SECRET,{
-      expiresIn: '30m',
-    });
-    sendEmail.sendEmail(email, "Reset your password", `Please click on the link to reset your password: ${process.env.REACT_APP_FRONTEND_URL}/reset-password/${token}`);
-    return res.status(200).json({
-      success: true,
-      message: "Email sent successfully",
-    });
-
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      success: false,
-      message: "Email cannot be sent. Please try again.",
-    });
-  }
-}
-exports.resendforgotPassword = async (req, res) => {
-  try {
-    const { email } = req.body;
-    const user = await  Admin.findOne ({ email });
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-    const token = jwt.sign({ id: user._id }, process.env.ACCESS_TOKEN_SECRET,{
-      expiresIn: '30m',
-    });
-    sendEmail.sendEmail(email, "Reset your password", `Please click on the link to reset your password: ${process.env.REACT_APP_FRONTEND_URL}/reset-password/${token}`);
-    return res.status(200).json({
-      success: true,
-      message: "Email sent successfully",
-    });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      success: false,
-      message: "Email cannot be sent. Please try again.",
-    });
-  }
-}
 exports.changePassword = async (req, res) => {
   try {
-    const { oldPassword, password, confirmPassword } = req.body;
+    const { oldPassword, newPassword, confirmPassword } = req.body;
     const user = await Admin.findById(req.user.id);
     if (!user) {
       return res.status(404).json({
@@ -508,3 +458,41 @@ exports.refreshToken = async (req, res) => {
       });
     }
   };
+
+exports.getAllAdmins=async (req, res) => {
+    try {
+        const admins = await Admin.find();
+        return res.status(200).json({
+            success: true,
+            admins,
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to get all admins",
+        });
+    }
+};
+exports.deleteAdmin = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const admin = await Admin.findByIdAndDelete(id);
+        if (!admin) {
+            return res.status(404).json({
+                success: false,
+                message: "Admin not found",
+            });
+        }
+        return res.status(200).json({
+            success: true,
+            message: "Admin deleted successfully",
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to delete admin",
+        });
+    }
+};
