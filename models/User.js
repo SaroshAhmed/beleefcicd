@@ -14,6 +14,7 @@ const userSchema = new mongoose.Schema(
     title: String,
     googleId: { type: String, required: true, unique: true },
     profileComplete: { type: Boolean, default: false },
+    validLicence: { type: Boolean, default: false },
     stripeCustomerId: { type: String }, // Stripe Customer ID
     paymentMethods: [
       {
