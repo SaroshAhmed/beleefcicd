@@ -2,7 +2,7 @@ const User = require("../../models/User");
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select(
-      "name email mobile picture company title"
+      "name email mobile picture company title validLicence"
     );
     res.status(200).json({ success: true, data: users });
   } catch (error) {
@@ -33,8 +33,10 @@ exports.updateUser = async (req, res) => {
             mobile,
             company,
             title,
-            id
+            id,
+            validLicence
         } = req.body;
+        console.log(req.body);
         const user = await User.findById(id);
         if(!user){
             return res.status(404).json({message: "User not found"});
@@ -120,6 +122,7 @@ exports.updateUser = async (req, res) => {
         user.title = title;
         user.conjunctionAgent = data?.conjunctionAgent;
         user.abn = data?.abn;
+        user.validLicence = validLicence?.value;
         await user.save();
         res.status(200).json({success: true, data: user});
     }catch(error){
