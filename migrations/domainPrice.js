@@ -841,29 +841,141 @@ const updateDomainPrices = async () => {
     //   ],
     // };
     
-    const domainPrices = {
-      Clyde: [
-        { minPrice: 0, maxPrice: 999999, fee: 957 },
-        { minPrice: 1000000, maxPrice: 9999999999, fee: 1199 },
-      ],
-      Granville: [
-        { minPrice: 0, maxPrice: 999999, fee: 957 },
-        { minPrice: 1000000, maxPrice: 9999999999, fee: 1199 },
-      ],
-      Guildford: [
-        { minPrice: 0, maxPrice: 999999, fee: 957 },
-        { minPrice: 1000000, maxPrice: 9999999999, fee: 1199 },
-      ],
-      Merrylands: [
-        { minPrice: 0, maxPrice: 999999, fee: 957 },
-        { minPrice: 1000000, maxPrice: 9999999999, fee: 1199 },
-      ],
-      "South Granville": [
-        { minPrice: 0, maxPrice: 999999, fee: 957 },
-        { minPrice: 1000000, maxPrice: 9999999999, fee: 1199 },
-      ],
-    };
+    // const domainPrices = {
+    //   Clyde: [
+    //     { minPrice: 0, maxPrice: 999999, fee: 957 },
+    //     { minPrice: 1000000, maxPrice: 9999999999, fee: 1199 },
+    //   ],
+    //   Granville: [
+    //     { minPrice: 0, maxPrice: 999999, fee: 957 },
+    //     { minPrice: 1000000, maxPrice: 9999999999, fee: 1199 },
+    //   ],
+    //   Guildford: [
+    //     { minPrice: 0, maxPrice: 999999, fee: 957 },
+    //     { minPrice: 1000000, maxPrice: 9999999999, fee: 1199 },
+    //   ],
+    //   Merrylands: [
+    //     { minPrice: 0, maxPrice: 999999, fee: 957 },
+    //     { minPrice: 1000000, maxPrice: 9999999999, fee: 1199 },
+    //   ],
+    //   "South Granville": [
+    //     { minPrice: 0, maxPrice: 999999, fee: 957 },
+    //     { minPrice: 1000000, maxPrice: 9999999999, fee: 1199 },
+    //   ],
+    // };
 
+    // const domainPrices={
+    //   Abbotsbury: [
+    //     { minPrice: 0, maxPrice: 699999, fee: 660 },
+    //     { minPrice: 700000, maxPrice: 9999999999, fee: 880 },
+    //   ],
+    //   Bonnyrigg: [
+    //     { minPrice: 0, maxPrice: 699999, fee: 660 },
+    //     { minPrice: 700000, maxPrice: 9999999999, fee: 880 },
+    //   ],
+    //   BonnyriggHeights: [
+    //     { minPrice: 0, maxPrice: 699999, fee: 660 },
+    //     { minPrice: 700000, maxPrice: 9999999999, fee: 880 },
+    //   ],
+    //   BossleyPark: [
+    //     { minPrice: 0, maxPrice: 699999, fee: 660 },
+    //     { minPrice: 700000, maxPrice: 9999999999, fee: 880 },
+    //   ],
+    //   Cabramatta: [
+    //     { minPrice: 0, maxPrice: 699999, fee: 660 },
+    //     { minPrice: 700000, maxPrice: 9999999999, fee: 880 },
+    //   ],
+    //   CabramattaWest: [
+    //     { minPrice: 0, maxPrice: 699999, fee: 660 },
+    //     { minPrice: 700000, maxPrice: 9999999999, fee: 880 },
+    //   ],
+    //   CanleyHeights: [
+    //     { minPrice: 0, maxPrice: 699999, fee: 660 },
+    //     { minPrice: 700000, maxPrice: 9999999999, fee: 880 },
+    //   ],
+    //   CanleyVale: [
+    //     { minPrice: 0, maxPrice: 699999, fee: 660 },
+    //     { minPrice: 700000, maxPrice: 9999999999, fee: 880 },
+    //   ],
+    //   EdensorPark: [
+    //     { minPrice: 0, maxPrice: 699999, fee: 660 },
+    //     { minPrice: 700000, maxPrice: 9999999999, fee: 880 },
+    //   ],
+    //   Fairfield: [
+    //     { minPrice: 0, maxPrice: 699999, fee: 660 },
+    //     { minPrice: 700000, maxPrice: 9999999999, fee: 880 },
+    //   ],
+    //   FairfieldEast: [
+    //     { minPrice: 0, maxPrice: 699999, fee: 660 },
+    //     { minPrice: 700000, maxPrice: 9999999999, fee: 880 },
+    //   ],
+    //   FairfieldHeights: [
+    //     { minPrice: 0, maxPrice: 699999, fee: 660 },
+    //     { minPrice: 700000, maxPrice: 9999999999, fee: 880 },
+    //   ],
+    //   FairfieldWest: [
+    //     { minPrice: 0, maxPrice: 699999, fee: 660 },
+    //     { minPrice: 700000, maxPrice: 9999999999, fee: 880 },
+    //   ],
+    //   GreenfieldPark: [
+    //     { minPrice: 0, maxPrice: 699999, fee: 660 },
+    //     { minPrice: 700000, maxPrice: 9999999999, fee: 880 },
+    //   ],
+    //   Lansvale: [
+    //     { minPrice: 0, maxPrice: 699999, fee: 660 },
+    //     { minPrice: 700000, maxPrice: 9999999999, fee: 880 },
+    //   ],
+    //   MountPritchard: [
+    //     { minPrice: 0, maxPrice: 699999, fee: 660 },
+    //     { minPrice: 700000, maxPrice: 9999999999, fee: 880 },
+    //   ],
+    //   Prairiewood: [
+    //     { minPrice: 0, maxPrice: 699999, fee: 660 },
+    //     { minPrice: 700000, maxPrice: 9999999999, fee: 880 },
+    //   ],
+    //   Smithfield: [
+    //     { minPrice: 0, maxPrice: 699999, fee: 660 },
+    //     { minPrice: 700000, maxPrice: 9999999999, fee: 880 },
+    //   ],
+    //   StJohnsPark: [
+    //     { minPrice: 0, maxPrice: 699999, fee: 660 },
+    //     { minPrice: 700000, maxPrice: 9999999999, fee: 880 },
+    //   ],
+    //   Wakeley: [
+    //     { minPrice: 0, maxPrice: 699999, fee: 660 },
+    //     { minPrice: 700000, maxPrice: 9999999999, fee: 880 },
+    //   ],
+    //   WetherillPark: [
+    //     { minPrice: 0, maxPrice: 699999, fee: 660 },
+    //     { minPrice: 700000, maxPrice: 9999999999, fee: 880 },
+    //   ]
+    // }
+
+    // const domainPrices={
+    //   Carramar: [
+    //     { minPrice: 0, maxPrice: 999999, fee: 1089 },
+    //     { minPrice: 1000000, maxPrice: 9999999999, fee: 1375 },
+    //   ],
+    //   Villawood: [
+    //     { minPrice: 0, maxPrice: 999999, fee: 1089 },
+    //     { minPrice: 1000000, maxPrice: 9999999999, fee: 1375 },
+    //   ]
+    // }
+
+    const domainPrices={
+      HorsleyPark: [
+        { minPrice: 0, maxPrice: 999999, fee: 957 },
+        { minPrice: 1000000, maxPrice: 9999999999, fee: 1199 },
+      ],
+      OldGuildford: [
+        { minPrice: 0, maxPrice: 999999, fee: 957 },
+        { minPrice: 1000000, maxPrice: 9999999999, fee: 1199 },
+      ],
+      Yennora: [
+        { minPrice: 0, maxPrice: 999999, fee: 957 },
+        { minPrice: 1000000, maxPrice: 9999999999, fee: 1199 },
+      ]
+    }
     
     // Iterate over each suburb and update its domain price
     for (const suburb in domainPrices) {
