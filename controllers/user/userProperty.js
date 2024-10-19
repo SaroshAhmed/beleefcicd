@@ -398,22 +398,7 @@ exports.createProperty = async (req, res) => {
       ...restPropertyData,
       boxStatus,
       processChain,
-      marketingPrice: "$5000-8000",
-      marketingItems: [
-        "Photography",
-        "Floorplan",
-        "Video",
-        "Copywriting",
-        "Styling",
-        "Brochures",
-        "Signboard",
-        "Mailcards",
-        "Social media",
-        "Realestate.com.au",
-        "Domain.com.au",
-        "Ausrealty.com.au",
-        "Auctioneer",
-      ],
+      fiveStepProcess,
       isCleaned: false,
     });
 
