@@ -274,8 +274,8 @@ exports.getPostListByAddress = async (req, res) => {
     }
 
     const agent=postList.userId
-    const followers = postList.propertyId.followers;
-    const marketing = postList.propertyId.marketing;
+    const followers = postList.propertyId?.followers || [];
+    const marketing = postList.propertyId?.marketing || [];
 
     const result = {
       ...postList._doc,
@@ -309,8 +309,8 @@ exports.getPostListByShareableLink = async (req, res) => {
     }
 
     const agent=postList.userId
-    const followers = postList.propertyId.followers;
-    const marketing = postList.propertyId.marketing;
+    const followers = postList.propertyId?.followers || [];
+    const marketing = postList.propertyId?.marketing || [];
 
     const result = {
       ...postList._doc,
