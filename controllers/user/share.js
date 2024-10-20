@@ -30,7 +30,7 @@ exports.createQuickSearch = async (req, res) => {
 
     await quickSearch.save();
 
-    const shareableLink = `${REACT_APP_FRONTEND_URL}/share/${uniqueId}`;
+    const shareableLink = `${REACT_APP_FRONTEND_URL}/quick-search/share/${uniqueId}`;
     res.status(200).json({ success: true, data: shareableLink });
   } catch (error) {
     console.error(error);

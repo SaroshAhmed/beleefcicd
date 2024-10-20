@@ -93,7 +93,7 @@ exports.createBooking = async (req, res) => {
   };
 
   const name = "Book Appraisal";
-  const prelistLink = `${REACT_APP_FRONTEND_URL}/prelist/${uniqueId}`;
+  const prelistLink = `${REACT_APP_FRONTEND_URL}/prelist/share/${uniqueId}`;
 
   try {
     // Check for existing events in the given time slot using the logged-in user's credentials
