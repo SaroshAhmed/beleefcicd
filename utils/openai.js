@@ -86,7 +86,7 @@ const chatCompletion = async (systemPrompt, userInput, jsonFormat = false) => {
       },
       {
         role: "user",
-        content: typeof userInput=='object'?JSON.stringify(userInput):userInput,
+        content: userInput,
       },
     ];
 
