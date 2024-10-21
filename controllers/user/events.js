@@ -46,7 +46,7 @@ const eventDurations = {
   "Melo - Storytelling Videos": 2,
   "Melo - Large Floor Plan": 2,
   "Melo - Medium Floor Plan": 1,
-  "Melo - Small Floor Plan": 0.75, // 45 minutes
+  "Melo - Small Floor Plan": 0.75,
 };
 
 // Function to get the selected item from a category
@@ -83,7 +83,7 @@ exports.calculateEvents = async (req, res) => {
       marketing.categories
     );
 
-    // Function to convert "X weeks" to days (handles floating point weeks like "2.5 weeks")
+    // Function to convert "X weeks" to days
     const weeksToDays = (weeks) => parseFloat(weeks) * 7;
 
     // Calculate the marketing start date based on prepareMarketing value
@@ -100,13 +100,6 @@ exports.calculateEvents = async (req, res) => {
 
     const marketingStartDate = getMarketingStartDate();
 
-    const getClosingDate = (marketingStartDate) => {
-      const weeks = parseFloat(conclusionDate.split(" ")[0]);
-      return marketingStartDate.clone().add(weeksToDays(weeks) + 2, "days");
-    };
-
-    const closingDate = getClosingDate(marketingStartDate);
-
     // Helper function to create an event in Sydney time
     const createEventInSydneyTime = (
       summary,
@@ -114,20 +107,19 @@ exports.calculateEvents = async (req, res) => {
       startHour,
       durationHours
     ) => {
-      // Split startHour into the integer part (hours) and the fractional part (minutes)
       const hours = Math.floor(startHour);
-      const minutes = (startHour - hours) * 60; // Convert the fractional part to minutes
+      const minutes = (startHour - hours) * 60;
 
       const eventStartSydney = eventDate
         .clone()
         .set("hour", hours)
         .set("minute", minutes)
         .set("second", 0)
-        .set("millisecond", 0); // Ensure precise time handling
+        .set("millisecond", 0);
 
       const eventEndSydney = eventStartSydney
         .clone()
-        .add(durationHours * 60, "minutes"); // Multiply by 60 to handle fractional durations
+        .add(durationHours * 60, "minutes");
 
       return {
         summary,
@@ -137,10 +129,19 @@ exports.calculateEvents = async (req, res) => {
     };
 
     // Function to map events in Sydney timezone
-    const calculateEventDates = (closingDate, marketingStartDate) => {
+    const calculateEventDates = (marketingStartDate) => {
       const events = [];
+
+      // Push "Notify off market buyers" event
+      events.push({
+        summary: "Notify off market buyers",
+        start: marketingStartDate.toISOString(),
+        end: null,
+      });
+
       let currentDate = marketingStartDate.clone();
-      let currentHour = 6; // Start at 6 AM
+      let currentHour = 6;
+      let lastMediaDate = null;
 
       // Ensure the event is between 6 AM and 8 PM
       const scheduleEventInBounds = (
@@ -152,10 +153,9 @@ exports.calculateEvents = async (req, res) => {
         currentDate = getNextWeekday(currentDate.clone().add(gapDays, "days"));
 
         if (specificHour !== null) {
-          currentHour = specificHour; // Use the specific hour if provided (e.g., 16 for 4:00 PM)
+          currentHour = specificHour;
         } else if (currentHour + durationHours > 20) {
-          // Ensure event ends before 8 PM
-          currentHour = 6; // If it goes past 8 PM, move to the next day
+          currentHour = 6;
           currentDate.add(1, "day");
         }
 
@@ -167,35 +167,49 @@ exports.calculateEvents = async (req, res) => {
             durationHours
           )
         );
-        currentHour += durationHours; // Update time for next event
+
+        // Update lastMediaDate when scheduling photo or video
+        if (eventName.includes("Photography") || eventName.includes("Video")) {
+          lastMediaDate = currentDate.clone();
+        }
+
+        currentHour += durationHours;
       };
 
       // Phase 1: Schedule Photos first (if selected)
       if (selectedPhoto) {
         const photoName = selectedPhoto.name;
         const photoDuration = eventDurations[photoName];
-        scheduleEventInBounds(photoName, 0, photoDuration); // Schedule photo
+        scheduleEventInBounds(photoName, 0, photoDuration);
       }
 
-      // Phase 2: Schedule Videos second (if selected and after photos)
+      // Phase 2: Schedule Videos second (if selected)
       if (selectedVideo) {
         const videoName = selectedVideo.name;
         const videoDuration = eventDurations[videoName];
-        scheduleEventInBounds(videoName, 0, videoDuration); // Schedule video
+        scheduleEventInBounds(videoName, 0, videoDuration);
       }
 
-      // Phase 3: Schedule Floorplan last (if selected)
+      // Phase 3: Schedule Floorplan
       if (selectedFloorplan) {
         const floorplanName = selectedFloorplan.name;
         const floorplanDuration = eventDurations[floorplanName];
         scheduleEventInBounds(floorplanName, 0, floorplanDuration, 16);
       }
 
-      // Phase 4: Launch to Market and post-launch recurring events
-      const launchToMarketMeetingDate = getNextMondayToThursday(
-        currentDate.clone().add(2, "days")
-      );
+      // Calculate launch to market date (2 weekdays after photos/videos)
+      let launchToMarketMeetingDate;
+      if (lastMediaDate) {
+        launchToMarketMeetingDate = getNextMondayToThursday(
+          lastMediaDate.clone().add(2, "days")
+        );
+      } else {
+        launchToMarketMeetingDate = getNextMondayToThursday(
+          currentDate.clone().add(2, "days")
+        );
+      }
 
+      // Schedule Launch to Market meeting and event
       events.push(
         createEventInSydneyTime(
           "Meeting: Launch to Market",
@@ -213,10 +227,16 @@ exports.calculateEvents = async (req, res) => {
         createEventInSydneyTime("Launch to Market", launchToMarketDate, 11, 1)
       );
 
-      currentDate = launchToMarketDate.clone();
+      // Calculate closing date based on launch to market date
+      const closingDate = (() => {
+        const weeks = parseFloat(conclusionDate.split(" ")[0]);
+        return launchToMarketDate.clone().add(weeksToDays(weeks), "days");
+      })();
 
-      while (currentDate.isBefore(closingDate)) {
-        const openHome = getNextSaturday(currentDate);
+      // Schedule recurring events
+      let currentRecurringDate = launchToMarketDate.clone();
+      while (currentRecurringDate.isBefore(closingDate)) {
+        const openHome = getNextSaturday(currentRecurringDate);
         if (
           openHome.isAfter(launchToMarketDate) &&
           openHome.isBefore(closingDate)
@@ -224,46 +244,33 @@ exports.calculateEvents = async (req, res) => {
           events.push(createEventInSydneyTime("Open home", openHome, 12, 0.5));
         }
 
-        const midWeekOpenHome = getNextWednesday(currentDate);
+        const midWeekOpenHome = getNextWednesday(currentRecurringDate);
         if (
           midWeekOpenHome.isAfter(launchToMarketDate) &&
           midWeekOpenHome.isBefore(closingDate)
         ) {
-          events.push({
-            summary: "Mid-week open home",
-            start: midWeekOpenHome
-              .clone()
-              .set("hour", 11)
-              .startOf("hour")
-              .toISOString(),
-            end: midWeekOpenHome
-              .clone()
-              .set("hour", 11)
-              .startOf("hour")
-              .add(30, "minutes")
-              .toISOString(),
-          });
-
-          events.push({
-            summary: "Mid-campaign meeting",
-            start: midWeekOpenHome
-              .clone()
-              .set("hour", 11)
-              .startOf("hour")
-              .add(30, "minutes")
-              .toISOString(),
-            end: midWeekOpenHome
-              .clone()
-              .set("hour", 11)
-              .startOf("hour")
-              .add(60, "minutes")
-              .toISOString(),
-          });
+          events.push(
+            createEventInSydneyTime(
+              "Mid-week open home",
+              midWeekOpenHome,
+              11,
+              0.5
+            )
+          );
+          events.push(
+            createEventInSydneyTime(
+              "Mid-campaign meeting",
+              midWeekOpenHome,
+              11.5,
+              0.5
+            )
+          );
         }
 
-        currentDate.add(7, "days");
+        currentRecurringDate.add(7, "days");
       }
 
+      // Schedule closing events
       const preClosingMeeting = closingDate.clone().subtract(1, "day");
       events.push(
         createEventInSydneyTime(
@@ -279,7 +286,7 @@ exports.calculateEvents = async (req, res) => {
       return events;
     };
 
-    const events = calculateEventDates(closingDate, marketingStartDate);
+    const events = calculateEventDates(marketingStartDate);
 
     return res.status(200).json({ success: true, data: events });
   } catch (error) {
