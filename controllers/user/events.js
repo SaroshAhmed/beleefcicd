@@ -98,13 +98,13 @@ exports.calculateEvents = async (req, res) => {
       }
     };
 
-    // Calculate the conclusion date based on conclusionDate value
+    const marketingStartDate = getMarketingStartDate();
+
     const getClosingDate = (marketingStartDate) => {
       const weeks = parseFloat(conclusionDate.split(" ")[0]);
-      return marketingStartDate.clone().add(weeksToDays(weeks), "days");
+      return marketingStartDate.clone().add(weeksToDays(weeks) + 2, "days");
     };
 
-    const marketingStartDate = getMarketingStartDate();
     const closingDate = getClosingDate(marketingStartDate);
 
     // Helper function to create an event in Sydney time
@@ -114,13 +114,21 @@ exports.calculateEvents = async (req, res) => {
       startHour,
       durationHours
     ) => {
+      // Split startHour into the integer part (hours) and the fractional part (minutes)
+      const hours = Math.floor(startHour);
+      const minutes = (startHour - hours) * 60; // Convert the fractional part to minutes
+
       const eventStartSydney = eventDate
         .clone()
-        .set("hour", startHour)
-        .startOf("hour");
+        .set("hour", hours)
+        .set("minute", minutes)
+        .set("second", 0)
+        .set("millisecond", 0); // Ensure precise time handling
+
       const eventEndSydney = eventStartSydney
         .clone()
-        .add(durationHours, "hours");
+        .add(durationHours * 60, "minutes"); // Multiply by 60 to handle fractional durations
+
       return {
         summary,
         start: eventStartSydney.toISOString(),
@@ -135,13 +143,22 @@ exports.calculateEvents = async (req, res) => {
       let currentHour = 6; // Start at 6 AM
 
       // Ensure the event is between 6 AM and 8 PM
-      const scheduleEventInBounds = (eventName, gapDays, durationHours) => {
+      const scheduleEventInBounds = (
+        eventName,
+        gapDays,
+        durationHours,
+        specificHour = null
+      ) => {
         currentDate = getNextWeekday(currentDate.clone().add(gapDays, "days"));
-        if (currentHour + durationHours > 20) {
+
+        if (specificHour !== null) {
+          currentHour = specificHour; // Use the specific hour if provided (e.g., 16 for 4:00 PM)
+        } else if (currentHour + durationHours > 20) {
           // Ensure event ends before 8 PM
           currentHour = 6; // If it goes past 8 PM, move to the next day
           currentDate.add(1, "day");
         }
+
         events.push(
           createEventInSydneyTime(
             eventName,
@@ -156,28 +173,29 @@ exports.calculateEvents = async (req, res) => {
       // Phase 1: Schedule Photos first (if selected)
       if (selectedPhoto) {
         const photoName = selectedPhoto.name;
-        const photoDuration = eventDurations[photoName] || 1; // Default to 1 hour
-        scheduleEventInBounds(photoName, 0, photoDuration); // Same day
+        const photoDuration = eventDurations[photoName];
+        scheduleEventInBounds(photoName, 0, photoDuration); // Schedule photo
       }
 
-      // Phase 2: Schedule Videos second (if selected)
+      // Phase 2: Schedule Videos second (if selected and after photos)
       if (selectedVideo) {
         const videoName = selectedVideo.name;
-        const videoDuration = eventDurations[videoName] || 1.5; // Default to 1.5 hours
-        scheduleEventInBounds(videoName, 0, videoDuration); // Same day
+        const videoDuration = eventDurations[videoName];
+        scheduleEventInBounds(videoName, 0, videoDuration); // Schedule video
       }
 
       // Phase 3: Schedule Floorplan last (if selected)
       if (selectedFloorplan) {
         const floorplanName = selectedFloorplan.name;
-        const floorplanDuration = eventDurations[floorplanName] || 1; // Default to 1 hour
-        scheduleEventInBounds(floorplanName, 0, floorplanDuration); // Same day
+        const floorplanDuration = eventDurations[floorplanName];
+        scheduleEventInBounds(floorplanName, 0, floorplanDuration, 16);
       }
 
       // Phase 4: Launch to Market and post-launch recurring events
       const launchToMarketMeetingDate = getNextMondayToThursday(
         currentDate.clone().add(2, "days")
       );
+
       events.push(
         createEventInSydneyTime(
           "Meeting: Launch to Market",
