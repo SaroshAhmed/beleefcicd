@@ -316,11 +316,48 @@ const getSignatureUrl = async (signatureUrl) => {
     throw new Error("Could not generate base64 image");
   }
 };
+const uploadFile = async (fileBuffer, fileName) => {
+  try {
+    const params = {
+      Bucket: process.env.S3_BUCKET_NAME,
+      Key: fileName, // Use a dynamic file name
+      Body: fileBuffer, // The file buffer from Puppeteer
+      ContentType: 'application/pdf', 
+    };
 
+    const data = await s3.upload(params).promise();
+    const url = await getSignedPdfUrl(data.Key);
+    return {
+      key: data.Key,
+      url: url,
+    }; // Return the URL of the uploaded PDF
+  } catch (error) {
+    console.error('Error uploading file to S3:', error);
+    throw new Error('Could not upload file to S3');
+  }
+};
+const getSignedPdfUrl = async (fileName) => {
+  try {
+    const params = {
+      Bucket: process.env.S3_BUCKET_NAME,
+      Key: fileName,
+      Expires: 3600, // URL expires in 1 hour
+    };
+
+    // Generate signed URL to access the S3 object
+    const signedUrl = s3.getSignedUrl('getObject', params);
+    return signedUrl;
+  } catch (error) {
+    console.error('Error generating signed URL for PDF:', error);
+    throw new Error('Could not generate signed URL for PDF');
+  }
+}
 module.exports = {
   formatCurrency,
   formatDateToAEDT,
   getVendorSignatureUrl,
   getMarketingPrices,
-  getSignatureUrl
+  getSignatureUrl,
+  uploadFile,
+  getSignedPdfUrl,
 };

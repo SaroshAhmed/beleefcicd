@@ -108,6 +108,22 @@ const userPropertySchema = new Schema(
     fiveStepProcess:{
       type: [Schema.Types.Mixed],
     },
+    customTable:{
+      columns: [
+        {
+          headerName: { type: String, required: true },
+        },
+      ],
+      rows: [
+        {
+          data: {
+            type: Map,
+            of: String,
+          },
+        },
+      ],
+
+    },
     finishes: {
       type: String,
       enum: ["High-end finishes", "Updated", "Original"],
