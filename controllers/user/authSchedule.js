@@ -1738,7 +1738,8 @@ td, th, tr {
 
 const generateAgreement = async (agent, content, propertyId) => {
   try {
-    const {
+    // Destructure the agent object
+    let {
       name,
       email,
       mobile,
@@ -1751,35 +1752,38 @@ const generateAgreement = async (agent, content, propertyId) => {
       conjunctionAgent,
       validLicence,
     } = agent;
+
     // Create a deep copy of content
     const contentCopy = structuredClone(
-      content.toObject ? content.toObject() : content
+      content?.toObject ? content.toObject() : content
     );
 
-    const {
-      vendors,
-      solicitor,
-      status,
-      terms,
-      saleProcess,
-      startPrice,
-      endPrice,
-      commissionFee,
-      commissionRange,
-      marketing,
-      propertyAddress,
-      address,
-      recommendedSold,
-      recommendedSales,
-    } = contentCopy;
+    // Destructure contentCopy with fallback values
+    let {
+      vendors = [],
+      solicitor = null,
+      status = "pending",
+      terms = "",
+      saleProcess = "",
+      startPrice = 0,
+      endPrice = 0,
+      commissionFee = 0,
+      commissionRange = null,
+      marketing = [],
+      propertyAddress = "",
+      address = "",
+      recommendedSold = [],
+      recommendedSales = [],
+      agreementDate,
+      agentSignature,
+    } = contentCopy || {};
 
-    let { agreementDate } = contentCopy;
+    // Handle agreementDate fallback to current AEDT date
     if (!agreementDate) {
       agreementDate = formatDateToAEDT(null);
     }
 
-    let agentSignature = contentCopy.agentSignature;
-
+    // Check if a valid license exists and replace agent variables with user variables if found
     if (!validLicence) {
       const user = await User.findOne({
         company,
@@ -1787,15 +1791,34 @@ const generateAgreement = async (agent, content, propertyId) => {
       });
 
       if (user) {
-        agentSignature = await getVendorSignatureUrl(user.signature);
+        // Replace existing variables with values from user
+        ({
+          name,
+          email,
+          mobile,
+          company,
+          companyAddress,
+          licenseNumber,
+          gst,
+          abn,
+          signature,
+          conjunctionAgent,
+          validLicence,
+        } = user);
+
+        // Update agentSignature based on the replaced signature
+        agentSignature = await getVendorSignatureUrl(signature);
       }
     }
 
+    // Iterate over vendors and update their signatures if present
     for (const vendor of vendors) {
       if (vendor.signature) {
         vendor.signature = await getVendorSignatureUrl(vendor.signature);
       }
     }
+
+    // Fallback for agentSignature if not already updated
     if (!agentSignature) {
       agentSignature = await getVendorSignatureUrl(signature);
     }
@@ -2299,6 +2322,26 @@ const generateAgreement = async (agent, content, propertyId) => {
                   `
                     )
                     .join("")}
+              </tbody>
+          </table>
+<br>
+               <p>
+                  <strong>SIGNED BY OR ON BEHALF OF THE LICENSEE:</strong>
+              </p>
+          <table class="w-full border-collapse">
+              <thead>
+                  <tr class="bg-gray-100">
+                      <th class="py-2 px-3 text-start">Name</th>
+                      <th class="py-2 px-3 text-start">Signature</th>
+                      <th class="py-2 px-3 text-start">Date</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  <tr class="border-b">
+                      <td class="py-2 px-3">${name}</td>
+                      <td class="py-2 px-3"> <img src=${agentSignature} alt="agent sign" class="w-auto h-8"></img></td>
+                      <td class="py-2 px-3">${agreementDate}</td>
+                  </tr>
               </tbody>
           </table>
       </section>
