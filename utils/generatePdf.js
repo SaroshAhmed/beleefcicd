@@ -1,15 +1,31 @@
 const puppeteer = require('puppeteer');
+const generateTableHtml = require('./generateTable');
 
-const generatePdf = async (reportContent, propertyName = 'Unknown Property') => {
+const generatePdf = async (reportContent, propertyName = 'Unknown Property',tableData) => {
     try {
-
+      const tableHtml = generateTableHtml(tableData);
   
       // Launch Puppeteer in headless mode
       const browser = await puppeteer.launch();
       const page = await browser.newPage();
-  
+      const finalHtmlContent = `
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; }
+            table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+            th, td { padding: 8px 12px; border: 1px solid #ddd; text-align: left; }
+          </style>
+        </head>
+        <body>
+          ${reportContent}
+          <h2>Data Summary</h2>
+          ${tableHtml} <!-- Table gets embedded here -->
+        </body>
+      </html>
+    `;
       // Set the HTML content
-      await page.setContent(reportContent);
+      await page.setContent(finalHtmlContent);
   
       // Generate PDF and return it as a buffer
       const pdfBuffer = await page.pdf({
