@@ -57,6 +57,12 @@ const getSelectedItem = (categoryName, categories) => {
   return selectedItem || null;
 };
 
+const getContractors = async () => {
+  const db = await connectToDatabase();
+  const contractorsCollection = db.collection("contractors");
+  const contractorBookingsCollection = db.collection("contractorBookings");
+};
+
 exports.calculateEvents = async (req, res) => {
   try {
     const { propertyId } = req.params;
@@ -233,27 +239,21 @@ exports.calculateEvents = async (req, res) => {
         return launchToMarketDate.clone().add(weeksToDays(weeks), "days");
       })();
 
-      // Schedule recurring events
       let currentRecurringDate = launchToMarketDate.clone();
-      while (currentRecurringDate.isBefore(closingDate)) {
-        const openHome = getNextSaturday(currentRecurringDate);
-        if (
-          openHome.isAfter(launchToMarketDate) &&
-          openHome.isBefore(closingDate)
-        ) {
-          events.push(createEventInSydneyTime("Open home", openHome, 12, 0.5));
-        }
+      let firstOpenHomeScheduled = false;
 
+      while (currentRecurringDate.isBefore(closingDate)) {
+        // Only schedule mid-week events after first open home
         const midWeekOpenHome = getNextWednesday(currentRecurringDate);
         if (
-          midWeekOpenHome.isAfter(launchToMarketDate) &&
+          firstOpenHomeScheduled &&
           midWeekOpenHome.isBefore(closingDate)
         ) {
           events.push(
             createEventInSydneyTime(
               "Mid-week open home",
               midWeekOpenHome,
-              11,
+              18,
               0.5
             )
           );
@@ -261,17 +261,33 @@ exports.calculateEvents = async (req, res) => {
             createEventInSydneyTime(
               "Mid-campaign meeting",
               midWeekOpenHome,
-              11.5,
+              18.5,
               0.5
             )
           );
         }
 
+        const openHome = getNextSaturday(currentRecurringDate);
+        if (
+          openHome.isAfter(launchToMarketDate) &&
+          openHome.isBefore(closingDate)
+        ) {
+          events.push(createEventInSydneyTime("Open home", openHome, 10, 0.5));
+          firstOpenHomeScheduled = true;
+        }
+
         currentRecurringDate.add(7, "days");
       }
 
-      // Schedule closing events
-      const preClosingMeeting = closingDate.clone().subtract(1, "day");
+      // Schedule closing events with Saturday adjustment
+      let preClosingMeeting = closingDate.clone().subtract(1, "day");
+
+      // If pre-closing falls on Sunday, move it to Saturday after open home
+      if (preClosingMeeting.day() === 0) {
+        preClosingMeeting = preClosingMeeting.subtract(1, "day"); // Move to Saturday
+        preClosingMeeting.set("hour", 14); // Set to after typical open home time
+      }
+
       events.push(
         createEventInSydneyTime(
           "Meeting: Pre Closing Date",
