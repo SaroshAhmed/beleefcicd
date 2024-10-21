@@ -589,7 +589,12 @@ exports.generateReport = async (req, res) => {
   try {
     const { systemPrompt, userMessage,address } = req.body;
     const { id } = req.user;
-
+    const userProperty = await UserProperty.findOne({ address, userId: id });
+    if (!userProperty) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Property not found" });
+    }
     // Validate the inputs
     if (!systemPrompt || !userMessage) {
       return res
@@ -614,20 +619,14 @@ exports.generateReport = async (req, res) => {
         .json({ success: false, message: "Invalid prompt data" });
     }
     const response = await chatCompletion(prompt.description, JSON.stringify(userMessage));
-    const pdfBuffer = await generatePdf(response,address);
-    const pdfUrl=await uploadFile(pdfBuffer,`weeklyReports/${id}/${address}/${userMessage?.length-1}/pdf`);
-    const userProperty = await UserProperty.findOne({ address, userId: id });
-    if (!userProperty) {
-        return res
-          .status(404)
-          .json({ success: false, message: "Property not found" });
-    }
+    const pdfBuffer = await generatePdf(response,address,userProperty.customTable);
+    const pdfUrl=await uploadFile(pdfBuffer,`weeklyReports/${userProperty?._id}/tab_${userMessage?.length-1}`);
+    
       const index=userMessage?.length-1;
       userProperty.fiveStepProcess[index].key=pdfUrl?.key;
       userProperty.fiveStepProcess[index].url=pdfUrl?.url;
       userProperty.markModified('fiveStepProcess');
       await userProperty.save();
-      console.log(userProperty.fiveStepProcess[index])
       return res.status(200).json({ success: true, data: pdfUrl });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
