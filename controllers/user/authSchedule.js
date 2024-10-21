@@ -74,26 +74,28 @@ const oauth2Client = new google.auth.OAuth2(
 
 exports.generatePdf = async (req, res) => {
   try {
-    const {
-      vendors,
-      solicitor,
-      status,
-      terms,
-      saleProcess,
-      startPrice,
-      endPrice,
-      commissionFee,
-      commissionRange,
-      marketing,
-      propertyAddress,
-      address,
-      recommendedSold,
-      recommendedSales,
-      agreementDate,
-      agent,
-    } = req.body.content;
 
-    const {
+    let {
+      vendors = [],
+      solicitor = null,
+      status = "pending",
+      terms = "",
+      saleProcess = "",
+      startPrice = 0,
+      endPrice = 0,
+      commissionFee = 0,
+      commissionRange = null,
+      marketing = [],
+      propertyAddress = "",
+      address = "",
+      recommendedSold = [],
+      recommendedSales = [],
+      agreementDate,
+      agentSignature,
+      agent
+    } = req.body.content || {};
+
+    let {
       name,
       email,
       mobile,
@@ -107,7 +109,7 @@ exports.generatePdf = async (req, res) => {
       validLicence,
     } = req.user ? req.user : agent;
 
-    let agentSignature = req.body.content.agentSignature;
+    // Check if a valid license exists and replace agent variables with user variables if found
     if (!validLicence) {
       const user = await User.findOne({
         company,
@@ -115,7 +117,23 @@ exports.generatePdf = async (req, res) => {
       });
 
       if (user) {
-        agentSignature = await getVendorSignatureUrl(user.signature);
+        // Replace existing variables with values from user
+        ({
+          name,
+          email,
+          mobile,
+          company,
+          companyAddress,
+          licenseNumber,
+          gst,
+          abn,
+          signature,
+          conjunctionAgent,
+          validLicence,
+        } = user);
+
+        // Update agentSignature based on the replaced signature
+        agentSignature = await getVendorSignatureUrl(signature);
       }
     }
 
@@ -627,6 +645,26 @@ exports.generatePdf = async (req, res) => {
                   .join("")}
             </tbody>
         </table>
+        <br>
+               <p>
+                  <strong>SIGNED BY OR ON BEHALF OF THE LICENSEE:</strong>
+              </p>
+          <table class="w-full border-collapse">
+              <thead>
+                  <tr class="bg-gray-100">
+                      <th class="py-2 px-3 text-start">Name</th>
+                      <th class="py-2 px-3 text-start">Signature</th>
+                      <th class="py-2 px-3 text-start">Date</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  <tr class="border-b">
+                      <td class="py-2 px-3">${name}</td>
+                      <td class="py-2 px-3"> <img src=${agentSignature} alt="agent sign" class="w-auto h-8"></img></td>
+                      <td class="py-2 px-3">${agreementDate}</td>
+                  </tr>
+              </tbody>
+          </table>
     </section>
 
     <pagebreak />
@@ -3488,7 +3526,8 @@ const generateAgreement = async (agent, content, propertyId) => {
 
 const generateCertificate = async (agent, content, propertyId) => {
   try {
-    const {
+    // Destructure the agent object
+    let {
       name,
       email,
       mobile,
@@ -3498,31 +3537,62 @@ const generateCertificate = async (agent, content, propertyId) => {
       gst,
       abn,
       signature,
+      conjunctionAgent,
+      validLicence,
     } = agent;
+
     // Create a deep copy of content
     const contentCopy = structuredClone(
       content.toObject ? content.toObject() : content
     );
 
-    const {
-      vendors,
-      solicitor,
-      status,
-      terms,
-      saleProcess,
-      startPrice,
-      endPrice,
-      commissionFee,
-      commissionRange,
-      marketing,
-      propertyAddress,
-      address,
-      recommendedSold,
-      recommendedSales,
+    // Destructure contentCopy with fallback values
+    let {
+      vendors = [],
+      solicitor = null,
+      status = "pending",
+      terms = "",
+      saleProcess = "",
+      startPrice = 0,
+      endPrice = 0,
+      commissionFee = 0,
+      commissionRange = null,
+      marketing = [],
+      propertyAddress = "",
+      address = "",
+      recommendedSold = [],
+      recommendedSales = [],
       agreementDate,
-    } = contentCopy;
+      agentSignature,
+    } = contentCopy || {};
 
-    let agentSignature = contentCopy.agentSignature;
+    // Check if a valid license exists and replace agent variables with user variables if found
+    if (!validLicence) {
+      const user = await User.findOne({
+        company,
+        validLicence: true,
+      });
+
+      if (user) {
+        // Replace existing variables with values from user
+        ({
+          name,
+          email,
+          mobile,
+          company,
+          companyAddress,
+          licenseNumber,
+          gst,
+          abn,
+          signature,
+          conjunctionAgent,
+          validLicence,
+        } = user);
+
+        // Update agentSignature based on the replaced signature
+        agentSignature = await getVendorSignatureUrl(signature);
+      }
+    }
 
     for (const vendor of vendors) {
       if (vendor.signature) {
@@ -3705,7 +3775,31 @@ const generateCertificate = async (agent, content, propertyId) => {
 
 const generateProof = async (agent, content, propertyId) => {
   try {
-    const { name, signature } = agent;
+    let agentSignature;
+    let { name, signature, company, validLicence } = agent;
+
+    // Check if a valid license exists and replace agent variables with user variables if found
+    if (!validLicence) {
+      const user = await User.findOne({
+        company,
+        validLicence: true,
+      });
+
+      if (user) {
+        // Replace existing variables with values from user
+        ({
+          name,
+
+          signature,
+          company,
+
+          validLicence,
+        } = user);
+
+        // Update agentSignature based on the replaced signature
+        agentSignature = await getVendorSignatureUrl(signature);
+      }
+    }
 
     // Create a deep copy of content
     const contentCopy = structuredClone(
@@ -3713,8 +3807,6 @@ const generateProof = async (agent, content, propertyId) => {
     );
 
     const { vendors, propertyAddress, address } = contentCopy;
-
-    let agentSignature = contentCopy.agentSignature;
 
     if (!agentSignature) {
       agentSignature = await getVendorSignatureUrl(signature);
