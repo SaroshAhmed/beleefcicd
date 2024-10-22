@@ -62,12 +62,13 @@ const getContractors = async () => {
   const contractorsCollection = db.collection("contractors");
   const contractors = await contractorsCollection.find({}).toArray();
   const contractorBookingsCollection = db.collection("contractorBookings");
-  const contractorBookings = await contractorBookingsCollection.find({}).toArray();
+  const contractorBookings = await contractorBookingsCollection
+    .find({})
+    .toArray();
 };
 
 exports.calculateEvents = async (req, res) => {
   try {
-
     const { propertyId } = req.params;
     const objectId = new mongoose.Types.ObjectId(propertyId);
 
@@ -207,22 +208,16 @@ exports.calculateEvents = async (req, res) => {
       }
 
       // Calculate launch to market date (2 weekdays after photos/videos)
-      let launchToMarketMeetingDate;
-      if (lastMediaDate) {
-        launchToMarketMeetingDate = getNextMondayToThursday(
-          lastMediaDate.clone().add(2, "days")
-        );
-      } else {
-        launchToMarketMeetingDate = getNextMondayToThursday(
-          currentDate.clone().add(2, "days")
-        );
-      }
+      let launchToMarketMeetingDate = getNextMondayToThursday(
+        (lastMediaDate ? lastMediaDate.clone().add(3, "days") : currentDate.clone().add(1, "days"))
+      );
+
 
       // Schedule Launch to Market meeting and event
       events.push(
         createEventInSydneyTime(
           "Meeting: Launch to Market",
-          launchToMarketMeetingDate,
+          lastMediaDate ? lastMediaDate.clone().add(3, "days") : currentDate.clone().add(1, "days"),
           10,
           0.5
         )
@@ -244,13 +239,15 @@ exports.calculateEvents = async (req, res) => {
 
       const closingDate = (() => {
         const weeks = parseFloat(conclusionDate.split(" ")[0]);
-        let tentativeClosingDate = launchToMarketDate.clone().add(weeksToDays(weeks), "days");
-      
+        let tentativeClosingDate = launchToMarketDate
+          .clone()
+          .add(weeksToDays(weeks), "days");
+
         // Move closing to Tuesday, Wednesday, or Thursday if it falls on other days
         while (![2, 3, 4].includes(tentativeClosingDate.day())) {
           tentativeClosingDate.add(1, "day"); // Move to the next day until it is Tuesday, Wednesday, or Thursday
         }
-      
+
         return tentativeClosingDate;
       })();
 
@@ -260,10 +257,7 @@ exports.calculateEvents = async (req, res) => {
       while (currentRecurringDate.isBefore(closingDate)) {
         // Only schedule mid-week events after first open home
         const midWeekOpenHome = getNextWednesday(currentRecurringDate);
-        if (
-          firstOpenHomeScheduled &&
-          midWeekOpenHome.isBefore(closingDate)
-        ) {
+        if (firstOpenHomeScheduled && midWeekOpenHome.isBefore(closingDate)) {
           events.push(
             createEventInSydneyTime(
               "Mid-week open home",

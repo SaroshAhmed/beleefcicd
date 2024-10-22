@@ -10,7 +10,7 @@ const { MONGO_URI, SECRET_KEY, REACT_APP_FRONTEND_URL } = require("./config");
 
 const bookingReminder = require("./cronJobs/bookingReminder");
 const startPropertyUpdaterCron = require("./cronJobs/aiCleanup");
-const { startWhatsAppClient } = require('/utils/whatsappService');
+const { startWhatsAppClient } = require('./utils/whatsappService');
 const app = express();
 require("./config/passport");
 
