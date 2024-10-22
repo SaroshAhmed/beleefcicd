@@ -13,6 +13,7 @@ const startPropertyUpdaterCron = require("./cronJobs/aiCleanup");
 const app = express();
 require("./config/passport");
 
+
 // app.use(
 //   cors({
 //     origin: REACT_APP_FRONTEND_URL,
@@ -32,7 +33,7 @@ app.use(
     origin: function (origin, callback) {
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-
+      
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -90,8 +91,11 @@ app.get("/", (req, res) => {
   res.send(html);
 });
 
+
+
 databaseConnect();
 bookingReminder();
+
 // startPropertyUpdaterCron()
 
 const PORT = process.env.PORT || 3000;
