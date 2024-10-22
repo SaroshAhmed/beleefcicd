@@ -60,11 +60,14 @@ const getSelectedItem = (categoryName, categories) => {
 const getContractors = async () => {
   const db = await connectToDatabase();
   const contractorsCollection = db.collection("contractors");
+  const contractors = await contractorsCollection.find({}).toArray();
   const contractorBookingsCollection = db.collection("contractorBookings");
+  const contractorBookings = await contractorBookingsCollection.find({}).toArray();
 };
 
 exports.calculateEvents = async (req, res) => {
   try {
+
     const { propertyId } = req.params;
     const objectId = new mongoose.Types.ObjectId(propertyId);
 
