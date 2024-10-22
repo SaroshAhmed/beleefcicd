@@ -12,7 +12,6 @@ const { getMapStaticImage } = require("../../utils/maps");
 const Prompt = require("../../models/Prompt");
 const generatePdf = require("../../utils/generatePdf");
 const { uploadFile, getSignedPdfUrl } = require("../../utils/helperFunctions");
-const marked = require('marked');
 // Helper Function to Calculate Days Listed
 function calculateDaysListed(dateListed, soldDate) {
   const listedDate = new Date(dateListed);
@@ -625,8 +624,8 @@ exports.generateReport = async (req, res) => {
       customTable: userProperty.customTable,
     }));
     const index=userMessage?.length-1;
-    userProperty.fiveStepProcess[index].gptResponse=marked.parse(response);
-    const pdfBuffer = await generatePdf(marked.parse(response),address,userProperty.customTable,userMessage?.length==1?'OFF Market':`Week ${userMessage?.length-1}`,userMessage);
+    userProperty.fiveStepProcess[index].gptResponse=response;
+    const pdfBuffer = await generatePdf(response,address,userProperty.customTable,userMessage?.length==1?'OFF Market':`Week ${userMessage?.length-1}`,userMessage);
     const pdfUrl=await uploadFile(pdfBuffer,`weeklyReports/${userProperty?._id}/tab_${userMessage?.length-1}`);
     
       
@@ -636,7 +635,7 @@ exports.generateReport = async (req, res) => {
       await userProperty.save();
       return res.status(200).json({ success: true, data: {
         ...pdfUrl,
-        gptResponse: marked.parse(response),
+        gptResponse: response,
       } });
   } catch (error) {
     console.error("Error generating report:", error.message);
