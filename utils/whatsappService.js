@@ -1,24 +1,30 @@
-// whatsappService.js
 const wa = require('@open-wa/wa-automate');
 
 let client;
 
+// Function to start WhatsApp Client
 const startWhatsAppClient = async () => {
-  try {
-    client = await wa.create({
-      sessionId: 'MySession',
-      multiDevice: true,
-      headless: true,
-      qrTimeout: 0,
-      useChrome: false,
-    });
-    console.log("WhatsApp client started");
-  } catch (error) {
-    console.error("Failed to start WhatsApp client:", error);
+  if (!client) { // Only start the client if it's not already running
+    try {
+      client = await wa.create({
+        sessionId: 'MySession',
+        multiDevice: true,
+        headless: true,
+        qrTimeout: 0,
+        useChrome: false,
+      });
+      console.log("WhatsApp client started");
+    } catch (error) {
+      console.error("Failed to start WhatsApp client:", error);
+      throw error; // Propagate the error for handling
+    }
   }
 };
 
-const createWhatsAppGroup = async (groupName = 'Sandy Test', participants = []) => {
+// Helper function to create WhatsApp group
+const createWhatsAppGroup = async (groupName, participants) => {
+  console.log(`Attempting to create group: ${groupName} with participants: ${participants}`);
+  await startWhatsAppClient(); 
   try {
     if (!participants || participants.length === 0) {
       throw new Error("At least one participant is required.");
@@ -32,9 +38,9 @@ const createWhatsAppGroup = async (groupName = 'Sandy Test', participants = []) 
     const groupId = groupInfo.gid ? groupInfo.gid._serialized : groupInfo._serialized;
     console.log(`Group ${groupName} created with ID: ${groupId}`);
 
- 
-    setTimeout(() => {
-      additionalMembers.forEach((member, index) => {
+  
+    await Promise.all(additionalMembers.map((member, index) => {
+      return new Promise((resolve) => {
         setTimeout(() => {
           client.addParticipant(groupId, member)
             .then(result => {
@@ -43,25 +49,31 @@ const createWhatsAppGroup = async (groupName = 'Sandy Test', participants = []) 
               } else {
                 console.log(`Failed to add ${member} to the group.`);
               }
+              resolve();
             })
             .catch(err => {
               console.error(`Error adding ${member}:`, err);
+              resolve(); 
             });
         }, index * 3000); 
       });
+    }));
 
-    
+    // Sending welcome message after all participants are added
+    const welcomeMessage = 'Hi Team, Welcome! We have created this group to ensure smooth communication. Looking forward to achieving the maximum outcome. Regards, Sandy'; 
+    await new Promise((resolve) => {
       setTimeout(() => {
-        const welcomeMessage = 'Hi Team, Welcome, We have created this group to ensure smooth and live communication throughout the campaign. What happens next: We will send through a calendar of events confirming all future events such as marketing. Looking forward to achieving the maximum outcome. Regards, Sandy.';
         client.sendText(groupId, welcomeMessage)
           .then(() => {
             console.log('Welcome message sent successfully.');
+            resolve();
           })
           .catch(err => {
             console.error('Failed to send welcome message:', err);
+            resolve();
           });
-      }, (additionalMembers.length * 3000) + 5000); // Adjust delay to ensure all members are added before sending
-    }, 5000); // Delay before starting to add participants
+      }, (additionalMembers.length * 3000) + 5000); 
+    });
 
     return { message: "Group created successfully", groupId };
   } catch (error) {
@@ -70,4 +82,4 @@ const createWhatsAppGroup = async (groupName = 'Sandy Test', participants = []) 
   }
 };
 
-module.exports = { startWhatsAppClient, createWhatsAppGroup };
+module.exports = { createWhatsAppGroup };
