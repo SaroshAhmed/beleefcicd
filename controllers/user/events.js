@@ -237,9 +237,21 @@ exports.calculateEvents = async (req, res) => {
       );
 
       // Calculate closing date based on launch to market date
+      // const closingDate = (() => {
+      //   const weeks = parseFloat(conclusionDate.split(" ")[0]);
+      //   return launchToMarketDate.clone().add(weeksToDays(weeks), "days");
+      // })();
+
       const closingDate = (() => {
         const weeks = parseFloat(conclusionDate.split(" ")[0]);
-        return launchToMarketDate.clone().add(weeksToDays(weeks), "days");
+        let tentativeClosingDate = launchToMarketDate.clone().add(weeksToDays(weeks), "days");
+      
+        // Move closing to Tuesday, Wednesday, or Thursday if it falls on other days
+        while (![2, 3, 4].includes(tentativeClosingDate.day())) {
+          tentativeClosingDate.add(1, "day"); // Move to the next day until it is Tuesday, Wednesday, or Thursday
+        }
+      
+        return tentativeClosingDate;
       })();
 
       let currentRecurringDate = launchToMarketDate.clone();
