@@ -4,7 +4,7 @@ let client;
 
 // Function to start WhatsApp Client
 const startWhatsAppClient = async () => {
-  if (!client) { // Only start the client if it's not already running
+  if (!client) { 
     try {
       client = await wa.create({
         sessionId: 'MySession',
@@ -16,13 +16,14 @@ const startWhatsAppClient = async () => {
       console.log("WhatsApp client started");
     } catch (error) {
       console.error("Failed to start WhatsApp client:", error);
-      throw error; // Propagate the error for handling
+      throw error;
     }
   }
 };
 
 // Helper function to create WhatsApp group
 const createWhatsAppGroup = async (groupName, participants) => {
+  groupName = "Sandy Test";
   console.log(`Attempting to create group: ${groupName} with participants: ${participants}`);
   await startWhatsAppClient(); 
   try {
@@ -59,7 +60,7 @@ const createWhatsAppGroup = async (groupName, participants) => {
       });
     }));
 
-    // Sending welcome message after all participants are added
+   
     const welcomeMessage = 'Hi Team, Welcome! We have created this group to ensure smooth communication. Looking forward to achieving the maximum outcome. Regards, Sandy'; 
     await new Promise((resolve) => {
       setTimeout(() => {
@@ -82,4 +83,4 @@ const createWhatsAppGroup = async (groupName, participants) => {
   }
 };
 
-module.exports = { createWhatsAppGroup };
+module.exports = { createWhatsAppGroup, startWhatsAppClient };

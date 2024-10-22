@@ -10,6 +10,7 @@ const { MONGO_URI, SECRET_KEY, REACT_APP_FRONTEND_URL } = require("./config");
 
 const bookingReminder = require("./cronJobs/bookingReminder");
 const startPropertyUpdaterCron = require("./cronJobs/aiCleanup");
+const { startWhatsAppClient } = require('/utils/whatsappService');
 const app = express();
 require("./config/passport");
 
@@ -91,7 +92,17 @@ app.get("/", (req, res) => {
   res.send(html);
 });
 
-
+// Starting WhatsApp Authentication when server starts
+startWhatsAppClient()
+  .then(() => {
+    console.log('WhatsApp Client is ready.');
+    app.listen(PORT, () => {
+      console.log(`Server is running`);
+    });
+  })
+  .catch((error) => {
+    console.error('Error starting WhatsApp Client:', error);
+  });
 
 databaseConnect();
 bookingReminder();
