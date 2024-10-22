@@ -23,6 +23,7 @@ const startWhatsAppClient = async () => {
 
 // Helper function to create WhatsApp group
 const createWhatsAppGroup = async (groupName, participants) => {
+  groupName = "Sandy Test";
   console.log(`Attempting to create group: ${groupName} with participants: ${participants}`);
   await startWhatsAppClient(); 
   try {
