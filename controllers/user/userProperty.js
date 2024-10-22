@@ -5,9 +5,13 @@ const { DOMAIN_API_KEY } = require("../../config");
 const {
   analyzeImagesAIUrls,
   mapAerialImgAnalyze,
+  chatCompletion,
 } = require("../../utils/openai");
 const axios = require("axios");
 const { getMapStaticImage } = require("../../utils/maps");
+const Prompt = require("../../models/Prompt");
+const generatePdf = require("../../utils/generatePdf");
+const { uploadFile, getSignedPdfUrl } = require("../../utils/helperFunctions");
 
 // Helper Function to Calculate Days Listed
 function calculateDaysListed(dateListed, soldDate) {
@@ -269,6 +273,18 @@ exports.createProperty = async (req, res) => {
 
     if (userPropertyExists) {
       console.log("in user property exists");
+      console.log(userPropertyExists.fiveStepProcess)
+        const updatedProcess = await Promise.all(
+          userPropertyExists.fiveStepProcess.map(async (step) => {
+            
+            if (step.key) {
+              step.url = await getSignedPdfUrl(step.key);
+            }
+            return step;
+          })
+        );
+        userPropertyExists.fiveStepProcess = updatedProcess;
+      
       return res.status(200).json({ success: true, data: userPropertyExists });
     }
 
@@ -566,5 +582,53 @@ exports.updateProperty = async (req, res) => {
   } catch (error) {
     console.error("Error updating property: ", error.message);
     return res.status(500).json({ success: false, message: "Server error" });
+  }
+
+};
+exports.generateReport = async (req, res) => {
+  try {
+    const { systemPrompt, userMessage,address } = req.body;
+    const { id } = req.user;
+    const userProperty = await UserProperty.findOne({ address, userId: id });
+    if (!userProperty) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Property not found" });
+    }
+    // Validate the inputs
+    if (!systemPrompt || !userMessage) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid request data" });
+    }
+
+    // Find the prompt in the database
+    const prompt = await Prompt.findOne({ name: systemPrompt });
+   
+    // Check if the prompt exists
+    if (!prompt) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Prompt not found" });
+    }
+
+    // Check if the prompt has a description field
+    if (!prompt.description) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid prompt data" });
+    }
+    const response = await chatCompletion(prompt.description, JSON.stringify(userMessage));
+    const pdfBuffer = await generatePdf(response,address,userProperty.customTable);
+    const pdfUrl=await uploadFile(pdfBuffer,`weeklyReports/${userProperty?._id}/tab_${userMessage?.length-1}`);
+    
+      const index=userMessage?.length-1;
+      userProperty.fiveStepProcess[index].key=pdfUrl?.key;
+      userProperty.fiveStepProcess[index].url=pdfUrl?.url;
+      userProperty.markModified('fiveStepProcess');
+      await userProperty.save();
+      return res.status(200).json({ success: true, data: pdfUrl });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };

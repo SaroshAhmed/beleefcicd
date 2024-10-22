@@ -1,6 +1,9 @@
 const express = require("express");
 const Prompt = require("../../models/Prompt");
 const { chatCompletion, imageCompletion } = require("../../utils/openai");
+
+
+
 exports.text = async (req, res) => {
   try {
     const { systemPrompt, userMessage } = req.body;
@@ -28,16 +31,12 @@ exports.text = async (req, res) => {
         .status(400)
         .json({ success: false, message: "Invalid prompt data" });
     }
-
-    // Call the chatbot function with the description and user message
     const response = await chatCompletion(prompt.description, userMessage);
-
     return res.status(200).json({ success: true, data: response });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 exports.image = async (req, res) => {
   try {
     const listFiles = req.files;

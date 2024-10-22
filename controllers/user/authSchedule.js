@@ -16,43 +16,6 @@ const { google } = require("googleapis");
 const mongoose = require("mongoose");
 const { sendSms } = require("../../utils/smsService");
 
-const { addDays, subDays, setHours, startOfDay } = require("date-fns");
-const moment = require("moment-timezone");
-
-// Timezone for Sydney
-const SYDNEY_TZ = "Australia/Sydney";
-
-// Utility function to get the next available weekday (Monday - Friday)
-const getNextWeekday = (date) => {
-  while (date.day() === 0 || date.day() === 6) {
-    // Skip Sunday (0) and Saturday (6)
-    date.add(1, "day");
-  }
-  return date;
-};
-
-// Utility function to get the next Saturday
-const getNextSaturday = (date) => {
-  return date.clone().day(6);
-};
-
-// Utility function to get the next Tuesday
-const getNextTuesday = (date) => {
-  return date.clone().day(2);
-};
-
-// Utility function to get the next Wednesday
-const getNextWednesday = (date) => {
-  return date.clone().day(3);
-};
-
-// Utility function to get the next Monday-Thursday for "Launch to Market" meeting
-const getNextMondayToThursday = (date) => {
-  while (date.day() === 0 || date.day() === 5 || date.day() === 6) {
-    date.add(1, "day");
-  }
-  return date;
-};
 
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -74,26 +37,27 @@ const oauth2Client = new google.auth.OAuth2(
 
 exports.generatePdf = async (req, res) => {
   try {
-    const {
-      vendors,
-      solicitor,
-      status,
-      terms,
-      saleProcess,
-      startPrice,
-      endPrice,
-      commissionFee,
-      commissionRange,
-      marketing,
-      propertyAddress,
-      address,
-      recommendedSold,
-      recommendedSales,
+    let {
+      vendors = [],
+      solicitor = null,
+      status = "pending",
+      terms = "",
+      saleProcess = "",
+      startPrice = 0,
+      endPrice = 0,
+      commissionFee = 0,
+      commissionRange = null,
+      marketing = [],
+      propertyAddress = "",
+      address = "",
+      recommendedSold = [],
+      recommendedSales = [],
       agreementDate,
+      agentSignature,
       agent,
-    } = req.body.content;
+    } = req.body.content || {};
 
-    const {
+    let {
       name,
       email,
       mobile,
@@ -107,7 +71,7 @@ exports.generatePdf = async (req, res) => {
       validLicence,
     } = req.user ? req.user : agent;
 
-    let agentSignature = req.body.content.agentSignature;
+    // Check if a valid license exists and replace agent variables with user variables if found
     if (!validLicence) {
       const user = await User.findOne({
         company,
@@ -115,7 +79,23 @@ exports.generatePdf = async (req, res) => {
       });
 
       if (user) {
-        agentSignature = await getVendorSignatureUrl(user.signature);
+        // Replace existing variables with values from user
+        ({
+          name,
+          email,
+          mobile,
+          company,
+          companyAddress,
+          licenseNumber,
+          gst,
+          abn,
+          signature,
+          conjunctionAgent,
+          validLicence,
+        } = user);
+
+        // Update agentSignature based on the replaced signature
+        agentSignature = await getVendorSignatureUrl(signature);
       }
     }
 
@@ -627,6 +607,26 @@ exports.generatePdf = async (req, res) => {
                   .join("")}
             </tbody>
         </table>
+        <br>
+               <p>
+                  <strong>SIGNED BY OR ON BEHALF OF THE LICENSEE:</strong>
+              </p>
+          <table class="w-full border-collapse">
+              <thead>
+                  <tr class="bg-gray-100">
+                      <th class="py-2 px-3 text-start">Name</th>
+                      <th class="py-2 px-3 text-start">Signature</th>
+                      <th class="py-2 px-3 text-start">Date</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  <tr class="border-b">
+                      <td class="py-2 px-3">${name}</td>
+                      <td class="py-2 px-3"> <img src=${agentSignature} alt="agent sign" class="w-auto h-8"></img></td>
+                      <td class="py-2 px-3">${agreementDate}</td>
+                  </tr>
+              </tbody>
+          </table>
     </section>
 
     <pagebreak />
@@ -3488,7 +3488,8 @@ const generateAgreement = async (agent, content, propertyId) => {
 
 const generateCertificate = async (agent, content, propertyId) => {
   try {
-    const {
+    // Destructure the agent object
+    let {
       name,
       email,
       mobile,
@@ -3498,31 +3499,62 @@ const generateCertificate = async (agent, content, propertyId) => {
       gst,
       abn,
       signature,
+      conjunctionAgent,
+      validLicence,
     } = agent;
+
     // Create a deep copy of content
     const contentCopy = structuredClone(
       content.toObject ? content.toObject() : content
     );
 
-    const {
-      vendors,
-      solicitor,
-      status,
-      terms,
-      saleProcess,
-      startPrice,
-      endPrice,
-      commissionFee,
-      commissionRange,
-      marketing,
-      propertyAddress,
-      address,
-      recommendedSold,
-      recommendedSales,
+    // Destructure contentCopy with fallback values
+    let {
+      vendors = [],
+      solicitor = null,
+      status = "pending",
+      terms = "",
+      saleProcess = "",
+      startPrice = 0,
+      endPrice = 0,
+      commissionFee = 0,
+      commissionRange = null,
+      marketing = [],
+      propertyAddress = "",
+      address = "",
+      recommendedSold = [],
+      recommendedSales = [],
       agreementDate,
-    } = contentCopy;
+      agentSignature,
+    } = contentCopy || {};
 
-    let agentSignature = contentCopy.agentSignature;
+    // Check if a valid license exists and replace agent variables with user variables if found
+    if (!validLicence) {
+      const user = await User.findOne({
+        company,
+        validLicence: true,
+      });
+
+      if (user) {
+        // Replace existing variables with values from user
+        ({
+          name,
+          email,
+          mobile,
+          company,
+          companyAddress,
+          licenseNumber,
+          gst,
+          abn,
+          signature,
+          conjunctionAgent,
+          validLicence,
+        } = user);
+
+        // Update agentSignature based on the replaced signature
+        agentSignature = await getVendorSignatureUrl(signature);
+      }
+    }
 
     for (const vendor of vendors) {
       if (vendor.signature) {
@@ -3705,7 +3737,31 @@ const generateCertificate = async (agent, content, propertyId) => {
 
 const generateProof = async (agent, content, propertyId) => {
   try {
-    const { name, signature } = agent;
+    let agentSignature;
+    let { name, signature, company, validLicence } = agent;
+
+    // Check if a valid license exists and replace agent variables with user variables if found
+    if (!validLicence) {
+      const user = await User.findOne({
+        company,
+        validLicence: true,
+      });
+
+      if (user) {
+        // Replace existing variables with values from user
+        ({
+          name,
+
+          signature,
+          company,
+
+          validLicence,
+        } = user);
+
+        // Update agentSignature based on the replaced signature
+        agentSignature = await getVendorSignatureUrl(signature);
+      }
+    }
 
     // Create a deep copy of content
     const contentCopy = structuredClone(
@@ -3713,8 +3769,6 @@ const generateProof = async (agent, content, propertyId) => {
     );
 
     const { vendors, propertyAddress, address } = contentCopy;
-
-    let agentSignature = contentCopy.agentSignature;
 
     if (!agentSignature) {
       agentSignature = await getVendorSignatureUrl(signature);
@@ -6557,201 +6611,226 @@ exports.getCalendarEvents = async (req, res) => {
   }
 };
 
-exports.calculateEvents = async (req, res) => {
-  try {
-    const { propertyId } = req.params;
-    const objectId = new mongoose.Types.ObjectId(propertyId);
+// exports.calculateEvents = async (req, res) => {
+//   try {
+//     const { propertyId } = req.params;
+//     const objectId = new mongoose.Types.ObjectId(propertyId);
 
-    const authSchedule = await AuthSchedule.findOne({
-      propertyId: objectId,
-    });
+//     const authSchedule = await AuthSchedule.findOne({
+//       propertyId: objectId,
+//     }).populate("propertyId");
 
-    if (!authSchedule) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Auth Schedule not found" });
-    }
+//     if (!authSchedule) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Auth Schedule not found" });
+//     }
 
-    const { prepareMarketing, conclusionDate } = authSchedule;
+//     const { prepareMarketing, conclusionDate } = authSchedule;
+//     const { marketing } = authSchedule.propertyId;
+//     For photos check marketing.categories and in their find category Photos
+//     now see in their array of items isChecked true get only those
 
-    // Function to convert "X weeks" to days (handles floating point weeks like "2.5 weeks")
-    const weeksToDays = (weeks) => parseFloat(weeks) * 7;
+//     {
+//       categories: [
+//         {
+//           _id: '670a86b35816964df31d8566',
+//           category: 'Mailcards & Brochures',
+//           items: [Array],
+//           __v: 0
+//         },
+//         {
+//           _id: '670a86b35816964df31d856a',
+//           category: 'Photos',
+//           items: [Array],
+//           __v: 0
+//         },
+//         {
+//           _id: '670a86b35816964df31d8573',
+//           category: 'Floorplans',
+//           items: [Array],
+//           __v: 0
+//         },
+//       ]
+//     }
+//     Melo Photography - Photography 10 Images you should add 1.5hrs
+// Melo Photography - Photography 20 Images you should add  3hrs
+// Melo Photography - Photography 7 Images you should add  1hr
+// Melo Photography - Photography 5 Images you should add  1hr
+// Melo Photography - Dusk Photography you should add  30min
+// Melo Photography - Drone Shots you should add  30 min
+// Melo Photography - Virtual Furniture you should add  Images
+// Melo Photography - Virtual Furniture you should add  Images
 
-    // Calculate the marketing start date based on prepareMarketing value
-    const getMarketingStartDate = () => {
-      const nowInSydney = moment.tz(SYDNEY_TZ);
+//     // Function to convert "X weeks" to days (handles floating point weeks like "2.5 weeks")
+//     const weeksToDays = (weeks) => parseFloat(weeks) * 7;
 
-      if (prepareMarketing === "ASAP") {
-        return nowInSydney.add(1, "day"); // Start tomorrow
-      } else {
-        const weeks = parseFloat(prepareMarketing.split(" ")[0]);
-        return nowInSydney.add(weeksToDays(weeks), "days");
-      }
-    };
+//     // Calculate the marketing start date based on prepareMarketing value
+//     const getMarketingStartDate = () => {
+//       const nowInSydney = moment.tz(SYDNEY_TZ);
 
-    // Calculate the conclusion date based on conclusionDate value
-    const getClosingDate = (marketingStartDate) => {
-      const weeks = parseFloat(conclusionDate.split(" ")[0]);
-      return marketingStartDate.clone().add(weeksToDays(weeks), "days");
-    };
+//       if (prepareMarketing === "ASAP") {
+//         return nowInSydney.add(1, "day"); // Start tomorrow
+//       } else {
+//         const weeks = parseFloat(prepareMarketing.split(" ")[0]);
+//         return nowInSydney.add(weeksToDays(weeks), "days");
+//       }
+//     };
 
-    const marketingStartDate = getMarketingStartDate();
-    const closingDate = getClosingDate(marketingStartDate);
+//     // Calculate the conclusion date based on conclusionDate value
+//     const getClosingDate = (marketingStartDate) => {
+//       const weeks = parseFloat(conclusionDate.split(" ")[0]);
+//       return marketingStartDate.clone().add(weeksToDays(weeks), "days");
+//     };
 
-    // Function to map events in Sydney timezone
-    const calculateEventDates = (closingDate, marketingStartDate) => {
-      const events = [];
-      let currentDate = marketingStartDate.clone();
+//     const marketingStartDate = getMarketingStartDate();
+//     const closingDate = getClosingDate(marketingStartDate);
 
-      // Helper to create event in Sydney time
-      const createEventInSydneyTime = (
-        summary,
-        eventDate,
-        startHour,
-        durationHours
-      ) => {
-        const eventStartSydney = eventDate
-          .clone()
-          .set("hour", startHour)
-          .startOf("hour");
-        const eventEndSydney = eventStartSydney
-          .clone()
-          .add(durationHours, "hours");
-        return {
-          summary,
-          start: eventStartSydney.toISOString(),
-          end: eventEndSydney.toISOString(),
-        };
-      };
+//     // Function to map events in Sydney timezone
+//     const calculateEventDates = (closingDate, marketingStartDate) => {
+//       const events = [];
+//       let currentDate = marketingStartDate.clone();
 
-      // Phase 1: Pre-launch events
-      // Events: Photoshoot, Floorplan, and Video - Flexible Scheduling on Weekdays Only
-      const scheduleFlexibleEvent = (eventName, gapDays) => {
-        currentDate = getNextWeekday(currentDate.clone().add(gapDays, "days"));
-        events.push(createEventInSydneyTime(eventName, currentDate, 10, 1));
-      };
+//       // Helper to create event in Sydney time
+//       const createEventInSydneyTime = (
+//         summary,
+//         eventDate,
+//         startHour,
+//         durationHours
+//       ) => {
+//         const eventStartSydney = eventDate
+//           .clone()
+//           .set("hour", startHour)
+//           .startOf("hour");
+//         const eventEndSydney = eventStartSydney
+//           .clone()
+//           .add(durationHours, "hours");
+//         return {
+//           summary,
+//           start: eventStartSydney.toISOString(),
+//           end: eventEndSydney.toISOString(),
+//         };
+//       };
 
-      scheduleFlexibleEvent("Photoshoot", 2);
-      scheduleFlexibleEvent("Floorplan", 1);
-      scheduleFlexibleEvent("Video", 3);
+//       // Phase 1: Pre-launch events
+//       // Events: Photoshoot, Floorplan, and Video - Flexible Scheduling on Weekdays Only
+//       const scheduleFlexibleEvent = (eventName, gapDays) => {
+//         currentDate = getNextWeekday(currentDate.clone().add(gapDays, "days"));
+//         events.push(createEventInSydneyTime(eventName, currentDate, 10, 1));
+//       };
 
-      // Phase 2: Launch to Market
-      // Meeting: Launch to Market happens 2 days after the last media event
-      const launchToMarketMeetingDate = getNextMondayToThursday(
-        currentDate.clone().add(2, "days")
-      );
-      events.push(
-        createEventInSydneyTime(
-          "Meeting: Launch to Market",
-          launchToMarketMeetingDate,
-          10,
-          0.5
-        )
-      );
+//       scheduleFlexibleEvent("Photoshoot", 2);
+//       scheduleFlexibleEvent("Floorplan", 1);
+//       scheduleFlexibleEvent("Video", 3);
 
-      // Launch to Market happens 1 hour after the meeting
-      const launchToMarketDate = launchToMarketMeetingDate.clone();
-      if (launchToMarketDate.day() === 4 && launchToMarketDate.hour() > 13) {
-        launchToMarketDate.hour(12);
-      }
-      events.push(
-        createEventInSydneyTime("Launch to Market", launchToMarketDate, 11, 1)
-      );
+//       // Phase 2: Launch to Market
+//       // Meeting: Launch to Market happens 2 days after the last media event
+//       const launchToMarketMeetingDate = getNextMondayToThursday(
+//         currentDate.clone().add(2, "days")
+//       );
+//       events.push(
+//         createEventInSydneyTime(
+//           "Meeting: Launch to Market",
+//           launchToMarketMeetingDate,
+//           10,
+//           0.5
+//         )
+//       );
 
-      // Phase 3: Post-launch recurring events
-      // Start scheduling recurring events from the launch date
-      currentDate = launchToMarketDate.clone();
+//       // Launch to Market happens 1 hour after the meeting
+//       const launchToMarketDate = launchToMarketMeetingDate.clone();
+//       if (launchToMarketDate.day() === 4 && launchToMarketDate.hour() > 13) {
+//         launchToMarketDate.hour(12);
+//       }
+//       events.push(
+//         createEventInSydneyTime("Launch to Market", launchToMarketDate, 11, 1)
+//       );
 
-      // Generate recurring weekly events starting after launch to market
-      while (currentDate.isBefore(closingDate)) {
-        // Weekly report: First Tuesday after launch, then every Tuesday
-        const weeklyReport = getNextTuesday(currentDate);
-        if (
-          weeklyReport.isAfter(launchToMarketDate) &&
-          weeklyReport.isBefore(closingDate)
-        ) {
-          events.push(
-            createEventInSydneyTime("Weekly Report", weeklyReport, 10, 1)
-          );
-        }
+//       // Phase 3: Post-launch recurring events
+//       // Start scheduling recurring events from the launch date
+//       currentDate = launchToMarketDate.clone();
 
-        // Open home: First Saturday after launch, then every Saturday
-        const openHome = getNextSaturday(currentDate);
-        if (
-          openHome.isAfter(launchToMarketDate) &&
-          openHome.isBefore(closingDate)
-        ) {
-          events.push(createEventInSydneyTime("Open home", openHome, 12, 0.5));
-        }
+//       // Generate recurring weekly events starting after launch to market
+//       while (currentDate.isBefore(closingDate)) {
+//         // Open home: First Saturday after launch, then every Saturday
+//         const openHome = getNextSaturday(currentDate);
+//         if (
+//           openHome.isAfter(launchToMarketDate) &&
+//           openHome.isBefore(closingDate)
+//         ) {
+//           events.push(createEventInSydneyTime("Open home", openHome, 12, 0.5));
+//         }
 
-        // Mid-week open home and meeting: First Wednesday after launch, then every Wednesday
-        const midWeekOpenHome = getNextWednesday(currentDate);
-        if (
-          midWeekOpenHome.isAfter(launchToMarketDate) &&
-          midWeekOpenHome.isBefore(closingDate)
-        ) {
-          // Schedule Mid-week open home (30 minutes)
-          events.push({
-            summary: "Mid-week open home",
-            start: midWeekOpenHome
-              .clone()
-              .set("hour", 11)
-              .startOf("hour")
-              .toISOString(),
-            end: midWeekOpenHome
-              .clone()
-              .set("hour", 11)
-              .startOf("hour")
-              .add(30, "minutes")
-              .toISOString(),
-          });
+//         // Mid-week open home and meeting: First Wednesday after launch, then every Wednesday
+//         const midWeekOpenHome = getNextWednesday(currentDate);
+//         if (
+//           midWeekOpenHome.isAfter(launchToMarketDate) &&
+//           midWeekOpenHome.isBefore(closingDate)
+//         ) {
+//           // Schedule Mid-week open home (30 minutes)
+//           events.push({
+//             summary: "Mid-week open home",
+//             start: midWeekOpenHome
+//               .clone()
+//               .set("hour", 11)
+//               .startOf("hour")
+//               .toISOString(),
+//             end: midWeekOpenHome
+//               .clone()
+//               .set("hour", 11)
+//               .startOf("hour")
+//               .add(30, "minutes")
+//               .toISOString(),
+//           });
 
-          // Schedule Mid-campaign meeting immediately after (30 minutes)
-          events.push({
-            summary: "Mid-campaign meeting",
-            start: midWeekOpenHome
-              .clone()
-              .set("hour", 11)
-              .startOf("hour")
-              .add(30, "minutes")
-              .toISOString(),
-            end: midWeekOpenHome
-              .clone()
-              .set("hour", 11)
-              .startOf("hour")
-              .add(60, "minutes")
-              .toISOString(),
-          });
-        }
+//           // Schedule Mid-campaign meeting immediately after (30 minutes)
+//           events.push({
+//             summary: "Mid-campaign meeting",
+//             start: midWeekOpenHome
+//               .clone()
+//               .set("hour", 11)
+//               .startOf("hour")
+//               .add(30, "minutes")
+//               .toISOString(),
+//             end: midWeekOpenHome
+//               .clone()
+//               .set("hour", 11)
+//               .startOf("hour")
+//               .add(60, "minutes")
+//               .toISOString(),
+//           });
+//         }
 
-        // Move to the next week
-        currentDate.add(7, "days");
-      }
+//         // Move to the next week
+//         currentDate.add(7, "days");
+//       }
 
-      // Phase 4: Closing events
-      // Meeting: Pre-closing date: 24 hours before closing date
-      const preClosingMeeting = closingDate.clone().subtract(1, "day");
-      events.push(
-        createEventInSydneyTime(
-          "Meeting: Pre Closing Date",
-          preClosingMeeting,
-          14,
-          1
-        )
-      );
+//       // Phase 4: Closing events
+//       // Meeting: Pre-closing date: 24 hours before closing date
+//       const preClosingMeeting = closingDate.clone().subtract(1, "day");
+//       events.push(
+//         createEventInSydneyTime(
+//           "Meeting: Pre Closing Date",
+//           preClosingMeeting,
+//           14,
+//           1
+//         )
+//       );
 
-      // Closing Date
-      events.push(createEventInSydneyTime("Closing Date", closingDate, 10, 1));
+//       // Closing Date
+//       events.push(createEventInSydneyTime("Closing Date", closingDate, 10, 1));
 
-      return events;
-    };
+//       return events;
+//     };
 
-    // Calculate the events based on conclusionDate and prepareMarketing
-    const events = calculateEventDates(closingDate, marketingStartDate);
+//     // Calculate the events based on conclusionDate and prepareMarketing
+//     const events = calculateEventDates(closingDate, marketingStartDate);
 
-    return res.status(200).json({ success: true, data: events });
-  } catch (error) {
-    console.error("Error fetching events: ", error.message);
-    return res.status(500).json({ success: false, message: error.message });
-  }
-};
+//     return res.status(200).json({ success: true, data: events });
+//   } catch (error) {
+//     console.error("Error fetching events: ", error.message);
+//     return res.status(500).json({ success: false, message: error.message });
+//   }
+// };
+
+

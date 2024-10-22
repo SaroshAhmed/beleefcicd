@@ -39,5 +39,5 @@ router.post("/fileUpload", fileUpload);
 router.get("/getSignedUrl/:url", getSignedUrl);
 
 
-router.get("/calEvents/:propertyId", calculateEvents);
+
 module.exports = router;
