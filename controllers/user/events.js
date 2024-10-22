@@ -50,12 +50,6 @@ const eventDurations = {
 };
 
 // Function to get the selected item from a category
-// const getSelectedItem = (categoryName, categories) => {
-//   const category = categories.find((cat) => cat.category === categoryName);
-//   if (!category) return null;
-//   const selectedItem = category.items.find((item) => item.isChecked);
-//   return selectedItem || null;
-// };
 const getSelectedItem = (categoryName, categories) => {
   const category = categories.find((cat) => cat.category === categoryName);
   if (!category) return [];
@@ -63,15 +57,76 @@ const getSelectedItem = (categoryName, categories) => {
   return selectedItems;
 };
 
-const getContractors = async () => {
+// const getContractors = async () => {
+//   const db = await connectToDatabase();
+//   const contractorsCollection = db.collection("contractors");
+//   const contractors = await contractorsCollection.find({}).toArray();
+//   const contractorBookingsCollection = db.collection("contractorBookings");
+//   const contractorBookings = await contractorBookingsCollection
+//     .find({})
+//     .toArray();
+// };
+
+const getContractors = async (calculatedEvents) => {
   const db = await connectToDatabase();
   const contractorsCollection = db.collection("contractors");
   const contractors = await contractorsCollection.find({}).toArray();
   const contractorBookingsCollection = db.collection("contractorBookings");
-  const contractorBookings = await contractorBookingsCollection
-    .find({})
-    .toArray();
+  const contractorBookings = await contractorBookingsCollection.find({}).toArray();
+
+  calculatedEvents.forEach(event => {
+    const eventDate = moment(event.start).tz(SYDNEY_TZ).format('ddd').toUpperCase();
+    const eventStartTime = moment(event.start).tz(SYDNEY_TZ);
+    const eventEndTime = moment(event.end).tz(SYDNEY_TZ);
+
+    contractors.forEach(contractor => {
+      const { availability, services, name, _id } = contractor;
+
+      // Check if contractor is available on the event day
+      const contractorDayAvailability = availability[eventDate];
+console.log(contractorDayAvailability)
+      if (contractorDayAvailability && contractorDayAvailability.available) {
+        const contractorStartTime = moment.tz(`${contractorDayAvailability.startTime}`, 'HH:mm', SYDNEY_TZ);
+        const contractorEndTime = moment.tz(`${contractorDayAvailability.endTime}`, 'HH:mm', SYDNEY_TZ);
+
+        // Check if the event is within the contractor's available hours
+        const isContractorAvailable = eventStartTime.isBetween(contractorStartTime, contractorEndTime, null, '[]') &&
+                                      eventEndTime.isBetween(contractorStartTime, contractorEndTime, null, '[]');
+
+        // Check if contractor provides the required service for the event (photo or video)
+        const isPhotoEvent = event.summary.includes("Photography") || event.summary.includes("Photo");
+        const isVideoEvent = event.summary.includes("Video");
+
+        const includesPhotographer = services.includes("Photographer");
+        const includesVideographer = services.includes("Videographer");
+
+        if (isContractorAvailable && ((isPhotoEvent && includesPhotographer) || (isVideoEvent && includesVideographer))) {
+
+          // Check if there are any conflicting bookings for the contractor
+          const conflictingBooking = contractorBookings.some(booking => {
+            return (
+              booking.contractorId.toString() === _id.toString() && // Booking belongs to the same contractor
+              (
+                (moment(booking.startTime).isBetween(eventStartTime, eventEndTime, null, '[)') || 
+                moment(booking.endTime).isBetween(eventStartTime, eventEndTime, null, '(]')) || 
+                (eventStartTime.isBetween(moment(booking.startTime), moment(booking.endTime), null, '[)') ||
+                eventEndTime.isBetween(moment(booking.startTime), moment(booking.endTime), null, '(]'))
+              )
+            );
+          });
+
+          // If no conflicting bookings, contractor is available for the event
+          if (!conflictingBooking) {
+            console.log(`Contractor available for ${event.summary} on ${event.start}: ${name}`);
+          } else {
+            console.log(`Contractor ${name} is not available for ${event.summary} due to a conflicting booking.`);
+          }
+        }
+      }
+    });
+  });
 };
+
 
 exports.calculateEvents = async (req, res) => {
   try {
@@ -92,13 +147,11 @@ exports.calculateEvents = async (req, res) => {
     const { marketing } = authSchedule.propertyId;
 
     // Get selected items for Photos, Floorplans, and Video
-    const selectedPhoto = getSelectedItem("Photos", marketing.categories);
     const selectedVideo = getSelectedItem("Video", marketing.categories);
     const selectedFloorplan = getSelectedItem(
       "Floorplans",
       marketing.categories
     );
-    console.log(selectedPhoto);
 
     // Function to convert "X weeks" to days
     const weeksToDays = (weeks) => parseFloat(weeks) * 7;
@@ -194,11 +247,7 @@ exports.calculateEvents = async (req, res) => {
       };
 
       // Phase 1: Schedule Photos first (if selected)
-      // if (selectedPhoto.length) {
-      //   const photoName = selectedPhoto.name;
-      //   const photoDuration = eventDurations[photoName];
-      //   scheduleEventInBounds(photoName, 0, photoDuration);
-      // }
+
       // Separate Dusk, Drone, and Photography events from the selected items
       // Get the selected photo items (Photography, Dusk, Drone)
       const selectedPhotoItems = getSelectedItem(
@@ -390,6 +439,7 @@ exports.calculateEvents = async (req, res) => {
     };
 
     const events = calculateEventDates(marketingStartDate);
+    await getContractors(events);
 
     return res.status(200).json({ success: true, data: events });
   } catch (error) {
