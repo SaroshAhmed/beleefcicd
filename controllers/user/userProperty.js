@@ -12,7 +12,7 @@ const { getMapStaticImage } = require("../../utils/maps");
 const Prompt = require("../../models/Prompt");
 const generatePdf = require("../../utils/generatePdf");
 const { uploadFile, getSignedPdfUrl } = require("../../utils/helperFunctions");
-
+const marked = require('marked');
 // Helper Function to Calculate Days Listed
 function calculateDaysListed(dateListed, soldDate) {
   const listedDate = new Date(dateListed);
@@ -618,17 +618,58 @@ exports.generateReport = async (req, res) => {
         .status(400)
         .json({ success: false, message: "Invalid prompt data" });
     }
-    const response = await chatCompletion(prompt.description, JSON.stringify(userMessage));
-    const pdfBuffer = await generatePdf(response,address,userProperty.customTable);
+    // below we hav to modify the data to be passed in chatCompletion function with userMessage we have to pass userProperty.customTable as well
+    
+    const response = await chatCompletion(prompt.description, JSON.stringify({
+      userMessage,
+      customTable: userProperty.customTable,
+    }));
+    const index=userMessage?.length-1;
+    userProperty.fiveStepProcess[index].gptResponse=marked.parse(response);
+    const pdfBuffer = await generatePdf(marked.parse(response),address,userProperty.customTable,userMessage?.length==1?'OFF Market':`Week ${userMessage?.length-1}`,userMessage);
     const pdfUrl=await uploadFile(pdfBuffer,`weeklyReports/${userProperty?._id}/tab_${userMessage?.length-1}`);
     
-      const index=userMessage?.length-1;
+      
       userProperty.fiveStepProcess[index].key=pdfUrl?.key;
       userProperty.fiveStepProcess[index].url=pdfUrl?.url;
       userProperty.markModified('fiveStepProcess');
       await userProperty.save();
-      return res.status(200).json({ success: true, data: pdfUrl });
+      return res.status(200).json({ success: true, data: {
+        ...pdfUrl,
+        gptResponse: marked.parse(response),
+      } });
   } catch (error) {
+    console.error("Error generating report:", error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+exports.updateReport = async (req, res) => {
+  try {
+    const { address, updatedText, userMessage } = req.body;
+    const { id } = req.user;
+    const userProperty = await UserProperty.findOne({ address, userId: id });
+    if (!userProperty) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Property not found" });
+    }
+    const index=userMessage?.length-1;
+    userProperty.fiveStepProcess[index].gptResponse=updatedText;
+    const pdfBuffer = await generatePdf(updatedText,address,userProperty.customTable,userMessage?.length==1?'OFF Market':`Week ${userMessage?.length-1}`,userMessage);
+    const pdfUrl=await uploadFile(pdfBuffer,`weeklyReports/${userProperty?._id}/tab_${userMessage?.length-1}`);
+    
+      
+      userProperty.fiveStepProcess[index].key=pdfUrl?.key;
+      userProperty.fiveStepProcess[index].url=pdfUrl?.url;
+      userProperty.markModified('fiveStepProcess');
+      await userProperty.save();
+      return res.status(200).json({ success: true, data: {
+        ...pdfUrl,
+        gptResponse: updatedText,
+      } });
+  } catch (error) {
+    console.error("Error updating report:", error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+}
