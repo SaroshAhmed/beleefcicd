@@ -14,7 +14,6 @@ const { startWhatsAppClient } = require('./utils/whatsappService');
 const app = express();
 require("./config/passport");
 
-
 // app.use(
 //   cors({
 //     origin: REACT_APP_FRONTEND_URL,
