@@ -50,11 +50,17 @@ const eventDurations = {
 };
 
 // Function to get the selected item from a category
+// const getSelectedItem = (categoryName, categories) => {
+//   const category = categories.find((cat) => cat.category === categoryName);
+//   if (!category) return null;
+//   const selectedItem = category.items.find((item) => item.isChecked);
+//   return selectedItem || null;
+// };
 const getSelectedItem = (categoryName, categories) => {
   const category = categories.find((cat) => cat.category === categoryName);
-  if (!category) return null;
-  const selectedItem = category.items.find((item) => item.isChecked);
-  return selectedItem || null;
+  if (!category) return [];
+  const selectedItems = category.items.filter((item) => item.isChecked);
+  return selectedItems;
 };
 
 const getContractors = async () => {
@@ -92,6 +98,7 @@ exports.calculateEvents = async (req, res) => {
       "Floorplans",
       marketing.categories
     );
+    console.log(selectedPhoto);
 
     // Function to convert "X weeks" to days
     const weeksToDays = (weeks) => parseFloat(weeks) * 7;
@@ -162,9 +169,7 @@ exports.calculateEvents = async (req, res) => {
       ) => {
         currentDate = getNextWeekday(currentDate.clone().add(gapDays, "days"));
 
-        if (specificHour !== null) {
-          currentHour = specificHour;
-        } else if (currentHour + durationHours > 20) {
+        if (currentHour + durationHours > 20) {
           currentHour = 6;
           currentDate.add(1, "day");
         }
@@ -173,7 +178,7 @@ exports.calculateEvents = async (req, res) => {
           createEventInSydneyTime(
             eventName,
             currentDate,
-            currentHour,
+            specificHour || currentHour,
             durationHours
           )
         );
@@ -183,54 +188,127 @@ exports.calculateEvents = async (req, res) => {
           lastMediaDate = currentDate.clone();
         }
 
-        currentHour += durationHours;
+        if (!specificHour) {
+          currentHour += durationHours;
+        }
       };
 
       // Phase 1: Schedule Photos first (if selected)
-      if (selectedPhoto) {
-        const photoName = selectedPhoto.name;
+      // if (selectedPhoto.length) {
+      //   const photoName = selectedPhoto.name;
+      //   const photoDuration = eventDurations[photoName];
+      //   scheduleEventInBounds(photoName, 0, photoDuration);
+      // }
+      // Separate Dusk, Drone, and Photography events from the selected items
+      // Get the selected photo items (Photography, Dusk, Drone)
+      const selectedPhotoItems = getSelectedItem(
+        "Photos",
+        marketing.categories
+      );
+
+      let selectedDusk = null;
+      let selectedDrone = null;
+      let selectedPhotography = null;
+
+      // Loop through the selected items and categorize them
+      selectedPhotoItems.forEach((item) => {
+        if (item.name.includes("Dusk Photography")) {
+          selectedDusk = item;
+        } else if (item.name.includes("Drone Shots")) {
+          selectedDrone = item;
+        } else if (item.name.includes("Photography")) {
+          selectedPhotography = item; // Pick the remaining photography item
+        }
+      });
+
+      // Schedule Photography event first (if selected)
+      if (selectedPhotography) {
+        const photoName = selectedPhotography.name;
         const photoDuration = eventDurations[photoName];
-        scheduleEventInBounds(photoName, 0, photoDuration);
+        scheduleEventInBounds(photoName, 0, photoDuration); // Schedule this early in the day (morning)
+      }
+
+      // Schedule Dusk and Drone Shots as a combined or separate event
+      if (selectedDusk && selectedDrone) {
+        // If both Dusk and Drone are selected, combine them into a single event
+        const combinedDuration =
+          eventDurations[selectedDusk.name] +
+          eventDurations[selectedDrone.name];
+        const sunsetHour = 18; // Assuming sunset happens around 6 PM
+        scheduleEventInBounds(
+          "Dusk Photography and Drone Shots",
+          0,
+          combinedDuration,
+          sunsetHour
+        );
+      } else if (selectedDusk) {
+        // Schedule Dusk Photography individually if only Dusk is selected
+        const sunsetHour = 18; // Assuming sunset happens around 6 PM
+        scheduleEventInBounds(
+          "Dusk Photography",
+          0,
+          eventDurations[selectedDusk.name],
+          sunsetHour
+        );
+      } else if (selectedDrone) {
+        // Schedule Drone Shots individually if only Drone is selected
+        const sunsetHour = 18; // Assuming sunset happens around 6 PM
+        scheduleEventInBounds(
+          "Drone Shots",
+          0,
+          eventDurations[selectedDrone.name],
+          sunsetHour
+        );
       }
 
       // Phase 2: Schedule Videos second (if selected)
-      if (selectedVideo) {
-        const videoName = selectedVideo.name;
+      if (selectedVideo.length) {
+        const videoName = selectedVideo[0].name;
         const videoDuration = eventDurations[videoName];
         scheduleEventInBounds(videoName, 0, videoDuration);
       }
 
       // Phase 3: Schedule Floorplan
-      if (selectedFloorplan) {
-        const floorplanName = selectedFloorplan.name;
+      if (selectedFloorplan.length) {
+        const floorplanName = selectedFloorplan[0].name;
         const floorplanDuration = eventDurations[floorplanName];
         scheduleEventInBounds(floorplanName, 0, floorplanDuration, 16);
       }
 
       // Calculate launch to market date (2 weekdays after photos/videos)
-      let launchToMarketMeetingDate = getNextMondayToThursday(
-        (lastMediaDate ? lastMediaDate.clone().add(3, "days") : currentDate.clone().add(1, "days"))
+      let launchToMarketMeetingDate = getNextWeekday(
+        lastMediaDate
+          ? lastMediaDate.clone().add(3, "days")
+          : currentDate.clone().add(1, "days")
       );
 
-
-      // Schedule Launch to Market meeting and event
+      // Schedule the "Meeting: Launch to Market" (can happen Monday to Friday)
       events.push(
         createEventInSydneyTime(
           "Meeting: Launch to Market",
-          lastMediaDate ? lastMediaDate.clone().add(3, "days") : currentDate.clone().add(1, "days"),
+          launchToMarketMeetingDate,
           10,
           0.5
         )
       );
 
-      const launchToMarketDate = launchToMarketMeetingDate.clone();
-      if (launchToMarketDate.day() === 4 && launchToMarketDate.hour() > 13) {
-        launchToMarketDate.hour(12);
+      // Calculate the "Launch to Market" event date (can only happen Monday to Thursday)
+      let launchToMarketDate = launchToMarketMeetingDate.clone();
+
+      // If the calculated launchToMarketDate is a Friday (day 5), move it to the following Monday
+      if (launchToMarketDate.day() === 5) {
+        launchToMarketDate.add(3, "days");
+      } else if (launchToMarketDate.day() === 6) {
+        // If it falls on Saturday, move it to the following Monday
+        launchToMarketDate.add(2, "days");
+      } else if (launchToMarketDate.day() === 0) {
+        // If it falls on Sunday, move it to the following Monday
+        launchToMarketDate.add(1, "day");
       }
+
       events.push(
         createEventInSydneyTime("Launch to Market", launchToMarketDate, 11, 1)
       );
-
       // Calculate closing date based on launch to market date
       // const closingDate = (() => {
       //   const weeks = parseFloat(conclusionDate.split(" ")[0]);
@@ -254,7 +332,6 @@ exports.calculateEvents = async (req, res) => {
       let currentRecurringDate = launchToMarketDate.clone();
       let firstOpenHomeScheduled = false;
 
-      
       while (currentRecurringDate.isBefore(closingDate)) {
         // Only schedule mid-week events after first open home
         const midWeekOpenHome = getNextWednesday(currentRecurringDate);
