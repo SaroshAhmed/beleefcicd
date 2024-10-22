@@ -12,7 +12,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@open-wa/wa-automate": "^4.74.0",
     "aws-sdk": "^2.1683.0",
     "axios": "^1.7.7",
     "bcrypt": "^5.1.1",
