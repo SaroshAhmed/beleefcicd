@@ -254,6 +254,7 @@ exports.calculateEvents = async (req, res) => {
       let currentRecurringDate = launchToMarketDate.clone();
       let firstOpenHomeScheduled = false;
 
+      
       while (currentRecurringDate.isBefore(closingDate)) {
         // Only schedule mid-week events after first open home
         const midWeekOpenHome = getNextWednesday(currentRecurringDate);

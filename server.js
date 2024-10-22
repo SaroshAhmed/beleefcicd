@@ -93,16 +93,17 @@ app.get("/", (req, res) => {
 });
 
 // Starting WhatsApp Authentication when server starts
-startWhatsAppClient()
-  .then(() => {
-    console.log('WhatsApp Client is ready.');
-    app.listen(PORT, () => {
-      console.log(`Server is running`);
-    });
-  })
-  .catch((error) => {
-    console.error('Error starting WhatsApp Client:', error);
-  });
+
+// startWhatsAppClient()
+//   .then(() => {
+//     console.log('WhatsApp Client is ready.');
+//     app.listen(PORT, () => {
+//       console.log(`Server is running`);
+//     });
+//   })
+//   .catch((error) => {
+//     console.error('Error starting WhatsApp Client:', error);
+//   });
 
 databaseConnect();
 bookingReminder();
