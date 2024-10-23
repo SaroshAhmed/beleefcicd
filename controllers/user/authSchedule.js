@@ -4613,7 +4613,7 @@ exports.createAuthSchedule = async (req, res) => {
       );
 
       await sendConciergeEmail(
-        "Anabel.m@ausrealty.com.au", // Recipient Email moussa.c@themarketrun.com.au
+        "moussa.c@themarketrun.com.au", // Recipient Email moussa.c@themarketrun.com.au
         `Fruit Box Request: ${address}`, // Subject
         `
         <div style="text-align: center;">
@@ -4737,6 +4737,7 @@ exports.createAuthSchedule = async (req, res) => {
         `
           )
           .join("")}
+        <p>Kindly upload the report upon completion and the agent will be notified</p>
          <table role="presentation" border="0" width="100%" cellspacing="0" cellpadding="0">
       <tbody>
           <tr>
@@ -6040,7 +6041,7 @@ exports.updateAuthSchedule = async (req, res) => {
       );
 
       await sendConciergeEmail(
-        "Anabel.m@ausrealty.com.au", // Recipient Email moussa.c@themarketrun.com.au
+        "moussa.c@themarketrun.com.au", // Recipient Email moussa.c@themarketrun.com.au
         `Fruit Box Request: ${address}`, // Subject
         `
         <div style="text-align: center;">
@@ -6107,6 +6108,7 @@ exports.updateAuthSchedule = async (req, res) => {
         `
           )
           .join("")}
+        <p>Kindly upload the report upon completion and the agent will be notified</p>
          <table role="presentation" border="0" width="100%" cellspacing="0" cellpadding="0">
       <tbody>
           <tr>
@@ -6164,6 +6166,7 @@ exports.updateAuthSchedule = async (req, res) => {
         `
           )
           .join("")}
+          <p>Kindly upload the report upon completion and the agent will be notified</p>
          <table role="presentation" border="0" width="100%" cellspacing="0" cellpadding="0">
       <tbody>
           <tr>
