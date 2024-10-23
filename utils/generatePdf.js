@@ -68,7 +68,7 @@ const generatePdf = async (reportContent, propertyName = 'Unknown Property',tabl
     try {
       const firstPageHtml = `
             <div style="text-align: center; margin-top: 300px;">
-        <h1>PRIVATE AND CONFIDENTIAL</h1>
+        <h1>Insights To The Maximum Outcome</h1>
         <p>${index} Report: ${propertyName}</p>
       </div>
       <div style="page-break-after: always;"></div> 
