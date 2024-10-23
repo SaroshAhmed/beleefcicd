@@ -603,16 +603,17 @@ exports.generateReport = async (req, res) => {
 
     // Find the prompt in the database
     const prompt = await Prompt.findOne({ name: systemPrompt });
+    const prompt2 = await Prompt.findOne({ name: 'AGENT_RECOMMENDATION' });
    
     // Check if the prompt exists
-    if (!prompt) {
+    if (!prompt || !prompt2) {
       return res
         .status(404)
         .json({ success: false, message: "Prompt not found" });
     }
 
     // Check if the prompt has a description field
-    if (!prompt.description) {
+    if (!prompt.description || !prompt2.description) {
       return res
         .status(400)
         .json({ success: false, message: "Invalid prompt data" });
@@ -623,9 +624,13 @@ exports.generateReport = async (req, res) => {
       userMessage,
       customTable: userProperty.customTable,
     }));
+    const response2 = await chatCompletion(prompt2.description, JSON.stringify({
+      userMessage,
+      customTable: userProperty.customTable,
+    })); 
     const index=userMessage?.length-1;
     userProperty.fiveStepProcess[index].gptResponse=response;
-    const pdfBuffer = await generatePdf(response,address,userProperty.customTable,userMessage?.length==1?'OFF Market':`Week ${userMessage?.length-1}`,userMessage);
+    const pdfBuffer = await generatePdf(response,address,userProperty.customTable,userMessage?.length==1?'OFF Market':`Week ${userMessage?.length-1}`,userMessage,response2);
     const pdfUrl=await uploadFile(pdfBuffer,`weeklyReports/${userProperty?._id}/tab_${userMessage?.length-1}`);
     
       

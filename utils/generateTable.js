@@ -10,7 +10,7 @@ const generateTableHtml = (tableData) => {
     // Create the table rows
     tableHtml += "<tbody style='background-color: white; border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb;'>";
     tableData.rows.forEach(row => {
-      tableHtml += "<tr style='padding-left: 0.75rem; padding-right: 0.75rem; padding-top: 0.75rem; padding-bottom: 0.75rem; white-space: nowrap; border: 1px solid; border-bottom-width: 2px;'>";
+      tableHtml += "<tr style='padding-left: 0.75rem; padding-right: 0.75rem; padding-top: 0.75rem; padding-bottom: 0.75rem; white-space: nowrap;'>";
       tableData.columns.forEach(col => {
         // convert row.data which is a Map to an object
         const rowObj = Object.fromEntries(row.data);
