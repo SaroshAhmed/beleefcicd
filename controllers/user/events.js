@@ -62,7 +62,7 @@ const getSelectedItem = (categoryName, categories) => {
 
   // Ensure isChecked is evaluated as a boolean
   const selectedItems = category.items.filter(
-    (item) => item.isChecked == "true" && !/Virtual|Redraw/i.test(item.name)
+    (item) => item.isChecked && !/Virtual|Redraw/i.test(item.name)
   );
 
   console.log(selectedItems); // Log the filtered selected items
