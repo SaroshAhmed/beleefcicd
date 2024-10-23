@@ -52,77 +52,140 @@ const eventDurations = {
 // Function to get the selected item from a category
 const getSelectedItem = (categoryName, categories) => {
   const category = categories.find((cat) => cat.category === categoryName);
+  console.log(category)
   if (!category) return [];
-  const selectedItems = category.items.filter((item) => item.isChecked);
+
+  const selectedItems = category.items.filter(
+    (item) => item.isChecked && !/Virtual|Redraw/i.test(item.name)
+  );
+console.log(selectedItems)
   return selectedItems;
 };
 
-// const getContractors = async () => {
-//   const db = await connectToDatabase();
-//   const contractorsCollection = db.collection("contractors");
-//   const contractors = await contractorsCollection.find({}).toArray();
-//   const contractorBookingsCollection = db.collection("contractorBookings");
-//   const contractorBookings = await contractorBookingsCollection
-//     .find({})
-//     .toArray();
-// };
 
 const getContractors = async (calculatedEvents) => {
   const db = await connectToDatabase();
   const contractorsCollection = db.collection("contractors");
   const contractors = await contractorsCollection.find({}).toArray();
   const contractorBookingsCollection = db.collection("contractorBookings");
-  const contractorBookings = await contractorBookingsCollection.find({}).toArray();
-console.log(contractors)
-console.log(calculatedEvents)
+  const contractorBookings = await contractorBookingsCollection
+    .find({})
+    .toArray();
 
-  calculatedEvents.forEach(event => {
-    const eventDate = moment(event.start).tz(SYDNEY_TZ).format('ddd').toUpperCase();
+  // Filter the calculatedEvents to include only those with relevant keywords in summary
+  const filteredEvents = calculatedEvents.filter((event) => {
+    const summaryLowercase = event.summary.toLowerCase();
+    return (
+      summaryLowercase.includes("photography") ||
+      summaryLowercase.includes("video") ||
+      summaryLowercase.includes("floor plan")
+    );
+  });
+
+  console.log("Filtered Events:", filteredEvents);
+
+  filteredEvents.forEach((event) => {
+    // Convert event start and end times to Sydney timezone
     const eventStartTime = moment(event.start).tz(SYDNEY_TZ);
     const eventEndTime = moment(event.end).tz(SYDNEY_TZ);
 
-    contractors.forEach(contractor => {
+    contractors.forEach((contractor) => {
       const { availability, services, name, _id } = contractor;
-console.log(eventDate)
+      const eventDate = eventStartTime.format("ddd").toUpperCase();
 
       // Check if contractor is available on the event day
       const contractorDayAvailability = availability[eventDate];
-console.log(contractorDayAvailability)
       if (contractorDayAvailability && contractorDayAvailability.available) {
-        const contractorStartTime = moment.tz(`${contractorDayAvailability.startTime}`, 'HH:mm', SYDNEY_TZ);
-        const contractorEndTime = moment.tz(`${contractorDayAvailability.endTime}`, 'HH:mm', SYDNEY_TZ);
+        const contractorStartTime = moment.tz(
+          `${contractorDayAvailability.startTime}`,
+          "HH:mm",
+          SYDNEY_TZ
+        );
+        const contractorEndTime = moment.tz(
+          `${contractorDayAvailability.endTime}`,
+          "HH:mm",
+          SYDNEY_TZ
+        );
 
         // Check if the event is within the contractor's available hours
-        const isContractorAvailable = eventStartTime.isBetween(contractorStartTime, contractorEndTime, null, '[]') &&
-                                      eventEndTime.isBetween(contractorStartTime, contractorEndTime, null, '[]');
+        const isContractorAvailable =
+          eventStartTime.isBetween(
+            contractorStartTime,
+            contractorEndTime,
+            null,
+            "[]"
+          ) &&
+          eventEndTime.isBetween(
+            contractorStartTime,
+            contractorEndTime,
+            null,
+            "[]"
+          );
 
-        // Check if contractor provides the required service for the event (photo or video)
-        const isPhotoEvent = event.summary.includes("Photography") || event.summary.includes("Photo");
-        const isVideoEvent = event.summary.includes("Video");
+        // Check if contractor provides the required service for the event (photo, video, or floor plan)
+        console.log(isContractorAvailable);
+
+        const isPhotoEvent =
+          event.summary.toLowerCase().includes("photography") ||
+          event.summary.toLowerCase().includes("photo");
+        const isVideoEvent = event.summary.toLowerCase().includes("video");
+        const isFloorPlanEvent = event.summary
+          .toLowerCase()
+          .includes("floor plan");
 
         const includesPhotographer = services.includes("Photographer");
         const includesVideographer = services.includes("Videographer");
+        const includesFloorPlanner = services.includes("Floor planner");
 
-        if (isContractorAvailable && ((isPhotoEvent && includesPhotographer) || (isVideoEvent && includesVideographer))) {
-
+        if (
+          isContractorAvailable &&
+          ((isPhotoEvent && includesPhotographer) ||
+            (isVideoEvent && includesVideographer) ||
+            (isFloorPlanEvent && includesFloorPlanner))
+        ) {
           // Check if there are any conflicting bookings for the contractor
-          const conflictingBooking = contractorBookings.some(booking => {
+          const conflictingBooking = contractorBookings.some((booking) => {
+            const bookingStartTime = moment(booking.startTime).tz(SYDNEY_TZ);
+            const bookingEndTime = moment(booking.endTime).tz(SYDNEY_TZ);
+
             return (
               booking.contractorId.toString() === _id.toString() && // Booking belongs to the same contractor
-              (
-                (moment(booking.startTime).isBetween(eventStartTime, eventEndTime, null, '[)') || 
-                moment(booking.endTime).isBetween(eventStartTime, eventEndTime, null, '(]')) || 
-                (eventStartTime.isBetween(moment(booking.startTime), moment(booking.endTime), null, '[)') ||
-                eventEndTime.isBetween(moment(booking.startTime), moment(booking.endTime), null, '(]'))
-              )
+              (bookingStartTime.isBetween(
+                eventStartTime,
+                eventEndTime,
+                null,
+                "[)"
+              ) ||
+                bookingEndTime.isBetween(
+                  eventStartTime,
+                  eventEndTime,
+                  null,
+                  "(]"
+                ) ||
+                eventStartTime.isBetween(
+                  bookingStartTime,
+                  bookingEndTime,
+                  null,
+                  "[)"
+                ) ||
+                eventEndTime.isBetween(
+                  bookingStartTime,
+                  bookingEndTime,
+                  null,
+                  "(]"
+                ))
             );
           });
 
           // If no conflicting bookings, contractor is available for the event
           if (!conflictingBooking) {
-            console.log(`Contractor available for ${event.summary} on ${event.start}: ${name}`);
+            console.log(
+              `Contractor available for ${event.summary} on ${event.start}: ${name}`
+            );
           } else {
-            console.log(`Contractor ${name} is not available for ${event.summary} due to a conflicting booking.`);
+            console.log(
+              `Contractor ${name} is not available for ${event.summary} due to a conflicting booking.`
+            );
           }
         }
       }
@@ -130,24 +193,25 @@ console.log(contractorDayAvailability)
   });
 };
 
-
 exports.calculateEvents = async (req, res) => {
   try {
-    const { propertyId } = req.params;
-    const objectId = new mongoose.Types.ObjectId(propertyId);
+    // const { propertyId } = req.params;
+    // const objectId = new mongoose.Types.ObjectId(propertyId);
 
-    const authSchedule = await AuthSchedule.findOne({
-      propertyId: objectId,
-    }).populate("propertyId");
+    // const authSchedule = await AuthSchedule.findOne({
+    //   propertyId: objectId,
+    // }).populate("propertyId");
 
-    if (!authSchedule) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Auth Schedule not found" });
-    }
+    // if (!authSchedule) {
+    //   return res
+    //     .status(404)
+    //     .json({ success: false, message: "Auth Schedule not found" });
+    // }
 
-    const { prepareMarketing, conclusionDate } = authSchedule;
-    const { marketing } = authSchedule.propertyId;
+    // const { prepareMarketing, conclusionDate } = authSchedule;
+    // const { marketing } = authSchedule.propertyId;
+
+    const { prepareMarketing, conclusionDate, marketing } = req.query;
 
     // Get selected items for Photos, Floorplans, and Video
     const selectedVideo = getSelectedItem("Video", marketing.categories);
@@ -257,6 +321,7 @@ exports.calculateEvents = async (req, res) => {
         "Photos",
         marketing.categories
       );
+console.log(selectedPhotoItems)
 
       let selectedDusk = null;
       let selectedDrone = null;
@@ -383,6 +448,7 @@ exports.calculateEvents = async (req, res) => {
 
       let currentRecurringDate = launchToMarketDate.clone();
       let firstOpenHomeScheduled = false;
+      let midCampaignMeeting = false;
 
       while (currentRecurringDate.isBefore(closingDate)) {
         // Only schedule mid-week events after first open home
@@ -396,14 +462,18 @@ exports.calculateEvents = async (req, res) => {
               0.5
             )
           );
-          events.push(
-            createEventInSydneyTime(
-              "Mid-campaign meeting",
-              midWeekOpenHome,
-              18.5,
-              0.5
-            )
-          );
+
+          if (!midCampaignMeeting) {
+            events.push(
+              createEventInSydneyTime(
+                "Mid-campaign meeting",
+                midWeekOpenHome,
+                18.5,
+                0.5
+              )
+            );
+            midCampaignMeeting=true
+          }
         }
 
         const openHome = getNextSaturday(currentRecurringDate);
@@ -442,7 +512,7 @@ exports.calculateEvents = async (req, res) => {
     };
 
     const events = calculateEventDates(marketingStartDate);
-    await getContractors(events);
+    // await getContractors(events);
 
     return res.status(200).json({ success: true, data: events });
   } catch (error) {
