@@ -73,6 +73,8 @@ const getContractors = async (calculatedEvents) => {
   const contractors = await contractorsCollection.find({}).toArray();
   const contractorBookingsCollection = db.collection("contractorBookings");
   const contractorBookings = await contractorBookingsCollection.find({}).toArray();
+console.log(contractors)
+console.log(calculatedEvents)
 
   calculatedEvents.forEach(event => {
     const eventDate = moment(event.start).tz(SYDNEY_TZ).format('ddd').toUpperCase();
@@ -81,6 +83,7 @@ const getContractors = async (calculatedEvents) => {
 
     contractors.forEach(contractor => {
       const { availability, services, name, _id } = contractor;
+console.log(eventDate)
 
       // Check if contractor is available on the event day
       const contractorDayAvailability = availability[eventDate];
