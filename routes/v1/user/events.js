@@ -5,6 +5,6 @@ calculateEvents
 } = require("../../../controllers/user/events");
 
 router.get("/calEvents/:propertyId", calculateEvents);
-router.get("/calEventst", calculateEvents);
+router.post("/calEventst", calculateEvents);
 
 module.exports = router;

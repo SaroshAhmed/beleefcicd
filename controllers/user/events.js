@@ -213,7 +213,7 @@ exports.calculateEvents = async (req, res) => {
     // const { marketing } = authSchedule.propertyId;
 
     const { prepareMarketing, conclusionDate, marketing, saleProcess } =
-      req.query;
+      req.body;
     if (prepareMarketing == "Off market") {
       return res.status(200).json({ success: true, data: [] });
     }
