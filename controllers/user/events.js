@@ -539,7 +539,12 @@ exports.calculateEvents = async (req, res) => {
         );
       }
 
-      events.push(createEventInSydneyTime("Closing Date", closingDate, 10, 1));
+      if (saleProcess === "Auction") {
+        events.push(createEventInSydneyTime("Auction Date", closingDate, 10, 1));
+      }else{
+        events.push(createEventInSydneyTime("Closing Date", closingDate, 10, 1));
+      }
+
 
       return events;
     };
