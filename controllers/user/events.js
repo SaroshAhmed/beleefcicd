@@ -8,6 +8,20 @@ const moment = require("moment-timezone");
 // Timezone for Sydney
 const SYDNEY_TZ = "Australia/Sydney";
 
+// Helper function to get the next working day, skipping weekends
+const addWorkingDays = (startDate, daysToAdd) => {
+  let date = startDate.clone(); // Clone the start date to avoid mutating the original
+  while (daysToAdd > 0) {
+    date.add(1, "day"); // Add one day
+    // If the day is a weekday (Monday to Friday), subtract from daysToAdd
+    if (date.day() !== 0 && date.day() !== 6) {
+      // 0 = Sunday, 6 = Saturday
+      daysToAdd -= 1;
+    }
+  }
+  return date;
+};
+
 // Utility function to get the next available weekday (Monday - Friday)
 const getNextWeekday = (date) => {
   while (date.day() === 0 || date.day() === 6) {
@@ -27,14 +41,6 @@ const getNextWednesday = (date) => {
   return date.clone().day(3);
 };
 
-// Utility function to get the next Monday-Thursday for "Launch to Market" meeting
-const getNextMondayToThursday = (date) => {
-  while (date.day() === 0 || date.day() === 5 || date.day() === 6) {
-    date.add(1, "day");
-  }
-  return date;
-};
-
 const eventDurations = {
   "Melo Photography - Photography 10 Images": 1.5,
   "Melo Photography - Photography 20 Images": 3,
@@ -52,16 +58,16 @@ const eventDurations = {
 // Function to get the selected item from a category
 const getSelectedItem = (categoryName, categories) => {
   const category = categories.find((cat) => cat.category === categoryName);
-  console.log(category)
   if (!category) return [];
 
+  // Ensure isChecked is evaluated as a boolean
   const selectedItems = category.items.filter(
-    (item) => item.isChecked && !/Virtual|Redraw/i.test(item.name)
+    (item) => item.isChecked == "true" && !/Virtual|Redraw/i.test(item.name)
   );
-console.log(selectedItems)
+
+  console.log(selectedItems); // Log the filtered selected items
   return selectedItems;
 };
-
 
 const getContractors = async (calculatedEvents) => {
   const db = await connectToDatabase();
@@ -82,7 +88,7 @@ const getContractors = async (calculatedEvents) => {
     );
   });
 
-  console.log("Filtered Events:", filteredEvents);
+  console.log("Filtered Events:", filteredEvents.length,filteredEvents);
 
   filteredEvents.forEach((event) => {
     // Convert event start and end times to Sydney timezone
@@ -92,36 +98,31 @@ const getContractors = async (calculatedEvents) => {
     contractors.forEach((contractor) => {
       const { availability, services, name, _id } = contractor;
       const eventDate = eventStartTime.format("ddd").toUpperCase();
+      console.log(eventDate);
 
       // Check if contractor is available on the event day
       const contractorDayAvailability = availability[eventDate];
-      if (contractorDayAvailability && contractorDayAvailability.available) {
-        const contractorStartTime = moment.tz(
-          `${contractorDayAvailability.startTime}`,
-          "HH:mm",
-          SYDNEY_TZ
-        );
-        const contractorEndTime = moment.tz(
-          `${contractorDayAvailability.endTime}`,
-          "HH:mm",
-          SYDNEY_TZ
-        );
+      console.log(contractorDayAvailability);
 
+      if (contractorDayAvailability && contractorDayAvailability.available) {
+        const contractorStartTime = eventStartTime.clone().set({
+          hour: parseInt(contractorDayAvailability.startTime.split(':')[0]),
+          minute: parseInt(contractorDayAvailability.startTime.split(':')[1]),
+          second: 0,
+          millisecond: 0
+        });
+        
+        const contractorEndTime = eventStartTime.clone().set({
+          hour: parseInt(contractorDayAvailability.endTime.split(':')[0]),
+          minute: parseInt(contractorDayAvailability.endTime.split(':')[1]),
+          second: 0,
+          millisecond: 0
+        });
+  
         // Check if the event is within the contractor's available hours
         const isContractorAvailable =
-          eventStartTime.isBetween(
-            contractorStartTime,
-            contractorEndTime,
-            null,
-            "[]"
-          ) &&
-          eventEndTime.isBetween(
-            contractorStartTime,
-            contractorEndTime,
-            null,
-            "[]"
-          );
-
+          eventStartTime.isBetween(contractorStartTime, contractorEndTime, null, '[]') &&
+          eventEndTime.isBetween(contractorStartTime, contractorEndTime, null, '[]');
         // Check if contractor provides the required service for the event (photo, video, or floor plan)
         console.log(isContractorAvailable);
 
@@ -211,7 +212,11 @@ exports.calculateEvents = async (req, res) => {
     // const { prepareMarketing, conclusionDate } = authSchedule;
     // const { marketing } = authSchedule.propertyId;
 
-    const { prepareMarketing, conclusionDate, marketing } = req.query;
+    const { prepareMarketing, conclusionDate, marketing, saleProcess } =
+      req.query;
+    if (prepareMarketing == "Off market") {
+      return res.status(200).json({ success: true, data: [] });
+    }
 
     // Get selected items for Photos, Floorplans, and Video
     const selectedVideo = getSelectedItem("Video", marketing.categories);
@@ -321,7 +326,6 @@ exports.calculateEvents = async (req, res) => {
         "Photos",
         marketing.categories
       );
-console.log(selectedPhotoItems)
 
       let selectedDusk = null;
       let selectedDrone = null;
@@ -337,13 +341,6 @@ console.log(selectedPhotoItems)
           selectedPhotography = item; // Pick the remaining photography item
         }
       });
-
-      // Schedule Photography event first (if selected)
-      if (selectedPhotography) {
-        const photoName = selectedPhotography.name;
-        const photoDuration = eventDurations[photoName];
-        scheduleEventInBounds(photoName, 0, photoDuration); // Schedule this early in the day (morning)
-      }
 
       // Schedule Dusk and Drone Shots as a combined or separate event
       if (selectedDusk && selectedDrone) {
@@ -378,11 +375,29 @@ console.log(selectedPhotoItems)
         );
       }
 
-      // Phase 2: Schedule Videos second (if selected)
-      if (selectedVideo.length) {
-        const videoName = selectedVideo[0].name;
-        const videoDuration = eventDurations[videoName];
-        scheduleEventInBounds(videoName, 0, videoDuration);
+      // If both selectedPhotography and selectedVideo exist, combine them into a single event
+      if (selectedPhotography && selectedVideo.length) {
+        const combinedEventName = `${selectedPhotography.name} and ${selectedVideo[0].name}`;
+        const combinedDuration =
+          eventDurations[selectedPhotography.name] +
+          eventDurations[selectedVideo[0].name];
+
+        // Schedule the combined event
+        scheduleEventInBounds(combinedEventName, 0, combinedDuration);
+      } else {
+        // Schedule Photography event (if selected)
+        if (selectedPhotography) {
+          const photoName = selectedPhotography.name;
+          const photoDuration = eventDurations[photoName];
+          scheduleEventInBounds(photoName, 0, photoDuration); // Schedule this early in the day (morning)
+        }
+
+        // Schedule Video event (if selected)
+        if (selectedVideo.length) {
+          const videoName = selectedVideo[0].name;
+          const videoDuration = eventDurations[videoName];
+          scheduleEventInBounds(videoName, 0, videoDuration);
+        }
       }
 
       // Phase 3: Schedule Floorplan
@@ -393,11 +408,9 @@ console.log(selectedPhotoItems)
       }
 
       // Calculate launch to market date (2 weekdays after photos/videos)
-      let launchToMarketMeetingDate = getNextWeekday(
-        lastMediaDate
-          ? lastMediaDate.clone().add(3, "days")
-          : currentDate.clone().add(1, "days")
-      );
+      let launchToMarketMeetingDate = lastMediaDate
+        ? addWorkingDays(lastMediaDate.clone(), 3) // Add 3 working days, skipping weekends
+        : getNextWeekday(currentDate.clone().add(1, "days")); // If no lastMediaDate, add 1 day as fallback
 
       // Schedule the "Meeting: Launch to Market" (can happen Monday to Friday)
       events.push(
@@ -426,25 +439,39 @@ console.log(selectedPhotoItems)
       events.push(
         createEventInSydneyTime("Launch to Market", launchToMarketDate, 11, 1)
       );
-      // Calculate closing date based on launch to market date
-      // const closingDate = (() => {
-      //   const weeks = parseFloat(conclusionDate.split(" ")[0]);
-      //   return launchToMarketDate.clone().add(weeksToDays(weeks), "days");
-      // })();
 
-      const closingDate = (() => {
-        const weeks = parseFloat(conclusionDate.split(" ")[0]);
-        let tentativeClosingDate = launchToMarketDate
-          .clone()
-          .add(weeksToDays(weeks), "days");
+      let closingDate;
 
-        // Move closing to Tuesday, Wednesday, or Thursday if it falls on other days
-        while (![2, 3, 4].includes(tentativeClosingDate.day())) {
-          tentativeClosingDate.add(1, "day"); // Move to the next day until it is Tuesday, Wednesday, or Thursday
-        }
+      if (saleProcess === "Auction") {
+        closingDate = (() => {
+          const weeks = parseFloat(conclusionDate.split(" ")[0]);
+          let tentativeClosingDate = launchToMarketDate
+            .clone()
+            .add(weeksToDays(weeks), "days");
 
-        return tentativeClosingDate;
-      })();
+          // Move closingDate to the next Saturday
+          while (tentativeClosingDate.day() !== 6) {
+            // 6 represents Saturday
+            tentativeClosingDate.add(1, "day"); // Move to the next day until it's Saturday
+          }
+
+          return tentativeClosingDate;
+        })();
+      } else {
+        closingDate = (() => {
+          const weeks = parseFloat(conclusionDate.split(" ")[0]);
+          let tentativeClosingDate = launchToMarketDate
+            .clone()
+            .add(weeksToDays(weeks), "days");
+
+          // Move closing to Tuesday, Wednesday, or Thursday if it falls on other days
+          while (![2, 3, 4].includes(tentativeClosingDate.day())) {
+            tentativeClosingDate.add(1, "day"); // Move to the next day until it is Tuesday, Wednesday, or Thursday
+          }
+
+          return tentativeClosingDate;
+        })();
+      }
 
       let currentRecurringDate = launchToMarketDate.clone();
       let firstOpenHomeScheduled = false;
@@ -472,7 +499,7 @@ console.log(selectedPhotoItems)
                 0.5
               )
             );
-            midCampaignMeeting=true
+            midCampaignMeeting = true;
           }
         }
 
@@ -497,14 +524,20 @@ console.log(selectedPhotoItems)
         preClosingMeeting.set("hour", 14); // Set to after typical open home time
       }
 
-      events.push(
-        createEventInSydneyTime(
-          "Meeting: Pre Closing Date",
-          preClosingMeeting,
-          14,
-          1
-        )
-      );
+      if (saleProcess === "Auction") {
+        events.push(
+          createEventInSydneyTime("Reserve Meeting", preClosingMeeting, 14, 1)
+        );
+      } else {
+        events.push(
+          createEventInSydneyTime(
+            "Meeting: Pre Closing Date",
+            preClosingMeeting,
+            14,
+            1
+          )
+        );
+      }
 
       events.push(createEventInSydneyTime("Closing Date", closingDate, 10, 1));
 
@@ -512,7 +545,7 @@ console.log(selectedPhotoItems)
     };
 
     const events = calculateEventDates(marketingStartDate);
-    // await getContractors(events);
+    await getContractors(events);
 
     return res.status(200).json({ success: true, data: events });
   } catch (error) {
