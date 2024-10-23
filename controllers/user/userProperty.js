@@ -618,7 +618,6 @@ exports.generateReport = async (req, res) => {
         .status(400)
         .json({ success: false, message: "Invalid prompt data" });
     }
-    // below we hav to modify the data to be passed in chatCompletion function with userMessage we have to pass userProperty.customTable as well
     
     const response = await chatCompletion(prompt.description, JSON.stringify({
       userMessage,
@@ -668,6 +667,104 @@ exports.updateReport = async (req, res) => {
       userProperty.fiveStepProcess[index].url=pdfUrl?.url;
       userProperty.markModified('fiveStepProcess');
       await userProperty.save();
+      return res.status(200).json({ success: true, data: {
+        ...pdfUrl,
+        gptResponse: updatedText,
+      } });
+  } catch (error) {
+    console.error("Error updating report:", error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+}
+exports.generateConclusionReport = async (req, res) => {
+  try {
+    const { systemPrompt, userMessage,address } = req.body;
+    const { id } = req.user;
+    const userProperty = await UserProperty.findOne({ address, userId: id });
+    if (!userProperty) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Property not found" });
+    }
+    // Validate the inputs
+    if (!systemPrompt || !userMessage) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid request data" });
+    }
+
+    // Find the prompt in the database
+    const prompt = await Prompt.findOne({ name: systemPrompt });
+   
+    // Check if the prompt exists
+    if (!prompt) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Prompt not found" });
+    }
+
+    // Check if the prompt has a description field
+    if (!prompt.description) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid prompt data" });
+    }
+    
+    const response = await chatCompletion(prompt.description, JSON.stringify({
+      userMessage,
+      customTable: userProperty.customTable,
+    }));
+    
+    const pdfBuffer = await generatePdf(response,address,userProperty.customTable,'Conclusion',userMessage);
+    const pdfUrl=await uploadFile(pdfBuffer,`weeklyReports/${userProperty?._id}/conclusion`);
+    
+      // userProperty.conclusion.gptResponse=response;
+      // userProperty.conclusion.key=pdfUrl?.key;
+      // userProperty.conclusion.url=pdfUrl?.url;
+      // userProperty.markModified('conclusion');
+      // await userProperty.save();
+      const updateRecord=await UserProperty.findOneAndUpdate({ address, userId: id }, {
+        $set: {
+          "conclusion.gptResponse": response,
+          "conclusion.key": pdfUrl?.key,
+          "conclusion.url": pdfUrl?.url,
+        },
+      }, { new: true });
+      return res.status(200).json({ success: true, data: {
+        ...pdfUrl,
+        gptResponse: response,
+      } });
+  } catch (error) {
+    console.error("Error generating report:", error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+exports.updateConclusionReport = async (req, res) => {
+  try {
+    const { address, updatedText, userMessage } = req.body;
+    const { id } = req.user;
+    const userProperty = await UserProperty.findOne({ address, userId: id });
+    if (!userProperty) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Property not found" });
+    }
+    
+    const pdfBuffer = await generatePdf(updatedText,address,userProperty.customTable,'Conclusion',userMessage);
+    const pdfUrl=await uploadFile(pdfBuffer,`weeklyReports/${userProperty?._id}/conclusion`);
+    
+      // userProperty.conclusion.gptResponse=updatedText;
+      // userProperty.conclusion.key=pdfUrl?.key;
+      // userProperty.conclusion.url=pdfUrl?.url;
+      // userProperty.markModified('conclusion');
+      // await userProperty.save();
+      const updateRecord=await UserProperty.findOneAndUpdate({ address, userId: id }, {
+        $set: {
+          "conclusion.gptResponse": updatedText,
+          "conclusion.key": pdfUrl?.key,
+          "conclusion.url": pdfUrl?.url,
+        },
+      }, { new: true });
       return res.status(200).json({ success: true, data: {
         ...pdfUrl,
         gptResponse: updatedText,

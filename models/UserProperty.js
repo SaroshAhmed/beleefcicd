@@ -108,6 +108,11 @@ const userPropertySchema = new Schema(
     fiveStepProcess:{
       type: [Schema.Types.Mixed],
     },
+    conclusion:{
+      gptResponse: { type: String, default: null },
+      key: { type: [String], default: null },
+      url: { type: String, default: null },
+    },
     customTable:{
       columns: [
         {
