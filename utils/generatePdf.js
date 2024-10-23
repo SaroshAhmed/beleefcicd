@@ -5,10 +5,10 @@ const generateReportSections = (reportDataArray) => {
     .map((data) => {
       // Calculate percentages
       const enquiriesPercentage = ( data.inspections1/ data.enquiries) * 100 || 0;
-      const engagementsPercentage = (data.engagements / data.inspections2) * 100 || 0;
+      const engagementsPercentage = (data.engagement / data.inspections2) * 100 || 0;
 
       return `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        <div>
   <!-- Week Header -->
   <div style="background-color: #f5f5f5; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
     <h2 style="font-size: 1.25rem; color: #000; font-weight: 600; margin: 0;">${data.name}</h2>
@@ -37,7 +37,7 @@ const generateReportSections = (reportDataArray) => {
     <div style="display: flex; gap: 16px; margin-bottom: 24px; align-items: flex-end;">
       <div style="flex: 1;">
         <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #333;">Price Test</label>
-        <div style="width: 100%; height: 40px; padding: 8px 16px 8px 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; box-sizing: border-box;">${data.pricePoint || 'N/A'}</div>
+        <div style="width: 100%; height: 40px; padding: 8px 16px 8px 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; box-sizing: border-box;">${data.priceAssessment || 'N/A'}</div>
       </div>
       <div style="flex: 1;">
         <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #333;">Inspections</label>
@@ -45,7 +45,7 @@ const generateReportSections = (reportDataArray) => {
       </div>
       <div style="flex: 1;">
         <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #333;">Engagement</label>
-        <div style="width: 100%; height: 40px; padding: 8px 16px 8px 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; box-sizing: border-box;">${data.engagements}</div>
+        <div style="width: 100%; height: 40px; padding: 8px 16px 8px 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; box-sizing: border-box;">${data.engagement}</div>
       </div>
       <span style="display: inline-block; background-color: #000; color: white; padding: 8px 16px; border-radius: 4px; font-size: 14px; font-weight: 600; margin-bottom: 8px;">${engagementsPercentage.toFixed(2)}%</span>
     </div>
@@ -64,7 +64,7 @@ const generateReportSections = (reportDataArray) => {
     .join(""); // Join all the generated sections into one string
 };
 
-const generatePdf = async (reportContent, propertyName = 'Unknown Property',tableData,index,data) => {
+const generatePdf = async (reportContent, propertyName = 'Unknown Property',tableData,index,data,reportContent2='<p></p>') => {
     try {
       const firstPageHtml = `
             <div style="text-align: center; margin-top: 300px;">
@@ -83,7 +83,9 @@ const generatePdf = async (reportContent, propertyName = 'Unknown Property',tabl
       <html>
         <head>
           <style>
-            body { font-family: Arial, sans-serif; }
+            body {
+      font-family: 'Raleway', 'Inter', 'Noto Sans', 'Open Sans', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+    }
             
           </style>
         </head>
@@ -92,14 +94,12 @@ const generatePdf = async (reportContent, propertyName = 'Unknown Property',tabl
           <div style="text-align: start; font-weight: bold; font-size: 1.25rem; margin-bottom: 16px;">
   HERE IS WHAT HAS HAPPENED.
 </div>
-<div style="text-align: start; font-weight: bold; font-size: 1.25rem; margin-bottom: 16px;">
-  MANUAL
-</div>
           ${reportSections}
           
           <h2>CURRENT ENGAGEMENT</h2>
           ${tableHtml} <!-- Table gets embedded here -->
           ${reportContent}
+          ${reportContent2}
         </body>
       </html>
     `;
