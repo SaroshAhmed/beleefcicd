@@ -28,12 +28,32 @@ const allowedOrigins = [
   "https://www.admin.beleef.com.au",
 ];
 
-app.use(
+// app.use(
+//   cors({
+//     origin: function (origin, callback) {
+//       // Allow requests with no origin (like mobile apps or curl requests)
+//       if (!origin) return callback(null, true);
+      
+//       if (allowedOrigins.includes(origin)) {
+//         callback(null, true);
+//       } else {
+//         callback(new Error("Not allowed by CORS"));
+//       }
+//     },
+//     credentials: true,
+//   })
+// );
+// CORS Middleware (applies only to routes other than the webhook)
+app.use((req, res, next) => {
+  // Skip CORS for /webhooks/campaignAgent
+  if (req.path.startsWith("/api/v1/webhooks/campaignAgent")) {
+    return next();
+  }
+  
+  // Apply CORS for other routes
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-      
+      if (!origin) return callback(null, true); // Allow requests with no origin (like mobile apps or curl requests)
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -41,8 +61,8 @@ app.use(
       }
     },
     credentials: true,
-  })
-);
+  })(req, res, next);
+});
 
 app.use(express.json({ limit: "50mb" }));
 
