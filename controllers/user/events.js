@@ -106,11 +106,147 @@ const getSelectedItem = (categoryName, categories) => {
   return selectedItems;
 };
 
+// const getContractors = async (calculatedEvents) => {
+//   const db = await connectToDatabase();
+//   const contractorsCollection = db.collection("contractors");
+//   const contractors = await contractorsCollection.find({}).toArray();
+//   const contractorBookingsCollection = db.collection("contractorbookings");
+//   const contractorBookings = await contractorBookingsCollection
+//     .find({})
+//     .toArray();
+
+//   // Filter the calculatedEvents to include only those with relevant keywords in summary
+//   const filteredEvents = calculatedEvents.filter((event) => {
+//     const summaryLowercase = event.summary.toLowerCase();
+//     return (
+//       summaryLowercase.includes("photography") ||
+//       summaryLowercase.includes("video") ||
+//       summaryLowercase.includes("floor plan")
+//     );
+//   });
+
+//   console.log("Filtered Events:", filteredEvents.length, filteredEvents);
+
+//   filteredEvents.forEach((event) => {
+//     // Convert event start and end times to Sydney timezone
+//     const eventStartTime = moment(event.start).tz(SYDNEY_TZ);
+//     const eventEndTime = moment(event.end).tz(SYDNEY_TZ);
+
+//     contractors.forEach((contractor) => {
+//       const { availability, services, name, _id } = contractor;
+//       const eventDate = eventStartTime.format("ddd").toUpperCase();
+//       console.log(eventDate);
+
+//       // Check if contractor is available on the event day
+//       const contractorDayAvailability = availability[eventDate];
+//       console.log(contractorDayAvailability);
+
+//       if (contractorDayAvailability && contractorDayAvailability.available) {
+//         const contractorStartTime = eventStartTime.clone().set({
+//           hour: parseInt(contractorDayAvailability.startTime.split(":")[0]),
+//           minute: parseInt(contractorDayAvailability.startTime.split(":")[1]),
+//           second: 0,
+//           millisecond: 0,
+//         });
+
+//         const contractorEndTime = eventStartTime.clone().set({
+//           hour: parseInt(contractorDayAvailability.endTime.split(":")[0]),
+//           minute: parseInt(contractorDayAvailability.endTime.split(":")[1]),
+//           second: 0,
+//           millisecond: 0,
+//         });
+
+//         // Check if the event is within the contractor's available hours
+//         const isContractorAvailable =
+//           eventStartTime.isBetween(
+//             contractorStartTime,
+//             contractorEndTime,
+//             null,
+//             "[]"
+//           ) &&
+//           eventEndTime.isBetween(
+//             contractorStartTime,
+//             contractorEndTime,
+//             null,
+//             "[]"
+//           );
+//         // Check if contractor provides the required service for the event (photo, video, or floor plan)
+//         console.log(isContractorAvailable);
+
+//         const isPhotoEvent =
+//           event.summary.toLowerCase().includes("photography") ||
+//           event.summary.toLowerCase().includes("photo");
+//         const isVideoEvent = event.summary.toLowerCase().includes("video");
+//         const isFloorPlanEvent = event.summary
+//           .toLowerCase()
+//           .includes("floor plan");
+
+//         const includesPhotographerAndVideographer = services.includes(
+//           "Photographer and Videographer"
+//         );
+//         const includesFloorPlanner = services.includes("Floor planner");
+
+//         if (
+//           isContractorAvailable &&
+//           ((isPhotoEvent && includesPhotographerAndVideographer) ||
+//             (isVideoEvent && includesPhotographerAndVideographer) ||
+//             (isFloorPlanEvent && includesFloorPlanner))
+//         ) {
+//           // Check if there are any conflicting bookings for the contractor
+//           const conflictingBooking = contractorBookings.some((booking) => {
+//             const bookingStartTime = moment(booking.startTime).tz(SYDNEY_TZ);
+//             const bookingEndTime = moment(booking.endTime).tz(SYDNEY_TZ);
+
+//             return (
+//               booking.contractorId.toString() === _id.toString() && // Booking belongs to the same contractor
+//               (bookingStartTime.isBetween(
+//                 eventStartTime,
+//                 eventEndTime,
+//                 null,
+//                 "[)"
+//               ) ||
+//                 bookingEndTime.isBetween(
+//                   eventStartTime,
+//                   eventEndTime,
+//                   null,
+//                   "(]"
+//                 ) ||
+//                 eventStartTime.isBetween(
+//                   bookingStartTime,
+//                   bookingEndTime,
+//                   null,
+//                   "[)"
+//                 ) ||
+//                 eventEndTime.isBetween(
+//                   bookingStartTime,
+//                   bookingEndTime,
+//                   null,
+//                   "(]"
+//                 ))
+//             );
+//           });
+
+//           // If no conflicting bookings, contractor is available for the event
+//           if (!conflictingBooking) {
+//             console.log(
+//               `Contractor available for ${event.summary} on ${event.start}: ${name}`
+//             );
+//           } else {
+//             console.log(
+//               `Contractor ${name} is not available for ${event.summary} due to a conflicting booking.`
+//             );
+//           }
+//         }
+//       }
+//     });
+//   });
+// };
+
 const getContractors = async (calculatedEvents) => {
   const db = await connectToDatabase();
   const contractorsCollection = db.collection("contractors");
   const contractors = await contractorsCollection.find({}).toArray();
-  const contractorBookingsCollection = db.collection("contractorBookings");
+  const contractorBookingsCollection = db.collection("contractorbookings");
   const contractorBookings = await contractorBookingsCollection
     .find({})
     .toArray();
@@ -125,21 +261,18 @@ const getContractors = async (calculatedEvents) => {
     );
   });
 
-  console.log("Filtered Events:", filteredEvents.length, filteredEvents);
+  // Create a map to store available contractors for each event
+  const eventContractors = new Map();
 
   filteredEvents.forEach((event) => {
-    // Convert event start and end times to Sydney timezone
     const eventStartTime = moment(event.start).tz(SYDNEY_TZ);
     const eventEndTime = moment(event.end).tz(SYDNEY_TZ);
 
     contractors.forEach((contractor) => {
-      const { availability, services, name, _id } = contractor;
+      const { availability, services, name, _id, mobile, email,picture } = contractor;
       const eventDate = eventStartTime.format("ddd").toUpperCase();
-      console.log(eventDate);
 
-      // Check if contractor is available on the event day
       const contractorDayAvailability = availability[eventDate];
-      console.log(contractorDayAvailability);
 
       if (contractorDayAvailability && contractorDayAvailability.available) {
         const contractorStartTime = eventStartTime.clone().set({
@@ -156,7 +289,6 @@ const getContractors = async (calculatedEvents) => {
           millisecond: 0,
         });
 
-        // Check if the event is within the contractor's available hours
         const isContractorAvailable =
           eventStartTime.isBetween(
             contractorStartTime,
@@ -170,8 +302,6 @@ const getContractors = async (calculatedEvents) => {
             null,
             "[]"
           );
-        // Check if contractor provides the required service for the event (photo, video, or floor plan)
-        console.log(isContractorAvailable);
 
         const isPhotoEvent =
           event.summary.toLowerCase().includes("photography") ||
@@ -181,23 +311,23 @@ const getContractors = async (calculatedEvents) => {
           .toLowerCase()
           .includes("floor plan");
 
-        const includesPhotographer = services.includes("Photographer");
-        const includesVideographer = services.includes("Videographer");
+        const includesPhotographerAndVideographer = services.includes(
+          "Photographer and Videographer"
+        );
         const includesFloorPlanner = services.includes("Floor planner");
 
         if (
           isContractorAvailable &&
-          ((isPhotoEvent && includesPhotographer) ||
-            (isVideoEvent && includesVideographer) ||
+          ((isPhotoEvent && includesPhotographerAndVideographer) ||
+            (isVideoEvent && includesPhotographerAndVideographer) ||
             (isFloorPlanEvent && includesFloorPlanner))
         ) {
-          // Check if there are any conflicting bookings for the contractor
           const conflictingBooking = contractorBookings.some((booking) => {
             const bookingStartTime = moment(booking.startTime).tz(SYDNEY_TZ);
             const bookingEndTime = moment(booking.endTime).tz(SYDNEY_TZ);
 
             return (
-              booking.contractorId.toString() === _id.toString() && // Booking belongs to the same contractor
+              booking.contractorId.toString() === _id.toString() &&
               (bookingStartTime.isBetween(
                 eventStartTime,
                 eventEndTime,
@@ -225,40 +355,38 @@ const getContractors = async (calculatedEvents) => {
             );
           });
 
-          // If no conflicting bookings, contractor is available for the event
+          console.log(event.summary,conflictingBooking)
+
           if (!conflictingBooking) {
-            console.log(
-              `Contractor available for ${event.summary} on ${event.start}: ${name}`
-            );
-          } else {
-            console.log(
-              `Contractor ${name} is not available for ${event.summary} due to a conflicting booking.`
-            );
+            // Store contractor information for this event
+            const contractorInfo = {
+              id: _id,
+              name,
+              mobile,
+              email,
+              picture
+            };
+            eventContractors.set(event.start, contractorInfo);
           }
         }
       }
     });
   });
+
+  // Update the original events array with contractor information
+  calculatedEvents.forEach((event) => {
+    const contractor = eventContractors.get(event.start);
+    console.log(contractor)
+    if (contractor) {
+      event.contractor = contractor;
+    }
+  });
+
+  return calculatedEvents;
 };
 
 exports.calculateEvents = async (req, res) => {
   try {
-    // const { propertyId } = req.params;
-    // const objectId = new mongoose.Types.ObjectId(propertyId);
-
-    // const authSchedule = await AuthSchedule.findOne({
-    //   propertyId: objectId,
-    // }).populate("propertyId");
-
-    // if (!authSchedule) {
-    //   return res
-    //     .status(404)
-    //     .json({ success: false, message: "Auth Schedule not found" });
-    // }
-
-    // const { prepareMarketing, conclusionDate } = authSchedule;
-    // const { marketing } = authSchedule.propertyId;
-
     const { prepareMarketing, conclusionDate, marketing, saleProcess } =
       req.body;
     if (prepareMarketing == "Off market") {
@@ -289,33 +417,6 @@ exports.calculateEvents = async (req, res) => {
 
     const marketingStartDate = getMarketingStartDate();
 
-    // Helper function to create an event in Sydney time
-    // const createEventInSydneyTime = (
-    //   summary,
-    //   eventDate,
-    //   startHour,
-    //   durationHours
-    // ) => {
-    //   const hours = Math.floor(startHour);
-    //   const minutes = (startHour - hours) * 60;
-
-    //   const eventStartSydney = eventDate
-    //     .clone()
-    //     .set("hour", hours)
-    //     .set("minute", minutes)
-    //     .set("second", 0)
-    //     .set("millisecond", 0);
-
-    //   const eventEndSydney = eventStartSydney
-    //     .clone()
-    //     .add(durationHours * 60, "minutes");
-
-    //   return {
-    //     summary,
-    //     start: eventStartSydney.toISOString(),
-    //     end: eventEndSydney.toISOString(),
-    //   };
-    // };
     const createEventInSydneyTime = (
       summary,
       eventDate,
@@ -324,20 +425,22 @@ exports.calculateEvents = async (req, res) => {
     ) => {
       const hours = Math.floor(startHour);
       const minutes = (startHour - hours) * 60;
-    
+
       const eventStartSydney = eventDate
         .clone()
         .set("hour", hours)
         .set("minute", minutes)
         .set("second", 0)
         .set("millisecond", 0);
-    
+
       // Calculate the end time only if durationHours is provided
       let eventEndSydney = null;
       if (durationHours !== null) {
-        eventEndSydney = eventStartSydney.clone().add(durationHours * 60, "minutes");
+        eventEndSydney = eventStartSydney
+          .clone()
+          .add(durationHours * 60, "minutes");
       }
-    
+
       return {
         summary,
         start: eventStartSydney.toISOString(),
@@ -628,9 +731,10 @@ exports.calculateEvents = async (req, res) => {
     };
 
     const events = calculateEventDates(marketingStartDate);
-    await getContractors(events);
+    const eventsWithContractors = await getContractors(events);
+    // await getContractors(events);
 
-    return res.status(200).json({ success: true, data: events });
+    return res.status(200).json({ success: true, data: eventsWithContractors });
   } catch (error) {
     console.error("Error fetching events: ", error.message);
     return res.status(500).json({ success: false, message: error.message });
@@ -680,19 +784,19 @@ exports.createBooking = async (req, res) => {
 
     const events = data.items;
 
+    // Uncomment this block if you want to prevent booking the same time slot
     // if (events.length > 0) {
     //   return res.status(409).json({
     //     success: false,
     //     message: "Time slot is already booked.",
-    //     data:events
+    //     data: events
     //   });
     // }
 
     // Create a new event in Google Calendar using the logged-in user's calendar
     const event = {
       summary: address,
-      description: `Test booking
-      `,
+      description: `Test booking`,
       start: { dateTime: startTime, timeZone: "Australia/Sydney" },
       end: { dateTime: endTime, timeZone: "Australia/Sydney" },
       attendees: [
@@ -723,8 +827,33 @@ exports.createBooking = async (req, res) => {
     // Extract the Google event ID
     const googleEventId = eventResponse.data.id;
 
-    res.status(201).json({ success: true, data: "booked" });
+    const db = await connectToDatabase();
+    // Insert the booking data into MongoDB
+    const contractorBookingsCollection = db.collection("contractorbookings");
+
+    // Creating a new booking record
+    const bookingData = {
+      contractorId: new mongoose.Types.ObjectId("671408321992c151ac127cf1"), // Provided contractorId
+      agentId: new mongoose.Types.ObjectId("66e8888d93621bd7670ec3aa"), // Assuming the agent is the same as the user here
+      name: "Real Estate Photoshoot 3",
+      description: "High-quality photoshoot for property listing",
+      address: address,
+      startTime: startTime,
+      endTime: endTime,
+      googleEventId: googleEventId, // Google event ID from calendar API
+      marketing: [], // Add appropriate marketing data if available
+      servicesOffered: [], // Add appropriate services offered if available
+      isReminded: false,
+    };
+
+    // Insert the booking into the collection
+    await contractorBookingsCollection.insertOne(bookingData);
+
+    res
+      .status(201)
+      .json({ success: true, data: "Booking created successfully" });
   } catch (error) {
+    console.error("Error creating booking:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
