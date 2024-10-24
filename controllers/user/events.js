@@ -1,12 +1,50 @@
 const AuthSchedule = require("../../models/AuthSchedule");
 const mongoose = require("mongoose");
 const connectToDatabase = require("../../config/serviceDB");
+const { google } = require("googleapis");
+const Booking = require("../../models/Booking");
+const calendar = google.calendar("v3");
+const { sendEmail } = require("../../utils/emailService");
+const { sendSms } = require("../../utils/smsService");
+const { v4: uuidv4 } = require("uuid");
+const { REACT_APP_FRONTEND_URL } = require("../../config");
 
 const { addDays, subDays, setHours, startOfDay } = require("date-fns");
 const moment = require("moment-timezone");
 
 // Timezone for Sydney
 const SYDNEY_TZ = "Australia/Sydney";
+
+const privateKey = Buffer.from(
+  process.env.EVENT_GOOGLE_PRIVATE_KEY,
+  "base64"
+).toString("utf8");
+
+const initializeServiceAccountClient = () => {
+  const client = new google.auth.GoogleAuth({
+    credentials: {
+      type: "service_account",
+      project_id: process.env.EVENT_GOOGLE_PROJECT_ID,
+      private_key_id: process.env.EVENT_GOOGLE_PRIVATE_KEY_ID,
+      // private_key: process.env.EVENT_GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+      private_key: privateKey.replace(/\\n/g, "\n"),
+      client_email: process.env.EVENT_GOOGLE_CLIENT_EMAIL,
+      client_id: process.env.EVENT_GOOGLE_CLIENT_ID,
+      auth_uri: process.env.EVENT_GOOGLE_AUTH_URI,
+      token_uri: process.env.EVENT_GOOGLE_TOKEN_URI,
+      auth_provider_x509_cert_url:
+        process.env.EVENT_GOOGLE_AUTH_PROVIDER_CERT_URL,
+      client_x509_cert_url: process.env.EVENT_GOOGLE_CLIENT_CERT_URL,
+    },
+    scopes: ["https://www.googleapis.com/auth/calendar"], // Google Calendar scope
+    clientOptions: {
+      subject: "keyevents@ausrealty.com.au", // Impersonate keyevents@ausrealty.com.au
+    },
+  });
+
+  return client;
+};
+
 
 // Helper function to get the next working day, skipping weekends
 const addWorkingDays = (startDate, daysToAdd) => {
@@ -556,5 +594,103 @@ exports.calculateEvents = async (req, res) => {
   } catch (error) {
     console.error("Error fetching events: ", error.message);
     return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.createBooking = async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.redirect("/auth/google");
+  }
+
+  // Use the authenticated user's OAuth2 credentials for event creation/checking
+  const oauth2Client = new google.auth.OAuth2();
+  oauth2Client.setCredentials({
+    access_token: req.user.accessToken, // Using logged-in user's access token
+  });
+
+  const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+
+  // Use the service account for sending invitations as keyevents@ausrealty.com.au
+  const serviceAccountClient = initializeServiceAccountClient();
+  const serviceOauth2Client = await serviceAccountClient.getClient(); // Get the authenticated client
+
+  const nameArray = req.user.name.toString().split(" ");
+  const firstName = nameArray[0];
+  const lastName = nameArray.length > 1 ? nameArray[1] : "";
+
+  const {
+    startTime,
+    endTime,
+    address="43 RONA STREET",
+  } = req.body;
+
+  const agent = {
+    firstName,
+    lastName,
+    email: req.user.email,
+    mobile: req.user.mobile,
+    image: req.user.picture,
+  };
+
+  try {
+    // Check for existing events in the given time slot using the logged-in user's credentials
+    const { data } = await calendar.events.list({
+      calendarId: "primary",
+      timeMin: startTime,
+      timeMax: endTime,
+      singleEvents: true,
+      orderBy: "startTime",
+    });
+
+    const events = data.items;
+
+    // if (events.length > 0) {
+    //   return res.status(409).json({
+    //     success: false,
+    //     message: "Time slot is already booked.",
+    //     data:events
+    //   });
+    // }
+
+
+    // Create a new event in Google Calendar using the logged-in user's calendar
+    const event = {
+      summary: address,
+      description: `Test booking
+      `,
+      start: { dateTime: startTime, timeZone: "Australia/Sydney" },
+      end: { dateTime: endTime, timeZone: "Australia/Sydney" },
+      attendees: [
+        {
+          email: agent.email, // Agent email
+          displayName: `${agent.firstName} ${agent.lastName}`, // Agent name
+        },
+      ],
+      reminders: {
+        useDefault: false,
+        overrides: [
+          { method: "email", minutes: 24 * 60 }, // Send email reminder 1 day before
+          { method: "email", minutes: 5 }, // Send email reminder 5 minutes before
+          { method: "popup", minutes: 10 }, // Show popup reminder 10 minutes before
+        ],
+      },
+      sendUpdates: "all", // This ensures the invitation email is sent
+    };
+
+    // Insert the event using the service account to ensure keyevents@ausrealty.com.au is the sender
+    const eventResponse = await calendar.events.insert({
+      auth: serviceOauth2Client, // Use the service account for sending invites
+      calendarId: "primary",
+      resource: event,
+      sendUpdates: "all", // Send email invitations to all attendees
+    });
+
+    // Extract the Google event ID
+    const googleEventId = eventResponse.data.id;
+
+
+    res.status(201).json({ success: true, data: "booked" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
