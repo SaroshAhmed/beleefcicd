@@ -129,6 +129,15 @@ const userPropertySchema = new Schema(
       ],
 
     },
+    salesTable:{
+      type: [{
+        property: { type: String, default: null },
+        specifics: { type: String, default: null },
+        sold: { type: String, default: null },
+        features: { type: String, default: null },
+        price: { type: String, default: null },
+      }],
+    },
     finishes: {
       type: String,
       enum: ["High-end finishes", "Updated", "Original"],

@@ -194,3 +194,98 @@ exports.getTable = async (req, res) => {
         return res.status(500).json({ success: false, message: error.message });
     }
 };
+
+exports.addSalesRow = async (req, res) => {
+    const { propertyId } = req.params;
+    const { data, tempId } = req.body;
+
+    try {
+        const userProperty = await UserProperty.findOneAndUpdate(
+            { _id: propertyId },
+            { $push: { 'salesTable': data } },  // Add the new row to salesTable
+            { new: true }  // Return the updated document after the push
+        );
+
+        if (!userProperty) {
+            return res.status(404).json({ success: false, message: "User Property not found" });
+        }
+
+        // Retrieve the newly added row by accessing the last element
+        const newSalesRow = userProperty.salesTable[userProperty.salesTable.length - 1];
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                data: newSalesRow,
+                tempId,
+                _id: newSalesRow._id  // Send back the new row's _id
+            },
+        });
+    } catch (error) {
+        console.error("Error adding sales row: ", error.message);
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+exports.getSalesTable = async (req, res) => {
+    const { propertyId } = req.params;
+    try {
+        const userProperty = await UserProperty.findById(propertyId);
+        if (!userProperty) {
+            return res.status(404).json({ success: false, message: "User Property not found" });
+        }
+        console.log(userProperty.salesTable);
+        return res.status(200).json({ success: true, data: userProperty.salesTable });
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+exports.updateSalesRow = async (req, res) => {
+    const { propertyId, rowId } = req.params;
+    const { data } = req.body;
+
+    try {
+        const userProperty = await UserProperty.findOneAndUpdate(
+            { _id: propertyId, 'salesTable._id': rowId },  // Match the property and row
+            {
+                $set: {
+                    'salesTable.$.property': data.property,
+                    'salesTable.$.specifics': data.specifics,
+                    'salesTable.$.sold': data.sold,
+                    'salesTable.$.features': data.features,
+                    'salesTable.$.price': data.price,
+                },
+            },  // Update only the fields you pass in the body
+            { new: true }
+        );
+
+        if (!userProperty) {
+            return res.status(404).json({ success: false, message: "User Property not found" });
+        }
+
+        return res.status(200).json({ success: true, data: userProperty });
+    } catch (error) {
+        console.error("Error updating sales row: ", error.message);
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+exports.deleteSalesRow=async(req,res)=>{
+    const {propertyId,rowId}=req.params;
+    try{
+        const userProperty=await UserProperty.findOneAndUpdate(
+            {_id:propertyId},
+            {$pull:{'salesTable':{_id:rowId}}},
+            {new:true}
+        );
+        if(!userProperty){
+            return res.status(404).json({success:false,message:"User Property not found"});
+        }
+        return res.status(200).json({success:true,data:userProperty});
+    }
+    catch(error){
+        console.error("Error deleting sales row: ",error.message);
+        return res.status(500).json({success:false,message:error.message});
+    }
+}
