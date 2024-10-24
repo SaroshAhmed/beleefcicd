@@ -312,15 +312,14 @@ const getContractors = async (calculatedEvents) => {
           .toLowerCase()
           .includes("floor plan");
 
-        const includesPhotographerAndVideographer = services.includes(
-          "Photographer and Videographer"
-        );
+        const includesPhotographer = services.includes("Photographer");
+        const includesVideographer = services.includes("Videographer");
         const includesFloorPlanner = services.includes("Floor planner");
 
         if (
           isContractorAvailable &&
-          ((isPhotoEvent && includesPhotographerAndVideographer) ||
-            (isVideoEvent && includesPhotographerAndVideographer) ||
+          ((isPhotoEvent && includesPhotographer) ||
+            (isVideoEvent && includesVideographer) ||
             (isFloorPlanEvent && includesFloorPlanner))
         ) {
           const conflictingBooking = contractorBookings.some((booking) => {
@@ -356,7 +355,7 @@ const getContractors = async (calculatedEvents) => {
             );
           });
 
-          console.log(event.summary, conflictingBooking);
+          console.log(event.summary, name, conflictingBooking);
 
           if (!conflictingBooking) {
             // Store contractor information for this event
@@ -377,7 +376,7 @@ const getContractors = async (calculatedEvents) => {
   // Update the original events array with contractor information
   calculatedEvents.forEach((event) => {
     const contractor = eventContractors.get(event.start);
-    console.log(contractor);
+
     if (contractor) {
       event.contractor = contractor;
     }
@@ -764,8 +763,8 @@ exports.createBooking = async (req, res) => {
   const lastName = nameArray.length > 1 ? nameArray[1] : "";
 
   const {
-    startTime,
-    endTime,
+    start: startTime,
+    end: endTime,
     address = "43 RONA STREET",
     contractor,
   } = req.body.event;
