@@ -63,6 +63,15 @@ const generateReportSections = (reportDataArray) => {
     })
     .join(""); // Join all the generated sections into one string
 };
+function filterArray(arr) {
+  return arr.filter(item => {
+    // Define the properties you want to check
+    const keysToCheck = ['pricePoint', 'enquiries', 'inspections1', 'inspections2', 'engagement', 'finalise'];
+
+    // Check if at least one of the specified properties is filled (not an empty string)
+    return keysToCheck.some(key => item[key] !== '');
+  });
+}
 
 const generatePdf = async (reportContent, propertyName = 'Unknown Property',tableData,index,data,reportContent2='<p></p>') => {
     try {
@@ -73,7 +82,7 @@ const generatePdf = async (reportContent, propertyName = 'Unknown Property',tabl
       </div>
       <div style="page-break-after: always;"></div> 
     `;
-    const reportSections = generateReportSections(data);
+    const reportSections = generateReportSections(filterArray(data));
     const tableHtml = generateTableHtml(tableData);
       
       // Launch Puppeteer in headless mode
