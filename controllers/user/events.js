@@ -45,7 +45,6 @@ const initializeServiceAccountClient = () => {
   return client;
 };
 
-
 // Helper function to get the next working day, skipping weekends
 const addWorkingDays = (startDate, daysToAdd) => {
   let date = startDate.clone(); // Clone the start date to avoid mutating the original
@@ -126,7 +125,7 @@ const getContractors = async (calculatedEvents) => {
     );
   });
 
-  console.log("Filtered Events:", filteredEvents.length,filteredEvents);
+  console.log("Filtered Events:", filteredEvents.length, filteredEvents);
 
   filteredEvents.forEach((event) => {
     // Convert event start and end times to Sydney timezone
@@ -144,23 +143,33 @@ const getContractors = async (calculatedEvents) => {
 
       if (contractorDayAvailability && contractorDayAvailability.available) {
         const contractorStartTime = eventStartTime.clone().set({
-          hour: parseInt(contractorDayAvailability.startTime.split(':')[0]),
-          minute: parseInt(contractorDayAvailability.startTime.split(':')[1]),
+          hour: parseInt(contractorDayAvailability.startTime.split(":")[0]),
+          minute: parseInt(contractorDayAvailability.startTime.split(":")[1]),
           second: 0,
-          millisecond: 0
+          millisecond: 0,
         });
-        
+
         const contractorEndTime = eventStartTime.clone().set({
-          hour: parseInt(contractorDayAvailability.endTime.split(':')[0]),
-          minute: parseInt(contractorDayAvailability.endTime.split(':')[1]),
+          hour: parseInt(contractorDayAvailability.endTime.split(":")[0]),
+          minute: parseInt(contractorDayAvailability.endTime.split(":")[1]),
           second: 0,
-          millisecond: 0
+          millisecond: 0,
         });
-  
+
         // Check if the event is within the contractor's available hours
         const isContractorAvailable =
-          eventStartTime.isBetween(contractorStartTime, contractorEndTime, null, '[]') &&
-          eventEndTime.isBetween(contractorStartTime, contractorEndTime, null, '[]');
+          eventStartTime.isBetween(
+            contractorStartTime,
+            contractorEndTime,
+            null,
+            "[]"
+          ) &&
+          eventEndTime.isBetween(
+            contractorStartTime,
+            contractorEndTime,
+            null,
+            "[]"
+          );
         // Check if contractor provides the required service for the event (photo, video, or floor plan)
         console.log(isContractorAvailable);
 
@@ -281,30 +290,58 @@ exports.calculateEvents = async (req, res) => {
     const marketingStartDate = getMarketingStartDate();
 
     // Helper function to create an event in Sydney time
+    // const createEventInSydneyTime = (
+    //   summary,
+    //   eventDate,
+    //   startHour,
+    //   durationHours
+    // ) => {
+    //   const hours = Math.floor(startHour);
+    //   const minutes = (startHour - hours) * 60;
+
+    //   const eventStartSydney = eventDate
+    //     .clone()
+    //     .set("hour", hours)
+    //     .set("minute", minutes)
+    //     .set("second", 0)
+    //     .set("millisecond", 0);
+
+    //   const eventEndSydney = eventStartSydney
+    //     .clone()
+    //     .add(durationHours * 60, "minutes");
+
+    //   return {
+    //     summary,
+    //     start: eventStartSydney.toISOString(),
+    //     end: eventEndSydney.toISOString(),
+    //   };
+    // };
     const createEventInSydneyTime = (
       summary,
       eventDate,
       startHour,
-      durationHours
+      durationHours = null // Set default to null for flexibility
     ) => {
       const hours = Math.floor(startHour);
       const minutes = (startHour - hours) * 60;
-
+    
       const eventStartSydney = eventDate
         .clone()
         .set("hour", hours)
         .set("minute", minutes)
         .set("second", 0)
         .set("millisecond", 0);
-
-      const eventEndSydney = eventStartSydney
-        .clone()
-        .add(durationHours * 60, "minutes");
-
+    
+      // Calculate the end time only if durationHours is provided
+      let eventEndSydney = null;
+      if (durationHours !== null) {
+        eventEndSydney = eventStartSydney.clone().add(durationHours * 60, "minutes");
+      }
+    
       return {
         summary,
         start: eventStartSydney.toISOString(),
-        end: eventEndSydney.toISOString(),
+        end: eventEndSydney ? eventEndSydney.toISOString() : null, // Return null if no end time
       };
     };
 
@@ -320,8 +357,8 @@ exports.calculateEvents = async (req, res) => {
       });
 
       let currentDate = marketingStartDate.clone();
-      let currentHour = 6;
-      let lastMediaDate = null;
+      let currentHour = 9;
+      let lastMediaDate = null; //when photo, video, dusk, floorplan is completed
 
       // Ensure the event is between 6 AM and 8 PM
       const scheduleEventInBounds = (
@@ -333,7 +370,7 @@ exports.calculateEvents = async (req, res) => {
         currentDate = getNextWeekday(currentDate.clone().add(gapDays, "days"));
 
         if (currentHour + durationHours > 20) {
-          currentHour = 6;
+          currentHour = 9;
           currentDate.add(1, "day");
         }
 
@@ -544,7 +581,7 @@ exports.calculateEvents = async (req, res) => {
         const openHome = getNextSaturday(currentRecurringDate);
         if (
           openHome.isAfter(launchToMarketDate) &&
-          openHome.isBefore(closingDate)
+          openHome.isSameOrBefore(closingDate)
         ) {
           events.push(createEventInSydneyTime("Open home", openHome, 10, 0.5));
           firstOpenHomeScheduled = true;
@@ -578,11 +615,14 @@ exports.calculateEvents = async (req, res) => {
       }
 
       if (saleProcess === "Auction") {
-        events.push(createEventInSydneyTime("Auction Date", closingDate, 10, 1));
-      }else{
-        events.push(createEventInSydneyTime("Closing Date", closingDate, 10, 1));
+        events.push(
+          createEventInSydneyTime("Auction Date", closingDate, 10.5, 1)
+        );
+      } else {
+        events.push(
+          createEventInSydneyTime("Closing Date", closingDate, 12, null)
+        );
       }
-
 
       return events;
     };
@@ -618,11 +658,7 @@ exports.createBooking = async (req, res) => {
   const firstName = nameArray[0];
   const lastName = nameArray.length > 1 ? nameArray[1] : "";
 
-  const {
-    startTime,
-    endTime,
-    address="43 RONA STREET",
-  } = req.body;
+  const { startTime, endTime, address = "43 RONA STREET" } = req.body;
 
   const agent = {
     firstName,
@@ -651,7 +687,6 @@ exports.createBooking = async (req, res) => {
     //     data:events
     //   });
     // }
-
 
     // Create a new event in Google Calendar using the logged-in user's calendar
     const event = {
@@ -687,7 +722,6 @@ exports.createBooking = async (req, res) => {
 
     // Extract the Google event ID
     const googleEventId = eventResponse.data.id;
-
 
     res.status(201).json({ success: true, data: "booked" });
   } catch (error) {
