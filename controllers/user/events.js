@@ -768,7 +768,7 @@ exports.createBooking = async (req, res) => {
     endTime,
     address = "43 RONA STREET",
     contractor,
-  } = req.body;
+  } = req.body.event;
 
   const agent = {
     firstName,
