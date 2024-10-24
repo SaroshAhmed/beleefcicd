@@ -269,7 +269,8 @@ const getContractors = async (calculatedEvents) => {
     const eventEndTime = moment(event.end).tz(SYDNEY_TZ);
 
     contractors.forEach((contractor) => {
-      const { availability, services, name, _id, mobile, email,picture } = contractor;
+      const { availability, services, name, _id, mobile, email, picture } =
+        contractor;
       const eventDate = eventStartTime.format("ddd").toUpperCase();
 
       const contractorDayAvailability = availability[eventDate];
@@ -355,7 +356,7 @@ const getContractors = async (calculatedEvents) => {
             );
           });
 
-          console.log(event.summary,conflictingBooking)
+          console.log(event.summary, conflictingBooking);
 
           if (!conflictingBooking) {
             // Store contractor information for this event
@@ -364,7 +365,7 @@ const getContractors = async (calculatedEvents) => {
               name,
               mobile,
               email,
-              picture
+              picture,
             };
             eventContractors.set(event.start, contractorInfo);
           }
@@ -376,7 +377,7 @@ const getContractors = async (calculatedEvents) => {
   // Update the original events array with contractor information
   calculatedEvents.forEach((event) => {
     const contractor = eventContractors.get(event.start);
-    console.log(contractor)
+    console.log(contractor);
     if (contractor) {
       event.contractor = contractor;
     }
@@ -762,7 +763,12 @@ exports.createBooking = async (req, res) => {
   const firstName = nameArray[0];
   const lastName = nameArray.length > 1 ? nameArray[1] : "";
 
-  const { startTime, endTime, address = "43 RONA STREET" } = req.body;
+  const {
+    startTime,
+    endTime,
+    address = "43 RONA STREET",
+    contractor,
+  } = req.body;
 
   const agent = {
     firstName,
@@ -833,10 +839,10 @@ exports.createBooking = async (req, res) => {
 
     // Creating a new booking record
     const bookingData = {
-      contractorId: new mongoose.Types.ObjectId("671408321992c151ac127cf1"), // Provided contractorId
-      agentId: new mongoose.Types.ObjectId("66e8888d93621bd7670ec3aa"), // Assuming the agent is the same as the user here
-      name: "Real Estate Photoshoot 3",
-      description: "High-quality photoshoot for property listing",
+      contractorId: new mongoose.Types.ObjectId(contractor._id),
+      agentId: new mongoose.Types.ObjectId(req.user.id),
+      name: event.summary,
+      description: event.summary,
       address: address,
       startTime: startTime,
       endTime: endTime,
