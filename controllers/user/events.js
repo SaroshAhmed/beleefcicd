@@ -8,7 +8,7 @@ const { sendEmail } = require("../../utils/emailService");
 const { sendSms } = require("../../utils/smsService");
 const { v4: uuidv4 } = require("uuid");
 const { REACT_APP_FRONTEND_URL } = require("../../config");
-
+const { chatCompletion } = require("../../utils/openai");
 const { addDays, subDays, setHours, startOfDay } = require("date-fns");
 const moment = require("moment-timezone");
 
@@ -105,142 +105,6 @@ const getSelectedItem = (categoryName, categories) => {
   console.log(selectedItems); // Log the filtered selected items
   return selectedItems;
 };
-
-// const getContractors = async (calculatedEvents) => {
-//   const db = await connectToDatabase();
-//   const contractorsCollection = db.collection("contractors");
-//   const contractors = await contractorsCollection.find({}).toArray();
-//   const contractorBookingsCollection = db.collection("contractorbookings");
-//   const contractorBookings = await contractorBookingsCollection
-//     .find({})
-//     .toArray();
-
-//   // Filter the calculatedEvents to include only those with relevant keywords in summary
-//   const filteredEvents = calculatedEvents.filter((event) => {
-//     const summaryLowercase = event.summary.toLowerCase();
-//     return (
-//       summaryLowercase.includes("photography") ||
-//       summaryLowercase.includes("video") ||
-//       summaryLowercase.includes("floor plan")
-//     );
-//   });
-
-//   console.log("Filtered Events:", filteredEvents.length, filteredEvents);
-
-//   filteredEvents.forEach((event) => {
-//     // Convert event start and end times to Sydney timezone
-//     const eventStartTime = moment(event.start).tz(SYDNEY_TZ);
-//     const eventEndTime = moment(event.end).tz(SYDNEY_TZ);
-
-//     contractors.forEach((contractor) => {
-//       const { availability, services, name, _id } = contractor;
-//       const eventDate = eventStartTime.format("ddd").toUpperCase();
-//       console.log(eventDate);
-
-//       // Check if contractor is available on the event day
-//       const contractorDayAvailability = availability[eventDate];
-//       console.log(contractorDayAvailability);
-
-//       if (contractorDayAvailability && contractorDayAvailability.available) {
-//         const contractorStartTime = eventStartTime.clone().set({
-//           hour: parseInt(contractorDayAvailability.startTime.split(":")[0]),
-//           minute: parseInt(contractorDayAvailability.startTime.split(":")[1]),
-//           second: 0,
-//           millisecond: 0,
-//         });
-
-//         const contractorEndTime = eventStartTime.clone().set({
-//           hour: parseInt(contractorDayAvailability.endTime.split(":")[0]),
-//           minute: parseInt(contractorDayAvailability.endTime.split(":")[1]),
-//           second: 0,
-//           millisecond: 0,
-//         });
-
-//         // Check if the event is within the contractor's available hours
-//         const isContractorAvailable =
-//           eventStartTime.isBetween(
-//             contractorStartTime,
-//             contractorEndTime,
-//             null,
-//             "[]"
-//           ) &&
-//           eventEndTime.isBetween(
-//             contractorStartTime,
-//             contractorEndTime,
-//             null,
-//             "[]"
-//           );
-//         // Check if contractor provides the required service for the event (photo, video, or floor plan)
-//         console.log(isContractorAvailable);
-
-//         const isPhotoEvent =
-//           event.summary.toLowerCase().includes("photography") ||
-//           event.summary.toLowerCase().includes("photo");
-//         const isVideoEvent = event.summary.toLowerCase().includes("video");
-//         const isFloorPlanEvent = event.summary
-//           .toLowerCase()
-//           .includes("floor plan");
-
-//         const includesPhotographerAndVideographer = services.includes(
-//           "Photographer and Videographer"
-//         );
-//         const includesFloorPlanner = services.includes("Floor planner");
-
-//         if (
-//           isContractorAvailable &&
-//           ((isPhotoEvent && includesPhotographerAndVideographer) ||
-//             (isVideoEvent && includesPhotographerAndVideographer) ||
-//             (isFloorPlanEvent && includesFloorPlanner))
-//         ) {
-//           // Check if there are any conflicting bookings for the contractor
-//           const conflictingBooking = contractorBookings.some((booking) => {
-//             const bookingStartTime = moment(booking.startTime).tz(SYDNEY_TZ);
-//             const bookingEndTime = moment(booking.endTime).tz(SYDNEY_TZ);
-
-//             return (
-//               booking.contractorId.toString() === _id.toString() && // Booking belongs to the same contractor
-//               (bookingStartTime.isBetween(
-//                 eventStartTime,
-//                 eventEndTime,
-//                 null,
-//                 "[)"
-//               ) ||
-//                 bookingEndTime.isBetween(
-//                   eventStartTime,
-//                   eventEndTime,
-//                   null,
-//                   "(]"
-//                 ) ||
-//                 eventStartTime.isBetween(
-//                   bookingStartTime,
-//                   bookingEndTime,
-//                   null,
-//                   "[)"
-//                 ) ||
-//                 eventEndTime.isBetween(
-//                   bookingStartTime,
-//                   bookingEndTime,
-//                   null,
-//                   "(]"
-//                 ))
-//             );
-//           });
-
-//           // If no conflicting bookings, contractor is available for the event
-//           if (!conflictingBooking) {
-//             console.log(
-//               `Contractor available for ${event.summary} on ${event.start}: ${name}`
-//             );
-//           } else {
-//             console.log(
-//               `Contractor ${name} is not available for ${event.summary} due to a conflicting booking.`
-//             );
-//           }
-//         }
-//       }
-//     });
-//   });
-// };
 
 const getContractors = async (calculatedEvents) => {
   const db = await connectToDatabase();
@@ -446,6 +310,15 @@ exports.calculateEvents = async (req, res) => {
       };
     };
 
+    const bestTime = await chatCompletion(
+      "We will give you address and property type, tell me exactly the best time to photograph the the property architecturally. Search tides and tell us based on the following requirements the best time . Requirements are: if it has a pool, sun needs to be on the pool, if it is waterfront, waterfront reserve, must be at high tide. Stay factual, do not hallucinate. just give time in 24 hr json format. {time:hr (type number) }",
+      "43 rona street, Peakhurst",
+      (jsonFormat = true)
+    );
+    console.log(bestTime);
+
+    let currentHour = bestTime.time || 9;
+
     // Function to map events in Sydney timezone
     const calculateEventDates = (marketingStartDate) => {
       const events = [];
@@ -458,7 +331,7 @@ exports.calculateEvents = async (req, res) => {
       });
 
       let currentDate = marketingStartDate.clone();
-      let currentHour = 9;
+
       let lastMediaDate = null; //when photo, video, dusk, floorplan is completed
 
       // Ensure the event is between 6 AM and 8 PM
