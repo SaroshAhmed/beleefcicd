@@ -1,7 +1,8 @@
 const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
 
 const campaignAgentSchema = new mongoose.Schema({
-  apiConsumerListingId: { type: String, required: true },
+  apiConsumerListingId: { type: Schema.Types.ObjectId, ref: "UserProperty", required: true },
   officeOwnershipGroupUniqueIdentifier: { type: String, required: true },
   status: { type: String, required: true },
   key: { type: String, required: true },

@@ -261,33 +261,36 @@ const getContractors = async (calculatedEvents) => {
     );
   });
 
-  // Create a map to store available contractors for each event
   const eventContractors = new Map();
 
   filteredEvents.forEach((event) => {
     const eventStartTime = moment(event.start).tz(SYDNEY_TZ);
     const eventEndTime = moment(event.end).tz(SYDNEY_TZ);
 
-    contractors.forEach((contractor) => {
+    // Use a flag to indicate when a match is found
+    let matchFound = false;
+
+    // Determine if the event needs both Photography and Video services
+    const requiresPhotography =
+      event.summary.toLowerCase().includes("photography") ||
+      event.summary.toLowerCase().includes("photo");
+    const requiresVideo = event.summary.toLowerCase().includes("video");
+
+    contractors.some((contractor) => {
       const { availability, services, name, _id, mobile, email, picture } =
         contractor;
       const eventDate = eventStartTime.format("ddd").toUpperCase();
-
       const contractorDayAvailability = availability[eventDate];
 
       if (contractorDayAvailability && contractorDayAvailability.available) {
         const contractorStartTime = eventStartTime.clone().set({
           hour: parseInt(contractorDayAvailability.startTime.split(":")[0]),
           minute: parseInt(contractorDayAvailability.startTime.split(":")[1]),
-          second: 0,
-          millisecond: 0,
         });
 
         const contractorEndTime = eventStartTime.clone().set({
           hour: parseInt(contractorDayAvailability.endTime.split(":")[0]),
           minute: parseInt(contractorDayAvailability.endTime.split(":")[1]),
-          second: 0,
-          millisecond: 0,
         });
 
         const isContractorAvailable =
@@ -304,24 +307,19 @@ const getContractors = async (calculatedEvents) => {
             "[]"
           );
 
-        const isPhotoEvent =
-          event.summary.toLowerCase().includes("photography") ||
-          event.summary.toLowerCase().includes("photo");
-        const isVideoEvent = event.summary.toLowerCase().includes("video");
-        const isFloorPlanEvent = event.summary
-          .toLowerCase()
-          .includes("floor plan");
-
+        // Check if contractor has the required services
         const includesPhotographer = services.includes("Photographer");
         const includesVideographer = services.includes("Videographer");
-        const includesFloorPlanner = services.includes("Floor planner");
 
-        if (
-          isContractorAvailable &&
-          ((isPhotoEvent && includesPhotographer) ||
-            (isVideoEvent && includesVideographer) ||
-            (isFloorPlanEvent && includesFloorPlanner))
-        ) {
+        const contractorMeetsRequirements =
+          (requiresPhotography &&
+            requiresVideo &&
+            includesPhotographer &&
+            includesVideographer) || // Needs both services
+          (requiresPhotography && !requiresVideo && includesPhotographer) || // Needs only photography
+          (!requiresPhotography && requiresVideo && includesVideographer); // Needs only video
+
+        if (isContractorAvailable && contractorMeetsRequirements) {
           const conflictingBooking = contractorBookings.some((booking) => {
             const bookingStartTime = moment(booking.startTime).tz(SYDNEY_TZ);
             const bookingEndTime = moment(booking.endTime).tz(SYDNEY_TZ);
@@ -355,9 +353,9 @@ const getContractors = async (calculatedEvents) => {
             );
           });
 
-          console.log(event.summary, name, conflictingBooking);
+          if (!conflictingBooking && !matchFound) {
+            console.log(event.summary, name, conflictingBooking);
 
-          if (!conflictingBooking) {
             // Store contractor information for this event
             const contractorInfo = {
               id: _id,
@@ -367,16 +365,16 @@ const getContractors = async (calculatedEvents) => {
               picture,
             };
             eventContractors.set(event.start, contractorInfo);
+            matchFound = true; // Stop further processing once a match is found
           }
         }
       }
+      return matchFound; // Stop iterating contractors once a match is found
     });
   });
 
-  // Update the original events array with contractor information
   calculatedEvents.forEach((event) => {
     const contractor = eventContractors.get(event.start);
-
     if (contractor) {
       event.contractor = contractor;
     }
@@ -838,7 +836,7 @@ exports.createBooking = async (req, res) => {
 
     // Creating a new booking record
     const bookingData = {
-      contractorId: new mongoose.Types.ObjectId(contractor._id),
+      contractorId: new mongoose.Types.ObjectId(contractor.id),
       agentId: new mongoose.Types.ObjectId(req.user.id),
       name: event.summary,
       description: event.summary,

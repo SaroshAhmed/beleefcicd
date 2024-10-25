@@ -1,4 +1,5 @@
 const CampaignAgent = require("../../models/CampaignAgent");
+const mongoose = require("mongoose");
 
 // Controller to handle webhook requests
 exports.campaignAgent= async (req, res) => {
@@ -32,7 +33,7 @@ exports.campaignAgent= async (req, res) => {
 
     // Create and save a new CampaignAgent document
     const campaignAgent = new CampaignAgent({
-      apiConsumerListingId,
+      apiConsumerListingId: new mongoose.Types.ObjectId(apiConsumerListingId),
       officeOwnershipGroupUniqueIdentifier,
       status,
       key,
