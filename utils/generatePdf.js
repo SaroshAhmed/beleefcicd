@@ -1,5 +1,6 @@
 const puppeteer = require('puppeteer');
 const generateTableHtml = require('./generateTable');
+const generateSalesTableHTML = require('./salesTable');
 const generateReportSections = (reportDataArray) => {
   return reportDataArray
     .map((data) => {
@@ -73,7 +74,7 @@ function filterArray(arr) {
   });
 }
 
-const generatePdf = async (reportContent, propertyName = 'Unknown Property',tableData,index,data,reportContent2='<p></p>') => {
+const generatePdf = async (reportContent, propertyName = 'Unknown Property',tableData,index,data,reportContent2='<p></p>',salesTable) => {
     try {
       const firstPageHtml = `
             <div style="text-align: center; margin-top: 300px;">
@@ -83,8 +84,10 @@ const generatePdf = async (reportContent, propertyName = 'Unknown Property',tabl
       <div style="page-break-after: always;"></div> 
     `;
     const reportSections = generateReportSections(filterArray(data));
-    const tableHtml = generateTableHtml(tableData);
-      
+    const tableHtml = generateTableHtml(
+      (tableData?.rows && tableData?.rows.length > 0) ? tableData : { columns: [], rows: [] }
+    );
+      const salesTableHtml = (salesTable && salesTable?.length > 0)?generateSalesTableHTML(salesTable):'';
       // Launch Puppeteer in headless mode
       const browser = await puppeteer.launch();
       const page = await browser.newPage();
@@ -106,9 +109,11 @@ const generatePdf = async (reportContent, propertyName = 'Unknown Property',tabl
           ${reportSections}
           
           <h2>CURRENT ENGAGEMENT</h2>
-          ${tableHtml} <!-- Table gets embedded here -->
+          ${tableHtml}
           ${reportContent}
           ${reportContent2}
+          <div style="page-break-after: always;"></div> 
+          ${salesTableHtml}
         </body>
       </html>
     `;

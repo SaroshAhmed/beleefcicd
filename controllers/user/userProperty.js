@@ -628,7 +628,7 @@ exports.generateReport = async (req, res) => {
       customTable: userProperty.customTable,
     })); 
     const index=userMessage?.length-1;
-    userProperty.fiveStepProcess[index].gptResponse=response;
+    userProperty.fiveStepProcess[index].gptResponse=response + response2;
     const pdfBuffer = await generatePdf(response,address,userProperty.customTable,userMessage?.length==1?'OFF Market':`Week ${userMessage?.length-1}`,userMessage,response2);
     const pdfUrl=await uploadFile(pdfBuffer,`weeklyReports/${userProperty?._id}/tab_${userMessage?.length-1}`);
     
@@ -639,7 +639,7 @@ exports.generateReport = async (req, res) => {
       await userProperty.save();
       return res.status(200).json({ success: true, data: {
         ...pdfUrl,
-        gptResponse: response,
+        gptResponse: response + response2,
       } });
   } catch (error) {
     console.error("Error generating report:", error.message);
@@ -659,7 +659,7 @@ exports.updateReport = async (req, res) => {
     }
     const index=userMessage?.length-1;
     userProperty.fiveStepProcess[index].gptResponse=updatedText;
-    const pdfBuffer = await generatePdf(updatedText,address,userProperty.customTable,userMessage?.length==1?'OFF Market':`Week ${userMessage?.length-1}`,userMessage);
+    const pdfBuffer = await generatePdf(updatedText,address,userProperty.customTable,userMessage?.length==1?'OFF Market':`Week ${userMessage?.length-1}`,userMessage,'<p></p>');
     const pdfUrl=await uploadFile(pdfBuffer,`weeklyReports/${userProperty?._id}/tab_${userMessage?.length-1}`);
     
       
@@ -714,15 +714,9 @@ exports.generateConclusionReport = async (req, res) => {
       userMessage,
       customTable: userProperty.customTable,
     }));
-    
-    const pdfBuffer = await generatePdf(response,address,userProperty.customTable,'Conclusion',userMessage);
+    console.log(userProperty.salesTable)
+    const pdfBuffer = await generatePdf(response,address,userProperty.customTable,'Conclusion',userMessage,'<p></p>',userProperty.salesTable);
     const pdfUrl=await uploadFile(pdfBuffer,`weeklyReports/${userProperty?._id}/conclusion`);
-    
-      // userProperty.conclusion.gptResponse=response;
-      // userProperty.conclusion.key=pdfUrl?.key;
-      // userProperty.conclusion.url=pdfUrl?.url;
-      // userProperty.markModified('conclusion');
-      // await userProperty.save();
       const updateRecord=await UserProperty.findOneAndUpdate({ address, userId: id }, {
         $set: {
           "conclusion.gptResponse": response,
@@ -750,14 +744,8 @@ exports.updateConclusionReport = async (req, res) => {
           .json({ success: false, message: "Property not found" });
     }
     
-    const pdfBuffer = await generatePdf(updatedText,address,userProperty.customTable,'Conclusion',userMessage);
+    const pdfBuffer = await generatePdf(updatedText,address,userProperty.customTable,'Conclusion',userMessage,'<p></p>',userProperty.salesTable);
     const pdfUrl=await uploadFile(pdfBuffer,`weeklyReports/${userProperty?._id}/conclusion`);
-    
-      // userProperty.conclusion.gptResponse=updatedText;
-      // userProperty.conclusion.key=pdfUrl?.key;
-      // userProperty.conclusion.url=pdfUrl?.url;
-      // userProperty.markModified('conclusion');
-      // await userProperty.save();
       const updateRecord=await UserProperty.findOneAndUpdate({ address, userId: id }, {
         $set: {
           "conclusion.gptResponse": updatedText,
