@@ -33,6 +33,9 @@ const userSchema = new mongoose.Schema(
     conjunctionAgent: {
       type: String,
     },
+    audioKey: {
+      type: String,
+    },
     accessToken: String,
     refreshToken: String,
   },

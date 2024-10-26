@@ -227,7 +227,60 @@ exports.saveProfile = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+exports.addAudio = async (req, res) => {
+  const userId = req.user.id;
+  const file = req.file;
 
+  if (!file) {
+      return res.status(400).json({ success: false, message: 'No audio file uploaded' });
+  }
+
+  try {
+    const key= `audio/${userId}.wav`;
+    const params = {
+      Bucket: process.env.S3_BUCKET_NAME,
+          Key: key,
+          Body: file.buffer,
+          ContentType: file.mimetype,
+          Expires: 3600,
+    };
+    const data = await s3.upload(params).promise();
+      const user = await User.findById(userId);
+      if (!user) {
+          return res.status(404).json({ success: false, message: 'User not found' });
+      }
+      user.audioKey = key;
+      await user.save();
+      console.log(user?.audioKey);
+      res.status(200).json({ success: true, message: 'Audio uploaded successfully'});
+  } catch (error) {
+      console.error('Error uploading audio to S3:', error);
+      res.status(500).json({ success: false, message: error.message });
+  }
+};
+exports.getAudio = async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+      const user = await User.findById(userId)
+      if (!user) {
+          return res.status(404).json({ success: false, message: 'User not found' });
+      }
+      if (!user.audioKey) {
+          return res.status(404).json({ success: false, message: 'Audio not found' });
+      }
+      const params = {
+          Bucket: process.env.S3_BUCKET_NAME,
+          Key: user.audioKey,
+          Expires: 3600,
+      };
+      const s3Link = await s3.getSignedUrlPromise('getObject', params);
+      res.status(200).json({ success: true, data: s3Link });
+  }
+  catch (error) {
+      res.status(500).json({ success: false, message: error.message});
+  }
+}
 // exports.saveProfile = async (req, res) => {
 //   const { paymentMethodId, s3Key } = req.body;
 //   const userId = req.user.id;
