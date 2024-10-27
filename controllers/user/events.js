@@ -78,33 +78,8 @@ const getNextWednesday = (date) => {
   return date.clone().day(3);
 };
 
-const eventDurations = {
-  "Melo Photography - Photography 10 Images": 1.5,
-  "Melo Photography - Photography 20 Images": 3,
-  "Melo Photography - Photography 7 Images": 1,
-  "Melo Photography - Photography 5 Images": 1,
-  "Melo Photography - Dusk Photography": 0.5,
-  "Melo Photography - Drone Shots": 0.5,
-  "Melo - Property Video": 1.5,
-  "Melo - Storytelling Videos": 2,
-  "Melo - Large Floor Plan": 2,
-  "Melo - Medium Floor Plan": 1,
-  "Melo - Small Floor Plan": 0.75,
-};
-
-// Function to get the selected item from a category
-const getSelectedItem = (categoryName, categories) => {
-  const category = categories.find((cat) => cat.category === categoryName);
-  if (!category) return [];
-
-  // Ensure isChecked is evaluated as a boolean
-  const selectedItems = category.items.filter(
-    (item) => item.isChecked && !/Virtual|Redraw/i.test(item.name)
-  );
-
-  console.log(selectedItems); // Log the filtered selected items
-  return selectedItems;
-};
+// Function to convert "X weeks" to days
+const weeksToDays = (weeks) => parseFloat(weeks) * 7;
 
 const getContractors = async (calculatedEvents) => {
   const db = await connectToDatabase();
@@ -128,6 +103,7 @@ const getContractors = async (calculatedEvents) => {
   const eventContractors = new Map();
 
   filteredEvents.forEach((event) => {
+    console.log(event.start)
     const eventStartTime = moment(event.start).tz(SYDNEY_TZ);
     const eventEndTime = moment(event.end).tz(SYDNEY_TZ);
 
@@ -170,6 +146,8 @@ const getContractors = async (calculatedEvents) => {
             null,
             "[]"
           );
+
+        console.log(contractor.name, isContractorAvailable,eventStartTime,contractorStartTime,contractorEndTime);
 
         // Check if contractor has the required services
         const includesPhotographer = services.includes("Photographer");
@@ -247,23 +225,127 @@ const getContractors = async (calculatedEvents) => {
   return calculatedEvents;
 };
 
+const eventDurations = {
+  "Melo Photography - Photography 10 Images": 1.5,
+  "Melo Photography - Photography 20 Images": 3,
+  "Melo Photography - Photography 7 Images": 1,
+  "Melo Photography - Photography 5 Images": 1,
+  "Melo Photography - Dusk Photography": 0.5,
+  "Melo Photography - Drone Shots": 0.5,
+  "Melo - Property Video": 1.5,
+  "Melo - Storytelling Videos": 2,
+  "Melo - Large Floor Plan": 2,
+  "Melo - Medium Floor Plan": 1,
+  "Melo - Small Floor Plan": 0.75,
+};
+
+// Function to get the selected item from a category
+const getSelectedItem = (categoryName, categories) => {
+  const category = categories.find((cat) => cat.category === categoryName);
+  if (!category) return [];
+
+  // Ensure isChecked is evaluated as a boolean
+  const selectedItems = category.items.filter(
+    (item) => item.isChecked && !/Virtual|Redraw/i.test(item.name)
+  );
+
+  return selectedItems;
+};
+
 exports.calculateEvents = async (req, res) => {
   try {
-    const { prepareMarketing, conclusionDate, marketing, saleProcess } =
-      req.body;
+    const {
+      prepareMarketing,
+      conclusionDate,
+      marketing,
+      saleProcess,
+      address,
+    } = req.body;
+
     if (prepareMarketing == "Off market") {
       return res.status(200).json({ success: true, data: [] });
     }
 
-    // Get selected items for Photos, Floorplans, and Video
-    const selectedVideo = getSelectedItem("Video", marketing.categories);
-    const selectedFloorplan = getSelectedItem(
-      "Floorplans",
-      marketing.categories
-    );
+    const imGroup = marketing.categories
+      .find((category) => category.category === "I.M Group")
+      ?.items.find((item) => item.isChecked);
 
-    // Function to convert "X weeks" to days
-    const weeksToDays = (weeks) => parseFloat(weeks) * 7;
+    // Define selected items with let for use outside the scope
+    let selectedPhotography = null;
+    let selectedDusk = null;
+    let selectedDrone = null;
+    let selectedFloorplan = [];
+    let selectedVideo = [];
+
+    // Set default items based on the selected package
+    if (imGroup) {
+      if (imGroup.name === "The Merjan Group Package") {
+        // Add default items for "The Merjan Group Package"
+        selectedPhotography = {
+          name: "Melo Photography - Photography 10 Images",
+          duration: eventDurations["Melo Photography - Photography 10 Images"],
+        };
+        selectedDusk = {
+          name: "Melo Photography - Dusk Photography",
+          duration: eventDurations["Melo Photography - Dusk Photography"],
+        };
+        selectedDrone = {
+          name: "Melo Photography - Drone Shots",
+          duration: eventDurations["Melo Photography - Drone Shots"],
+        };
+        selectedFloorplan = [
+          {
+            name: "Melo - Medium Floor Plan",
+            duration: eventDurations["Melo - Medium Floor Plan"],
+          },
+        ];
+      } else if (imGroup.name === "The Merjan Group Package with video") {
+        // Add default items for "The Merjan Group Package with video"
+        selectedPhotography = {
+          name: "Melo Photography - Photography 10 Images",
+          duration: eventDurations["Melo Photography - Photography 10 Images"],
+        };
+        selectedDusk = {
+          name: "Melo Photography - Dusk Photography",
+          duration: eventDurations["Melo Photography - Dusk Photography"],
+        };
+        selectedDrone = {
+          name: "Melo Photography - Drone Shots",
+          duration: eventDurations["Melo Photography - Drone Shots"],
+        };
+        selectedFloorplan = [
+          {
+            name: "Melo - Medium Floor Plan",
+            duration: eventDurations["Melo - Medium Floor Plan"],
+          },
+        ];
+        selectedVideo = [
+          {
+            name: "Melo - Property Video",
+            duration: eventDurations["Melo - Property Video"],
+          },
+        ];
+      }
+    } else {
+      // Get selected items for Photos, Floorplans, and Video if not automatically set by "I.M Group" package
+      const selectedPhotoItems = getSelectedItem(
+        "Photos",
+        marketing.categories
+      );
+      selectedVideo = getSelectedItem("Video", marketing.categories);
+      selectedFloorplan = getSelectedItem("Floorplans", marketing.categories);
+
+      // Loop through the selected items and categorize them
+      selectedPhotoItems.forEach((item) => {
+        if (item.name.includes("Dusk Photography")) {
+          selectedDusk = item;
+        } else if (item.name.includes("Drone Shots")) {
+          selectedDrone = item;
+        } else if (item.name.includes("Photography")) {
+          selectedPhotography = item; // Pick the remaining photography item
+        }
+      });
+    }
 
     // Calculate the marketing start date based on prepareMarketing value
     const getMarketingStartDate = () => {
@@ -311,11 +393,10 @@ exports.calculateEvents = async (req, res) => {
     };
 
     const bestTime = await chatCompletion(
-      "We will give you address and property type, tell me exactly the best time to photograph the the property architecturally. Search tides and tell us based on the following requirements the best time . Requirements are: if it has a pool, sun needs to be on the pool, if it is waterfront, waterfront reserve, must be at high tide. Stay factual, do not hallucinate. just give time in 24 hr json format. {time:hr (type number) }",
-      "43 rona street, Peakhurst",
+      "We will give you address and property type, tell me exactly the best time to photograph the the property architecturally. Search tides and tell us based on the following requirements the best time. Requirements are: if it has a pool, sun needs to be on the pool, if it is waterfront, waterfront reserve, must be at high tide. Stay factual, do not hallucinate. just give time in 24 hr json format. {time:hr (type number) }",
+      address,
       (jsonFormat = true)
     );
-    console.log(bestTime);
 
     let currentHour = bestTime.time || 9;
 
@@ -371,25 +452,6 @@ exports.calculateEvents = async (req, res) => {
 
       // Separate Dusk, Drone, and Photography events from the selected items
       // Get the selected photo items (Photography, Dusk, Drone)
-      const selectedPhotoItems = getSelectedItem(
-        "Photos",
-        marketing.categories
-      );
-
-      let selectedDusk = null;
-      let selectedDrone = null;
-      let selectedPhotography = null;
-
-      // Loop through the selected items and categorize them
-      selectedPhotoItems.forEach((item) => {
-        if (item.name.includes("Dusk Photography")) {
-          selectedDusk = item;
-        } else if (item.name.includes("Drone Shots")) {
-          selectedDrone = item;
-        } else if (item.name.includes("Photography")) {
-          selectedPhotography = item; // Pick the remaining photography item
-        }
-      });
 
       // Schedule Dusk and Drone Shots as a combined or separate event
       if (selectedDusk && selectedDrone) {
