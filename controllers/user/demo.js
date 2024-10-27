@@ -66,17 +66,20 @@ async function getPropertySuggestion(address, suburb) {
     );
 
     const matches = response.data.matches;
-    if (matches && matches.length > 0) {
-      const firstMatch = matches[0];
 
-      if (firstMatch.address && firstMatch.address.locality) {
-        if (
-          firstMatch.address.locality.toLowerCase() === suburb.toLowerCase()
-        ) {
-          return firstMatch.property.id;
-        }
-      }
+    if (matches && matches.length > 0) {
+      // Find the first property that matches both address and locality
+      const matchedProperty = matches.find(
+        (property) =>
+          property.address.streetAddress.toLowerCase() ===
+            address.toLowerCase() &&
+          property.address.locality.toLowerCase() === suburb.toLowerCase()
+      );
+
+      // Return the ID of the first matched property, or null if none found
+      return matchedProperty ? matchedProperty.property.id : null;
     }
+
     return null;
   } catch (error) {
     console.error("Error fetching property suggestion:", error);
@@ -356,3 +359,27 @@ exports.getPropertyByShareableLink = async (req, res) => {
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+// Update a property by address
+exports.updatePropertyByAddress = async (req, res) => {
+    const { address } = req.params; // Address to identify the property
+    const updates = req.body; // Fields to update
+  
+    try {
+      // Find the property by address and apply updates
+      const updatedProperty = await Demo.findOneAndUpdate(
+        { address: address.toUpperCase() }, // Ensure address is uppercase for consistency
+        { $set: updates }, // Apply the updates
+        { new: true } // Return the updated document
+      );
+  
+      if (updatedProperty) {
+        return res.status(200).json({ success: true, data: updatedProperty });
+      } else {
+        return res.status(404).json({ success: false, message: "Property not found" });
+      }
+    } catch (error) {
+      console.error("Error updating property:", error);
+      return res.status(500).json({ success: false, message: "Server error" });
+    }
+  };
