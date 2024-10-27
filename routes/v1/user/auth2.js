@@ -19,10 +19,10 @@ router.get(
 router.get(
   "/google/callback",
   passport.authenticate("google", {
-    failureRedirect: `${REACT_APP_FRONTEND_URL}/login`,
+    failureRedirect: `https://search.beleef.com.au/login`,
   }),
   function (req, res) {
-    res.redirect(`${REACT_APP_FRONTEND_URL}`);
+    res.redirect(`https://search.beleef.com.au`);
   }
 );
 
