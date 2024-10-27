@@ -103,7 +103,7 @@ const getContractors = async (calculatedEvents) => {
   const eventContractors = new Map();
 
   filteredEvents.forEach((event) => {
-    console.log(event.start)
+    console.log(event.start);
     const eventStartTime = moment(event.start).tz(SYDNEY_TZ);
     const eventEndTime = moment(event.end).tz(SYDNEY_TZ);
 
@@ -147,7 +147,13 @@ const getContractors = async (calculatedEvents) => {
             "[]"
           );
 
-        console.log(contractor.name, isContractorAvailable,eventStartTime,contractorStartTime,contractorEndTime);
+        console.log(
+          contractor.name,
+          isContractorAvailable,
+          eventStartTime,
+          contractorStartTime,
+          contractorEndTime
+        );
 
         // Check if contractor has the required services
         const includesPhotographer = services.includes("Photographer");
@@ -259,7 +265,9 @@ exports.calculateEvents = async (req, res) => {
       conclusionDate,
       marketing,
       saleProcess,
-      address,
+      address = "43 rona street",
+      finishes,
+      waterViews,
     } = req.body;
 
     if (prepareMarketing == "Off market") {
@@ -345,6 +353,17 @@ exports.calculateEvents = async (req, res) => {
           selectedPhotography = item; // Pick the remaining photography item
         }
       });
+    }
+
+    let separateEvents = false;
+
+    if (
+      finishes === "High-end finishes" &&
+      waterViews !== "no" &&
+      selectedPhotography &&
+      selectedVideo.length
+    ) {
+      separateEvents = true;
     }
 
     // Calculate the marketing start date based on prepareMarketing value
@@ -487,7 +506,7 @@ exports.calculateEvents = async (req, res) => {
       }
 
       // If both selectedPhotography and selectedVideo exist, combine them into a single event
-      if (selectedPhotography && selectedVideo.length) {
+      if (selectedPhotography && selectedVideo.length && !separateEvents) {
         const combinedEventName = `${selectedPhotography.name} and ${selectedVideo[0].name}`;
         const combinedDuration =
           eventDurations[selectedPhotography.name] +
@@ -696,10 +715,12 @@ exports.createBooking = async (req, res) => {
   const lastName = nameArray.length > 1 ? nameArray[1] : "";
 
   const {
+    summary,
     start: startTime,
     end: endTime,
     address = "43 RONA STREET",
     contractor,
+    access = "occupied",
   } = req.body.event;
 
   const agent = {
@@ -733,25 +754,30 @@ exports.createBooking = async (req, res) => {
 
     // Create a new event in Google Calendar using the logged-in user's calendar
     const event = {
-      summary: address,
-      description: `Test booking`,
+      summary: `${summary} - ${address}`,
+      description: `
+        <p><strong>Service Details:</strong> ${summary}</p>
+        <p><strong>Access:</strong> ${access}</p>
+        <p><strong>Agent Details</strong></p><p>Name: ${req.user.name}</p><p>Email: ${req.user.email}</p><p>Mobile: ${req.user.mobile}</p><p>Company: ${req.user.company}</p>
+        <p><strong>Service Provider</strong></p><p>Name: ${contractor.name}</p><p>Email: ${contractor.email}</p><p>Mobile: ${contractor.mobile}</p><p>Company: Melo</p>
+      `,
       start: { dateTime: startTime, timeZone: "Australia/Sydney" },
       end: { dateTime: endTime, timeZone: "Australia/Sydney" },
       attendees: [
         {
-          email: agent.email, // Agent email
-          displayName: `${agent.firstName} ${agent.lastName}`, // Agent name
+          email: req.user.email, // Agent email
+          displayName: req.user.name, // Agent name
         },
       ],
       reminders: {
         useDefault: false,
         overrides: [
-          { method: "email", minutes: 24 * 60 }, // Send email reminder 1 day before
-          { method: "email", minutes: 5 }, // Send email reminder 5 minutes before
-          { method: "popup", minutes: 10 }, // Show popup reminder 10 minutes before
+          { method: "email", minutes: 24 * 60 }, // Email reminder 1 day before
+          { method: "email", minutes: 5 }, // Email reminder 5 minutes before
+          { method: "popup", minutes: 10 }, // Popup reminder 10 minutes before
         ],
       },
-      sendUpdates: "all", // This ensures the invitation email is sent
+      sendUpdates: "all", // Ensures invitation email is sent
     };
 
     // Insert the event using the service account to ensure keyevents@ausrealty.com.au is the sender
