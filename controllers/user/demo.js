@@ -107,7 +107,7 @@ async function getExtendedPropertyDetails(propertyId) {
 async function getSoldMatches(suburbId, maxBed, minBed, type) {
   try {
     const response = await axios.get(
-      `https://api.pricefinder.com.au/v1/suburbs/${suburbId}/sales?date_end=now&date_start=today-6m&limit=5&matchlevel_max=property&max_beds=${maxBed}&min_beds=${minBed}&property_type=${type}&sort=-date`,
+      `https://api.pricefinder.com.au/v1/suburbs/${suburbId}/sales?date_end=now&date_start=today-6m&limit=60&matchlevel_max=property&max_beds=${maxBed}&min_beds=${minBed}&property_type=${type}&sort=-date`,
       {
         headers: {
           Accept: "application/json",
@@ -198,23 +198,31 @@ exports.createProperty = async (req, res) => {
 
         if (soldMatches.sales.length) {
           await Promise.all(
-            soldMatches.sales.map(async (property) => {
-              try {
-                const response = await getExtendedPropertyDetails(
-                  property.property.id
-                );
-                recentAreaSoldProcess.push({
-                  saleHistory: response?.saleHistory,
-                  listingHistory: response?.listingHistory,
-                });
-              } catch (error) {
-                console.error(
-                  `Error fetching details for property ID ${property.id}:`,
-                  error
-                );
-                // Continue without stopping the loop
-              }
-            })
+            soldMatches.sales
+              .filter(
+                (property) =>
+                  property?.listingHistory &&
+                  property?.price?.value &&
+                  property?.listingHistory?.daysToSell > 35
+              )
+              .slice(0, 5) // Limit to 5 records
+              .map(async (property) => {
+                try {
+                  const response = await getExtendedPropertyDetails(
+                    property.property.id
+                  );
+                  recentAreaSoldProcess.push({
+                    saleHistory: response?.saleHistory,
+                    listingHistory: response?.listingHistory,
+                  });
+                } catch (error) {
+                  console.error(
+                    `Error fetching details for property ID ${property.property.id}:`,
+                    error
+                  );
+                  // Continue without stopping the loop
+                }
+              })
           );
         }
 
