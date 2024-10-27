@@ -26,6 +26,8 @@ const allowedOrigins = [
   "https://www.beleef.com.au",
   "https://admin.beleef.com.au",
   "https://www.admin.beleef.com.au",
+  "https://search.beleef.com.au",
+  "https://www.search.beleef.com.au"
 ];
 
 // app.use(
