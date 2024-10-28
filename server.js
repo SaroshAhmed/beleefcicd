@@ -10,7 +10,8 @@ const { MONGO_URI, SECRET_KEY, REACT_APP_FRONTEND_URL } = require("./config");
 
 const bookingReminder = require("./cronJobs/bookingReminder");
 const startPropertyUpdaterCron = require("./cronJobs/aiCleanup");
-const { startWhatsAppClient } = require('./utils/whatsappService');
+const bodyParser = require('body-parser');
+const { createWhatsAppGroup, sendMessageToGroup, startWhatsAppClient, getQRCode } = require('./utils/whatsappService');
 const app = express();
 require("./config/passport");
 
@@ -125,6 +126,62 @@ app.get("/", (req, res) => {
 //   .catch((error) => {
 //     console.error('Error starting WhatsApp Client:', error);
 //   });
+// API Endpoint to create a WhatsApp Group
+
+
+app.use(bodyParser.json());
+
+startWhatsAppClient()
+  .then(() => {
+    console.log('WhatsApp Client is ready.');
+  })
+  .catch((error) => {
+    console.error('Error starting WhatsApp Client:', error);
+  });
+
+app.post('/create-group', async (req, res) => {
+  const { groupName, participants } = req.body;
+
+  if (!groupName || !participants) {
+    return res.status(400).send({ error: 'Group name and participants are required.' });
+  }
+
+  try {
+    const response = await createWhatsAppGroup(groupName, participants);
+    res.status(200).send(response);
+  } catch (error) {
+    res.status(500).send({ error: error.message });
+  }
+});
+
+// API Endpoint to send a message to a WhatsApp Group
+app.post('/send-group-message', async (req, res) => {
+  const { groupId, message } = req.body;
+
+  // Use lastCreatedGroupId if no groupId is provided
+  const targetGroupId = groupId || lastCreatedGroupId;
+
+  if (!targetGroupId || !message) {
+    return res.status(400).send({ error: 'Group ID and message are required.' });
+  }
+
+  try {
+    const response = await sendMessageToGroup(targetGroupId, message);
+    res.status(200).send(response);
+  } catch (error) {
+    res.status(500).send({ error: error.message });
+  }
+});
+
+// Endpoint to get QR code
+app.get('/get-qr-code', (req, res) => {
+  const qrCode = getQRCode();
+  if (qrCode) {
+    res.status(200).send({ qrCode });
+  } else {
+    res.status(404).send({ error: 'QR code not available' });
+  }
+});
 
 databaseConnect();
 bookingReminder();
