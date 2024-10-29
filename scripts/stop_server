@@ -1,9 +1,0 @@
-#!/bin/bash
-
-# Get the process ID of the Node.js application
-isExistApp=$(pgrep -f server.js)  # Change 'server.js' to your app's entry point
-
-if [[ -n $isExistApp ]]; then
-    # Kill the Node.js process
-    kill -9 $isExistApp
-fi

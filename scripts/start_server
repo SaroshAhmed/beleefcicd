@@ -1,8 +1,0 @@
-#!/bin/bash
-# Install dependencies (if not already installed)
-npm install
-
-# Start the Node.js application
-# You may want to use pm2 or a similar process manager to keep your app running
-# If you're not using pm2, replace 'server.js' with the entry point of your app
-node server.js &

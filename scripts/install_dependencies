@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# Update the package repository
-sudo yum -y update
-
-# Install Node.js and npm
-sudo yum install -y nodejs npm
