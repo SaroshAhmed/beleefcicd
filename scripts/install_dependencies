@@ -5,7 +5,3 @@ sudo yum -y update
 
 # Install Node.js and npm
 sudo yum install -y nodejs npm
-
-# Optionally, verify the installation
-node -v
-npm -v
