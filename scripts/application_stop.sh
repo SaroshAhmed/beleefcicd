@@ -1,16 +1,24 @@
-# #!/bin/bash
-# #Stopping existing node servers
-# echo "Stopping any existing node servers"
-# pkill node
-
 #!/bin/bash
+
 # Stopping existing node servers
 echo "Stopping any existing node servers"
 
-# Attempt to kill the Node.js processes with sudo
-if sudo pkill -f node; then
-    echo "Successfully stopped existing node servers."
+# Check for running node processes
+PIDS=$(pgrep -f 'node')
+
+if [ -z "$PIDS" ]; then
+    echo "No node processes found."
 else
-    echo "Failed to stop existing node servers. Please check permissions."
-    exit 1
+    echo "Found node processes with PIDs: $PIDS"
+    
+    # Attempt to kill the node processes with sudo
+    sudo pkill -f 'node'
+    
+    # Check if pkill was successful
+    if [ $? -eq 0 ]; then
+        echo "Successfully stopped node processes."
+    else
+        echo "Failed to stop node processes. Please check permissions."
+        exit 1
+    fi
 fi
