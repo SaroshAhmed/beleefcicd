@@ -103,7 +103,7 @@ app.get("/", (req, res) => {
   const html = `
       <html>
           <head>
-              <title>Welcome home</title>
+              <title>Welcome</title>
           </head>
           <body>
               <h1>Welcome to Beleef Backend APIs</h1>
