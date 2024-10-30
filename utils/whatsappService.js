@@ -15,9 +15,8 @@ const startWhatsAppClient = async () => {
       qrTimeout: 0,
       useChrome: false,
       screenshot: false,
-      logConsole: false,
+      logConsole: true, // Enable logging for debugging
       qrCallback: (qrCode) => {
-      
         lastQRCode = qrCode;
         console.log("QR code received and saved");
       },
@@ -25,10 +24,13 @@ const startWhatsAppClient = async () => {
       client = waClient;
       console.log("WhatsApp client started");
       return client;
-    }).catch((error) => {
+    }).catch(async (error) => {
       console.error("Failed to start WhatsApp client:", error);
       clientCreationPromise = null;
-      throw error;
+
+      // Retry starting the client after a short delay
+      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait before retry
+      return startWhatsAppClient(); // Retry starting the client
     });
   }
   return clientCreationPromise;
@@ -46,13 +48,19 @@ const createWhatsAppGroup = async (groupName, participants) => {
     const initialMember = formattedParticipants[0];
     const additionalMembers = formattedParticipants.slice(1);
 
-
     const groupInfo = await client.createGroup(groupName, [initialMember]);
+    
+    // Check if group creation was successful
+    if (!groupInfo || !groupInfo.gid) {
+      throw new Error("Failed to create group.");
+    }
+
     const groupId = groupInfo.gid ? groupInfo.gid._serialized : groupInfo._serialized;
     console.log(`Group ${groupName} created with ID: ${groupId}`);
 
     lastCreatedGroupId = groupId;
 
+    // Delay to ensure the group is ready
     await new Promise(resolve => setTimeout(resolve, 5000));
 
     for (const [index, member] of additionalMembers.entries()) {
@@ -74,9 +82,9 @@ const createWhatsAppGroup = async (groupName, participants) => {
   }
 };
 
+// Send message to group
 const sendMessageToGroup = async (groupId, message) => {
   await startWhatsAppClient();
-
 
   const targetGroupId = groupId || lastCreatedGroupId;
   
@@ -94,6 +102,8 @@ const sendMessageToGroup = async (groupId, message) => {
   }
 };
 
+// Get the last QR code
 const getQRCode = () => lastQRCode;
 
+// Export functions
 module.exports = { createWhatsAppGroup, sendMessageToGroup, startWhatsAppClient, getQRCode };
