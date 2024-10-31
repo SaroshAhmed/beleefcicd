@@ -13,7 +13,7 @@ const startWhatsAppClient = async () => {
       multiDevice: false, 
       headless: true, // Set to false to run with a GUI for debugging
       qrTimeout: 300, // Set a finite timeout for QR code scanning
-      useChrome: true, // Set to true to use Chrome if available
+      useChrome: false, // Set to true to use Chrome if available
       screenshot: false,
       logConsole: true, // Enable logging for debugging
       sessionDataPath: './session_data/MySession_data.json',
