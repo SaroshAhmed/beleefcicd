@@ -16,6 +16,7 @@ const startWhatsAppClient = async () => {
       useChrome: false,
       screenshot: false,
       logConsole: true, // Enable logging for debugging
+      sessionDataPath: './session_data/MySession_data.json',
       qrCallback: (qrCode) => {
         lastQRCode = qrCode;
         console.log("QR code received and saved");
