@@ -17,6 +17,13 @@ const startWhatsAppClient = async () => {
       screenshot: false,
       logConsole: true, // Enable logging for debugging
       sessionDataPath: './session_data/MySession_data.json',
+      skipUnreadMessages: true, // Do not load unread messages
+      cacheEnabled: false, // Disable caching for lower memory usage
+      messageStoreEnabled: false, // Disable message store to reduce memory
+      skipSessionSave: true, // Skip saving the session to avoid loading issues
+      clearSession: true, // Clear session to avoid loading past data
+      waitForRipeSession: true, // Wait until session is fully loaded before actions
+      skipAddingExtras: true, // Do not load additional data like profile pictures
       qrCallback: (qrCode) => {
         lastQRCode = qrCode;
         console.log("QR code received and saved");
