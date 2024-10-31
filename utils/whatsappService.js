@@ -10,10 +10,10 @@ const startWhatsAppClient = async () => {
   if (!client && !clientCreationPromise) {
     clientCreationPromise = wa.create({
       sessionId: 'MySession',
-      multiDevice: true,
-      headless: true,
-      qrTimeout: 0,
-      useChrome: false,
+      multiDevice: false, // Set to false for simpler connection
+      headless: false, // Set to false to run with a GUI for debugging
+      qrTimeout: 300, // Set a finite timeout for QR code scanning
+      useChrome: true, // Set to true to use Chrome if available
       screenshot: false,
       logConsole: true, // Enable logging for debugging
       sessionDataPath: './session_data/MySession_data.json',
