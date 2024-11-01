@@ -2,20 +2,20 @@
 const wa = require('@open-wa/wa-automate');
 let client;
 let clientCreationPromise;
-let lastQRCode = null; 
-let lastCreatedGroupId; 
+let lastQRCode = null;
+let lastCreatedGroupId;
 
 // Start WhatsApp client
 const startWhatsAppClient = async () => {
   if (!client && !clientCreationPromise) {
     clientCreationPromise = wa.create({
       sessionId: 'MySession',
-      multiDevice: false, 
-      headless: true, // Set to false to run with a GUI for debugging
-      qrTimeout: 300, // Set a finite timeout for QR code scanning
-      useChrome: false, // Set to true to use Chrome if available
+      multiDevice: false,
+      headless: true,
+      qrTimeout: 300,
+      useChrome: false,
       screenshot: false,
-      logConsole: true, // Enable logging for debugging
+      logConsole: true,
       sessionDataPath: './session_data/MySession_data.json',
       qrCallback: (qrCode) => {
         lastQRCode = qrCode;
@@ -30,8 +30,8 @@ const startWhatsAppClient = async () => {
       clientCreationPromise = null;
 
       // Retry starting the client after a short delay
-      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait before retry
-      return startWhatsAppClient(); // Retry starting the client
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      return startWhatsAppClient();
     });
   }
   return clientCreationPromise;
@@ -50,13 +50,14 @@ const createWhatsAppGroup = async (groupName, participants) => {
     const additionalMembers = formattedParticipants.slice(1);
 
     const groupInfo = await client.createGroup(groupName, [initialMember]);
-    
-    // Check if group creation was successful
+
+    // Log the groupInfo response to inspect its structure
+    console.log("Group Info:", groupInfo);
     if (!groupInfo || !groupInfo.gid) {
       throw new Error("Failed to create group.");
     }
 
-    const groupId = groupInfo.gid ? groupInfo.gid._serialized : groupInfo._serialized;
+    const groupId = groupInfo.gid._serialized || groupInfo._serialized;
     console.log(`Group ${groupName} created with ID: ${groupId}`);
 
     lastCreatedGroupId = groupId;
@@ -65,7 +66,7 @@ const createWhatsAppGroup = async (groupName, participants) => {
     await new Promise(resolve => setTimeout(resolve, 5000));
 
     for (const [index, member] of additionalMembers.entries()) {
-      await new Promise(resolve => setTimeout(resolve, index * 3000)); 
+      await new Promise(resolve => setTimeout(resolve, index * 4000)); // Slightly longer delay
       try {
         await client.addParticipant(groupId, member);
         console.log(`Successfully added ${member}`);
@@ -75,7 +76,7 @@ const createWhatsAppGroup = async (groupName, participants) => {
     }
 
     await client.sendText(groupId, 'Hi Team, Welcome! We have created this group to ensure smooth communication. Looking forward to achieving the maximum outcome. Regards, Sandy');
-    
+
     return { message: "Group created successfully", groupId };
   } catch (error) {
     console.error("Error creating group:", error);
@@ -88,7 +89,6 @@ const sendMessageToGroup = async (groupId, message) => {
   await startWhatsAppClient();
 
   const targetGroupId = groupId || lastCreatedGroupId;
-  
   if (!targetGroupId) {
     throw new Error("No groupId provided and no group has been created yet.");
   }
